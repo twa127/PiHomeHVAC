@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#service_name:homebridge.service
+#service_name:mosquitto.service
 #app_name:Mosquitto Broker
 #app_description:Install Mosquitto Broker
 
