@@ -37,4 +37,4 @@ echo "Creating service for auto start"
 sudo cp /var/www/add_on/zigbee2mqtt/zigbee2mqtt.service /etc/systemd/system/zigbee2mqtt.service
 sudo systemctl enable zigbee2mqtt.service
 
-echo -e "From the command line enter 'sudo systemctl start zigbee2mqtt.service'.\nThen brows to xxx.xxx.xxx.xxx8080 to complete the 'onboarding' stage of the install process."
+echo -e "From the command line enter 'sudo systemctl start zigbee2mqtt.service'.\nThen browse to xxx.xxx.xxx.xxx:8080 to complete the 'onboarding' stage of the install process."
