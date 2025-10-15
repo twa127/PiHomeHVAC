@@ -41,7 +41,7 @@ sudo apt -y install apache2 apache2-doc apache2-utils
 
 echo "Installing mariadb"
 sudo apt -y install mariadb-server mariadb-client
-sudo mysql_secure_installation
+sudo mariadb-secure-installation
 
 echo "Installing PHP support"
 sudo apt -y install php php-common
