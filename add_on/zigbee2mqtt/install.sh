@@ -32,6 +32,9 @@ echo "Installing dependencies"
 cd /opt/zigbee2mqtt
 pnpm install --frozen-lockfile
 
+echo "Creating /opt/zigbee2mqtt/data/configuration.yaml file"
+sudo cp configuration.yaml /opt/zigbee2mqtt/data
+
 # Create service
 echo "Creating service for auto start"
 sudo cp /var/www/add_on/zigbee2mqtt/zigbee2mqtt.service /etc/systemd/system/zigbee2mqtt.service
