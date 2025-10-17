@@ -12,12 +12,12 @@ class bc:
 
 
 print(bc.hed + " ")
-print("    __  __                             _         ")
-print("   |  \/  |                    /\     (_)        ")
-print("   | \  / |   __ _  __  __    /  \     _   _ __  ")
-print("   | |\/| |  / _` | \ \/ /   / /\ \   | | | '__| ")
-print("   | |  | | | (_| |  >  <   / ____ \  | | | |    ")
-print("   |_|  |_|  \__,_| /_/\_\ /_/    \_\ |_| |_|    ")
+print(r"    __  __                             _         ")
+print(r"   |  \/  |                    /\     (_)        ")
+print(r"   | \  / |   __ _  __  __    /  \     _   _ __  ")
+print(r"   | |\/| |  / _` | \ \/ /   / /\ \   | | | '__| ")
+print(r"   | |  | | | (_| |  >  <   / ____ \  | | | |    ")
+print(r"   |_|  |_|  \__,_| /_/\_\ /_/    \_\ |_| |_|    ")
 print(" ")
 print("        " + bc.SUB + "S M A R T   T H E R M O S T A T " + bc.ENDC)
 print(bc.WARN + " ")
@@ -26,7 +26,7 @@ print("* MySensors Wifi/Ethernet/Serial Gateway Communication *")
 print("* Script to communicate with MySensors Nodes, for more *")
 print("* info please check MySensors API.                     *")
 print("*      Build Date: 18/09/2017                          *")
-print("*      Version 0.31 - Last Modified 28/09/2025         *")
+print("*      Version 0.32 - Last Modified 16/10/2025         *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -2237,8 +2237,18 @@ def on_message(client, userdata, message):
                 [timestamp, mqtt_id],
             )
             con_mqtt.commit()
+            # zigbee2mqtt bridge messages (no action taken)
+            if fnmatch.fnmatch(message.topic, 'zigbee2mqtt/bridge/*'):
+                if dbgLevel >= 2 and dbgMsgIn == 1:
+                    print(
+                        "5: zigbee2mqtt Message (No action taken).",
+                        " Topic:",
+                        message_topic,
+                        " Message:",
+                        message_str,
+                    )
             # Process incomming STATE change messages for switches toggled by an external agent
-            if fnmatch.fnmatch(message.topic, '*/STATE*'):
+            elif fnmatch.fnmatch(message.topic, '*/STATE*'):
                 mqtt_payload = mqtt_payload = json.loads(message.payload.decode())
                 for e in mqtt_payload: # iterator over a dictionary
                     if fnmatch.fnmatch(e, 'POWER*'):
@@ -2646,6 +2656,12 @@ def on_message(client, userdata, message):
                         mqtt_payload = json.loads(message.payload.decode())
                         # Get the battery level value
                         mqtt_payload = deep_get(mqtt_payload, battery_attribute)
+                        # if None then try with lowercase
+                        if  mqtt_payload is None:
+                            # Re-get the MQTT message
+                            mqtt_payload = json.loads(message.payload.decode())
+                            battery_attribute = battery_attribute[0].lower() + battery_attribute[1:]
+                            mqtt_payload = deep_get(mqtt_payload, battery_attribute)
                         if  mqtt_payload is not None:
                             bat_voltage = 3 * (mqtt_payload/100)
                             bat_level = mqtt_payload

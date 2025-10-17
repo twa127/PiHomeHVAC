@@ -902,19 +902,10 @@ if ($type <= 5 || $type == 38) {
         //-------------------------------
         $fcolor = "blue";
 
-        $query = "SELECT sensor_id, sensor_child_id, frost_temp FROM sensors WHERE frost_temp <> 0;";
+        $query = "SELECT mode FROM zone_current_state;";
         $results = $conn->query($query);
         while ($row = mysqli_fetch_assoc($results)) {
-                $query = "SELECT node_id FROM nodes WHERE id = ".$row['sensor_id']." LIMIT 1;";
-                $result = $conn->query($query);
-                $frost_sensor_node = mysqli_fetch_array($result);
-                $frost_sensor_node_id = $frost_sensor_node['node_id'];
-                //query to get temperature from messages_in_view_24h table view
-                $query = "SELECT payload FROM messages_in_view_24h WHERE node_id = '".$frost_sensor_node_id."' AND child_id = ".$row['sensor_child_id']." LIMIT 1;";
-                $result = $conn->query($query);
-                $msg_in = mysqli_fetch_array($result);
-                $frost_sensor_c = $msg_in['payload'];
-                if ($frost_sensor_c <= $row["frost_temp"]) { $fcolor = "red"; }
+                if (floor($row['mode']/10) == 2) { $fcolor = "red"; }
         }
 	echo '<small class="statuscircle" id="frost_status"><i class="bi bi-circle-fill '.$fcolor.'" style="font-size: 0.55rem;"></i></small>';
 } elseif ($type == 27) {

@@ -14,12 +14,12 @@ class bc:
     blu = "\033[44m"
 
 print(bc.hed + " ")
-print("    __  __                             _         ")
-print("   |  \/  |                    /\     (_)        ")
-print("   | \  / |   __ _  __  __    /  \     _   _ __  ")
-print("   | |\/| |  / _` | \ \/ /   / /\ \   | | | '__| ")
-print("   | |  | | | (_| |  >  <   / ____ \  | | | |    ")
-print("   |_|  |_|  \__,_| /_/\_\ /_/    \_\ |_| |_|    ")
+print(r"    __  __                             _         ")
+print(r"   |  \/  |                    /\     (_)        ")
+print(r"   | \  / |   __ _  __  __    /  \     _   _ __  ")
+print(r"   | |\/| |  / _` | \ \/ /   / /\ \   | | | '__| ")
+print(r"   | |  | | | (_| |  >  <   / ____ \  | | | |    ")
+print(r"   |_|  |_|  \__,_| /_/\_\ /_/    \_\ |_| |_|    ")
 print(" ")
 print("        " + bc.SUB + "S M A R T   T H E R M O S T A T " + bc.ENDC)
 print(bc.WARN + " ")
@@ -365,6 +365,28 @@ def resync():
                      AND ((n.node_id != '0' AND n.sketch_version >= 0.35) OR (n.node_id = '0' AND n.sketch_version >= 0.38));"""
                )
     con.commit()  # commit above
+
+def check_frost_control (zone_id):
+    rval_dict = dict.fromkeys(["frost_temp", "frost_sensor_c", "frost_sp_deadband"], None)
+    cur.execute(
+        """SELECT `s`.`id` AS `sensor_id`, `s`.`frost_temp`, MIN(`current_val_1`) AS `current_val_1`, `zs`.`sp_deadband`, `zs`.`zone_id`
+           FROM `frost_sensor_relays`
+           JOIN `relays` `r` ON `frost_sensor_relays`.`relay_id` = `r`.`id`
+           JOIN `zone_relays` `zr` ON `r`.`id` = `zr`.`zone_relay_id`
+           JOIN `sensors` `s` ON `frost_sensor_relays`.`sensor_id` = `s`.`id`
+           JOIN `zone_sensors` `zs` ON `s`.`id` = `zs`.`zone_sensor_id`
+           WHERE `s`.`frost_temp` <> 0 AND ((ABS(TIME_TO_SEC(TIMEDIFF(NOW(), `s`.`last_seen`)) DIV 60) < `s`.`fail_timeout`) OR `s`.`fail_timeout` = 0) AND `zr`.`zone_id` = %s;""",
+        (zone_id,),
+    )
+    if cur.rowcount > 0:
+        ftemp = cur.fetchone()
+        ftemp_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+        rval_dict["frost_temp"] = ftemp[ftemp_to_index["frost_temp"]]
+        rval_dict["frost_sensor_c"] = ftemp[ftemp_to_index["current_val_1"]]
+        rval_dict["frost_sp_deadband"] = ftemp[ftemp_to_index["sp_deadband"]]
+        return rval_dict
+    else:
+        return rval_dict
 
 #---------------------
 #Start processing loop
@@ -915,8 +937,6 @@ try:
                             if time_delta < interval_minutes or interval_minutes == 0:
                                 current_val_1 = sensors_dict[zone_id][key]["current_val_1"]
                                 zone_sensor_name = sensors_dict[zone_id][key]["sensor_name"]
-                                zone_frost_controller = sensors_dict[zone_id][key]["frost_controller"]
-                                zone_frost_temp = sensors_dict[zone_id][key]["frost_temp"]
                                 if index == 0:
                                     zone_c = current_val_1
                                     zone_hysteresis_time = sensor[sensor_to_index["hysteresis_time"]]
@@ -926,26 +946,6 @@ try:
                                     default_c = sensors_dict[zone_id][key]["default_c"]
                                 else:
                                     zone_c = zone_c + current_val_1
-                                # process the frost control
-                                # check frost protection linked to this zone controller
-                                if zone_frost_controller != 0:
-                                    frost_active = 0
-                                    frost_target_c = 99
-                                    frost_sensor_c = current_val_1
-                                    if frost_sensor_c < (zone_frost_temp - zone_sp_deadband) and zone_frost_temp != 0:
-                                        frost_active = 1
-                                        #use the lowest value if multiple values
-                                        if zone_frost_temp < frost_target_c:
-                                            frost_target_c = zone_frost_temp
-                                    elif frost_sensor_c >= (frost_target_c - zone_sp_deadband) and frost_sensor_c < frost_target_c:
-                                        frost_active = 2
-                                        #use the lowest value if multiple values
-                                        if zone_frost_temp < frost_target_c:
-                                            frost_target_c = zone_frost_temp
-                                else:
-                                    frost_active = 0
-                                if dbgLevel == 1:
-                                    print("Sensor Name - " + zone_sensor_name + ", Frost Target Temperture - " + str(frost_target_c) + ", Frost Sensor Temperature - " + str(frost_sensor_c))
                                 index = index + 1
                             # sensor timeed out so get last reading
                             else:
@@ -1061,10 +1061,33 @@ try:
                         zone_sensor_found = False
                         zone_c = None;
                         temp_reading_time = None;
-                        frost_active = 0
                 else:
-                    zone_frost_controller = 0
                     zone_sensor_found = False
+
+                ## NO SENSORS ATTACHED TO THIS ZONE< BUT STILL NEED TO CHECK FROST CONTROL FROM ANY OTHER SENSORS
+                # process the frost control
+                # check frost protection linked to this zone controller
+                rval = check_frost_control(zone_id)
+                frost_temp = rval['frost_temp'];
+                if frost_temp is not None:
+                    frost_sensor_c = rval['frost_sensor_c']
+                    frost_sp_deadband = rval['frost_sp_deadband']
+                    frost_active = 0
+                    frost_target_c = 99
+                    if frost_sensor_c < (frost_temp - frost_sp_deadband):
+                        frost_active = 1
+                        #use the lowest value if multiple values
+                        if frost_temp < frost_target_c:
+                            frost_target_c = frost_temp
+                    elif frost_sensor_c >= (frost_target_c - frost_sp_deadband) and frost_sensor_c < frost_target_c:
+                        frost_active = 2
+                        #use the lowest value if multiple values
+                        if frost_temp < frost_target_c:
+                            frost_target_c = frost_temp
+                    if dbgLevel == 1:
+                        print("Sensor Name - " + zone_sensor_name + ", Frost Target Temperture - " + str(frost_target_c) + ", Frost Sensor Temperature - " + str(frost_sensor_c))
+                else:
+                    frost_active = 0
 
                 # test for zone controller fault
                 for key in controllers_dict[zone_id]:
@@ -2415,7 +2438,9 @@ try:
                     if floor(zone_mode/10) == 2:
                         target_c = frost_target_c
                         temp_cut_out_rising = frost_target_c - zone_sp_deadband
+                        temp_cut_out_falling = frost_target_c + zone_sp_deadband
                         temp_cut_out = frost_target_c
+                        temp_cut_in = frost_target_c + zone_sp_deadband
                     if floor(zone_mode/10) == 3:
                         target_c = zone_max_c
                         temp_cut_out_rising = 0

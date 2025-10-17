@@ -49,7 +49,11 @@ echo '<div class="modal fade" id="show_frost" tabindex="-1" role="dialog" aria-l
             </div>
             <div class="modal-body">
                 <p class="text-muted">'.$lang['frost_ptotection_info'].'</p>';
-                $query = "SELECT sensors.sensor_id, sensors.sensor_child_id, sensors.name AS sensor_name, sensors.frost_temp, relays.name AS controller_name FROM sensors, relays WHERE (sensors.frost_controller = relays.id) AND frost_temp <> 0;";
+                $query = "SELECT `sensors`.`id`, `sensors`.`name` AS `sensor_name`, `sensors`.`frost_temp`, `sensors`.`current_val_1`, `zcs`.`mode`
+                        FROM `sensors`
+                        JOIN `zone_sensors` `zs` ON `sensors`.`id` = `zs`.`zone_sensor_id`
+                        JOIN `zone_current_state` `zcs` ON `zs`.`zone_id` = `zcs`.`zone_id`
+                        WHERE `frost_temp` <> 0;";
                 $results = $conn->query($query);
                 echo '<table class="table table-bordered">
                         <tr>
@@ -59,21 +63,28 @@ echo '<div class="modal fade" id="show_frost" tabindex="-1" role="dialog" aria-l
                                 <th style="text-align:center; vertical-align:middle;" class="col-1"><small>'.$lang['status'].'</small></th>
                         </tr>';
                         while ($row = mysqli_fetch_assoc($results)) {
-                                $query = "SELECT node_id FROM nodes WHERE id = ".$row['sensor_id']." LIMIT 1;";
-                                $result = $conn->query($query);
-                                $frost_sensor_node = mysqli_fetch_array($result);
-                                $frost_sensor_node_id = $frost_sensor_node['node_id'];
-                                //query to get temperature from messages_in_view_24h table view
-                        	$query = "SELECT * FROM messages_in_view_24h WHERE node_id = '".$frost_sensor_node_id."' AND child_id = ".$row['sensor_child_id']." LIMIT 1;";
-                                $result = $conn->query($query);
-                                $msg_in = mysqli_fetch_array($result);
-                                $frost_sensor_c = $msg_in['payload'];
-                                if ($frost_sensor_c <= $row["frost_temp"]) { $scolor = "red"; } else { $scolor = "blue"; }
+                                $frost_sensor_c = $row['current_val_1'];
+				if (intval($row["mode"]/10) == 2) { $scolor = "red"; } else { $scolor = "blue"; }
+				$query = "SELECT `r`.`name`, `r`.`state`
+					FROM `frost_sensor_relays`
+					JOIN `relays` `r` ON `r`.`id` = `frost_sensor_relays`.`relay_id`
+					WHERE `frost_sensor_relays`.`sensor_id` = {$row['id']}
+					ORDER By `r`.`id`;";
+				$cresults = $conn->query($query);
+				$index = 0;
+				while ($crow = mysqli_fetch_assoc($cresults)) {
+					if ($index == 0) {
+						$controller_name = $crow["name"];
+					} else {
+						$controller_name = $controller_name."\n".$crow["name"];
+					}
+					$index++;
+				}
                                 echo '
                                 <tr>
                                         <td>'.$row["sensor_name"].'</td>
                                         <td style="text-align:center; vertical-align:middle;">'.$row["frost_temp"].'</td>
-                                        <td>'.$row["controller_name"].'</td>
+                                        <td>'.nl2br ($controller_name).'</td>
                                         <td style="text-align:center; vertical-align:middle;"><class="statuscircle"><i class="bi bi-circle-fill '.$scolor.'" style="font-size: 0.55rem;"></i></td>
                                 </tr>';
                         }

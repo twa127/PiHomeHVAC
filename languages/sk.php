@@ -1100,4 +1100,5 @@ $lang['sensor_average_record_update_success'] = "Average Sensor Record Updated S
 $lang['sensor_average_record_fail'] = "Average Sensor Record Add/Update Failed:";
 $lang['access_level'] = "User Access Level";
 $lang['access_level_info'] = "Level 1 User are able to configure all systems features and settings.<br>Level 2 Users have display only access.";
+$lang['setup_guide_zigbee2MQTT'] = "Setup Guide Zigbee2MQTT";
 ?>
