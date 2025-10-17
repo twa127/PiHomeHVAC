@@ -1,6 +1,6 @@
 # MaxAir - Smart Thermostat
 
-### Note: Now at Version 3.11.
+### Note: Now at Version 3.12.
 
 The previous version, PiHome, was centered around the creation of zones, this version is more centered around devices.
 
@@ -69,6 +69,8 @@ Update – if zone, or sensor, or relay edit is initiated from the Settings menu
 Version 3.10 Improvements in display and processing of multi-sensor zones, includes a new table 'sensor_average'.
 
 Version 3.11 User account management revised, to create three distint levels of access to the system; Level 0 - system administrator, with full access to the system, Level 1 - user with configuration access to the system and Level 2 - user with display only access. Support added for the 'Olimex Gateway', which functions as a gateway plus relay controller plus multiple DS18B20 sensor support.
+
+Version 3.12 Enable multiple relays controllers to be attached to a single sensor being used for 'Frost Control'. Add initial support for ZigBee sensors using MQTT and Zigbee2MQTT.
 
 ## Setup:
 
