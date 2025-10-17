@@ -177,6 +177,18 @@ fi
 echo "Enabling Apache rewrite"
 sudo a2enmod rewrite
 
+echo "Creating sudoers file"
+sudo cat <<EOT >> /etc/sudoers.d/maxair
+www-data ALL=(ALL) NOPASSWD:/sbin/iwlist wlan0 scan
+www-data ALL=(ALL) NOPASSWD:/sbin/reboot
+www-data ALL=(ALL) NOPASSWD:/sbin/shutdown -h now
+www-data ALL=(ALL) NOPASSWD:/bin/mv myfile1.tmp /etc/wpa_supplicant/wpa_supplicant.conf
+www-data ALL=(ALL) NOPASSWD:/sbin/ifconfig eth0
+www-data ALL=/bin/systemctl
+www-data ALL=NOPASSWD: /bin/systemctl
+www-data ALL=(ALL) NOPASSWD:/usr/bin/pkill
+EOT
+
 echo "Installing log2ram as a service (only install on Raspberry Pi)"
 VAR1=$(cat /proc/device-tree/model | awk '{print $1}')
 VAR2="Raspberry"
