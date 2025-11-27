@@ -481,6 +481,20 @@ Timeformat specifiers
   weekday[5] = "Friday";
   weekday[6] = "Saturday";
 
+  var monthofyear = new Array(12);
+  monthofyear[0] = "01";
+  monthofyear[1] = "02";
+  monthofyear[2] = "03";
+  monthofyear[3] = "04";
+  monthofyear[4] = "05";
+  monthofyear[5] = "06";
+  monthofyear[6] = "07";
+  monthofyear[7] = "08";
+  monthofyear[8] = "09";
+  monthofyear[9] = "10";
+  monthofyear[10] = "11";
+  monthofyear[11] = "12";
+
   $.fn.UseTooltip3 = function () {
     $(this).bind("plothover", function (event, pos, item) {
         if (item) {
@@ -502,7 +516,7 @@ Timeformat specifiers
                 showTooltip_min_max(item.pageX,
                         item.pageY,
                         color,
-                        "<strong>" + item.series.label + "</strong> At: " + weekday[new Date(x).getDay()] + " " + (new Date(x).getHours()<10?'0':'') + new Date(x).getHours() + ":"  + (new Date(x).getMinutes()<10?'0':'') + new Date(x).getMinutes() +"<br> <strong>" + stype + "  : " + $.formatNumber(y, { format: "#,##0", locale: "us" }) + units + "</strong> ");
+                        "<strong>" + item.series.label + "</strong> At: " + new Date(x).getDate() + "/" + monthofyear[new Date(x).getMonth()] + "/" + + new Date(x).getFullYear() + " " + (new Date(x).getHours()<10?'0':'') + new Date(x).getHours() + ":"  + (new Date(x).getMinutes()<10?'0':'') + new Date(x).getMinutes() +"<br> <strong>" + stype + "  : " + $.formatNumber(y, { format: "#,##0", locale: "us" }) + units + "</strong> ");
             }
         } else {
             $("#tooltip").remove();
