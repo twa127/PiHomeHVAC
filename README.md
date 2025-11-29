@@ -1,6 +1,6 @@
 # MaxAir - Smart Thermostat
 
-### Note: Now at Version 3.13.
+### Note: Now at Version 3.14.
 
 The previous version, PiHome, was centered around the creation of zones, this version is more centered around devices.
 
@@ -73,6 +73,8 @@ Version 3.11 User account management revised, to create three distint levels of 
 Version 3.12 Enable multiple relays controllers to be attached to a single sensor being used for 'Frost Control'. Add initial support for ZigBee sensors using MQTT and Zigbee2MQTT.
 
 Version 3.13 Change to Min/Max graph process to use a table to hold daily minimum and maximum vales for all sensors set to procuce a graph (rather than a csv file).
+
+Version 3.14 New Feature, 'One Shot Boost' boost will terminate once the target temperature is reached.
 
 ## Setup:
 
