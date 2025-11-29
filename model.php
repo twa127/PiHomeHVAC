@@ -3595,7 +3595,7 @@ if ((settings($conn, 'mode') & 0b1) == 0) {
 
 if ((settings($conn, 'mode') & 0b1) == 0) {
 	$query = "SELECT DISTINCT boost.id, boost.`status`, boost.sync, boost.zone_id, zone_idx.index_id, zone_type.category, zone.name, 
-        boost.temperature, boost.minute, boost_button_id, boost_button_child_id, hvac_mode, ts.sensor_type_id
+        boost.temperature, boost.minute, boost.one_shot, boost_button_id, boost_button_child_id, hvac_mode, ts.sensor_type_id
         FROM boost
         JOIN zone ON boost.zone_id = zone.id
         JOIN zone zone_idx ON boost.zone_id = zone_idx.id
@@ -3609,7 +3609,8 @@ if ((settings($conn, 'mode') & 0b1) == 0) {
         	<th class="col-4"><small>'.$lang['zone'].'</small></th>
         	<th class="col-2"><small>'.$lang['boost_time'].'</small></th>
         	<th class="col-2"><small>'.$lang['boost_temp'].'</small></th>
-        	<th class="col-2"><small>'.$lang['boost_console_id'].'</small></th>
+                <th class="col-1"><small>'.$lang['one_shot'].'</small></th>
+        	<th class="col-1"><small>'.$lang['boost_console_id'].'</small></th>
         	<th class="col-1"><small>'.$lang['boost_button_child_id'].'</small></th>
         	<th class="col-1"></th>
     	</tr>';
@@ -3638,16 +3639,23 @@ while ($row = mysqli_fetch_assoc($results)) {
     if ((settings($conn, 'mode') & 0b1) == 0) {
     	$boost_button_id = $row["boost_button_id"];
     	$boost_button_child_id = $row["boost_button_child_id"];
+	if ($row['one_shot'] == 1) { $enabled_check = 'checked'; } else { $enabled_check = ''; }
     	echo '
             <tr>
             	<th scope="row"><small>'.$row['name'].'</small></th>
             	<td><input id="minute'.$row["id"].'" type="text" class="float-left text" style="border: none" name="minute" size="3" value="'.$minute.'" placeholder="Minutes" required></td>';
 	    	if($row["category"] < 2 || $row["category"] == 5) {
             		echo '<td><input id="temperature'.$row["id"].'" type="text" class="float-left text" style="border: none" name="temperature" size="3" value="'.DispSensor($conn,$row["temperature"],$row["sensor_type_id"]).'" placeholder="Temperature" required></td>
+			<td style="text-align:center; vertical-align:middle;">
+				<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="one_shot'.$row["id"].'" name="one_shot" value="1" '.$enabled_check.'>
+			</td>
             		<td><input id="boost_button_id'.$row["id"].'" type="text" class="float-left text" style="border: none" name="button_id"  size="3" value="'.$boost_button_id.'" placeholder="Button ID" required></td>
             		<td><input id="boost_button_child_id'.$row["id"].'" type="text" class="float-left text" style="border: none" name="button_child_id" size="3" value="'.$boost_button_child_id.'" placeholder="Child ID" required></td>';
 	    	} else {
             		echo '<td><input id="temperature'.$row["id"].'" type="hidden" class="float-left text" style="border: none" name="temperature" size="3" value="'.DispSensor($conn,$row["temperature"],$row["sensor_type_id"]).'" placeholder="Temperature" required></td>
+                        <td style="text-align:center; vertical-align:middle;">
+                                <input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="one_shot'.$row["id"].'" name="one_shot" value="1" '.$enabled_check.'>
+                        </td>
             		<td><input id="boost_button_id'.$row["id"].'" type="hidden" class="float-left text" style="border: none" name="button_id"  size="3" value="'.$boost_button_id.'" placeholder="Button ID" required></td>
             		<td><input id="boost_button_child_id'.$row["id"].'" type="hidden" class="float-left text" style="border: none" name="button_child_id" size="3" value="'.$boost_button_child_id.'" placeholder="Child ID" required></td>';
 	    	}
@@ -3756,7 +3764,7 @@ echo '<p class="text-muted">'.$info_text.'</p>
 	<option value="95">95</option>
 	</select>
     <div class="help-block with-errors"></div></div>
-	<div class="form-group" class="control-label"><label>'.$lang['boost_time'].'</label> <small class="text-muted">'.$lang['boost_time_info'].'</small>
+    <div class="form-group" class="control-label"><label>'.$lang['boost_time'].'</label> <small class="text-muted">'.$lang['boost_time_info'].'</small>
 	<select class="form-select" type="text" id="boost_time" name="boost_time">
 	<option value="20">20</option>
 	<option value="25">25</option>
@@ -3806,7 +3814,16 @@ echo '<p class="text-muted">'.$info_text.'</p>
 		</select>
     	  <div class="help-block with-errors"></div></div>	';
 	}
-echo '</div>
+
+        echo '<div class="form-group" class="control-label"><label>'.$lang['one_shot'].'</label> <small class="text-muted">'.$lang['one_shot_info'].'</small>
+
+                <div class="form-check">';
+                        echo '<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" id="checkbox7" class="styled" type="checkbox" value="1" name="one_shot" unchecked Enabled>';
+                        echo '<label class="form-check-label" for="checkbox7"> '.$lang['one_shot'].'</label>
+                </div>
+	</div>
+
+</div>
             <div class="modal-footer">
 				<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>';
 				if ((settings($conn, 'mode') & 0b1) == 0) {

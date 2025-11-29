@@ -243,6 +243,7 @@ function add_boost(wid){
 var idata="w=boost&o=add&zone_id="+document.getElementById("zone_id").value;
 	idata+="&boost_temperature="+document.getElementById("boost_temperature").value;
 	idata+="&boost_time="+document.getElementById("boost_time").value;
+        idata+="&one_shot="+document.getElementById("checkbox7").checked;
 	if(wid==0) {
 		idata+="&boost_console_id="+document.getElementById("boost_console_id").value;
 		idata+="&boost_button_child_id="+document.getElementById("boost_button_child_id").value;
@@ -291,7 +292,10 @@ var x = document.getElementById("boost_setup").querySelectorAll("input");
 var i;
 var idata="w=boost&o=update";
     for (i = 0; i < x.length; i++) {
-        idata+="&"+x[i].id+"="+x[i].value;
+        if(x[i].name == "one_shot")
+             idata+="&"+x[i].id+"="+x[i].checked;
+        else
+             idata+="&"+x[i].id+"="+x[i].value;
     }
     idata+="&wid=0";
     $.get('db.php',idata)

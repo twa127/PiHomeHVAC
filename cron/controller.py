@@ -1407,15 +1407,46 @@ try:
                         boost_c = boost[boost_to_index['temperature']]
                         boost_minute = boost[boost_to_index['minute']]
                         boost_mode = boost[boost_to_index['hvac_mode']]
+                        one_shot = boost[boost_to_index['one_shot']]
                     else:
                         boost_status = 0
 
+                    # check if in 'one shot' mode
+                    if boost_status == 1 and (one_shot == 1 or one_shot == "1"):
+                        if zone_c < boost_c and time_stamp < boost_time + datetime.timedelta(minutes = boost_minute):
+                            boost_active = 1
+                            if dbgLevel >= 2:
+                                print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - One Shot Boost is Active for This Zone")
+                            else:
+                                boost_active = 0
+                                #You can comment out if you dont have Boost Button Console installed.
+                                cur.execute(
+                                    "SELECT * FROM boost WHERE zone_id = %s AND status = '1';",
+                                    (zone_id, ),
+                                )
+                                if cur.rowcount > 0:
+                                    brow = cur.fetchone()
+                                    brow_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+                                    boost_button_id = brow[brow_to_index['boost_button_id']]
+                                    boost_button_child_id = brow[brow_to_index['boost_button_child_id']]
+                                    cur.execute(
+                                        "UPDATE messages_out SET payload = %s, sent = '0' WHERE zone_id = %s AND node_id = %s AND child_id = %s LIMIT 1;",
+                                        [str(boost_active), zone_id, boost_button_id, boost_button_child_id],
+                                    )
+                                    con.commit()  # commit above
+                                    #update Boost Records in database
+                                    cur.execute(
+                                        "UPDATE boost SET status = %s, sync = '0' WHERE zone_id = %s AND status = '1';",
+                                        [str(boost_active), zone_id],
+                                    )
+                                    con.commit()  # commit above
+
                     #check boost time is passed, if it passed then update db and set to boost status to 0
-                    if boost_status == 1:
+                    elif boost_status == 1:
                         if time_stamp < boost_time + datetime.timedelta(minutes = boost_minute):
                             boost_active = 1
                             if dbgLevel >= 2:
-                                print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Boost is Active for This Zone")
+                                print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Timed Boost is Active for This Zone")
                         elif time_stamp >= boost_time + datetime.timedelta(minutes = boost_minute) and  boost_status == 1:
                             boost_active = 0
                             #You can comment out if you dont have Boost Button Console installed.

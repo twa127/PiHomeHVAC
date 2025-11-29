@@ -238,6 +238,8 @@ if($what=="boost"){
                 $boost_temperature = $_GET['boost_temperature'];
                 $boost_console_id = $_GET['boost_console_id'];
                 $boost_button_child_id = $_GET['boost_button_child_id'];
+                $one_shot = $_GET['one_shot'];
+		if ($one_shot=='true'){$one_shot = '1';} else {$one_shot = '0';}
                 $query = "SELECT id FROM nodes WHERE node_id = '".$boost_console_id."' LIMIT 1;";
                 $nresult = $conn->query($query);
                 $nodes_row = mysqli_fetch_assoc($nresult);
@@ -253,8 +255,8 @@ if($what=="boost"){
                 }
                 //Add record to Boost table
                 if ($wid == 0) {
-                        $query = "INSERT INTO `boost`(`sync`, `purge`, `status`, `zone_id`, `time`, `temperature`, `minute`, `boost_button_id`, `boost_button_child_id`, `hvac_mode`)
-                                VALUES ('0', '0', '0', '{$zone_id}', '{$datetime}', '{$boost_temperature}', '{$boost_time}', '{$boost_console_id}', '{$boost_button_child_id}', '0')";
+                        $query = "INSERT INTO `boost`(`sync`, `purge`, `status`, `zone_id`, `time`, `temperature`, `minute`, `boost_button_id`, `boost_button_child_id`, `one_shot`, `hvac_mode`)
+                                VALUES ('0', '0', '0', '{$zone_id}', '{$datetime}', '{$boost_temperature}', '{$boost_time}', '{$boost_console_id}', '{$boost_button_child_id}', '{$one_shot}', '0')";
                 } else {
                         $query = "SELECT id FROM zone WHERE name = 'HVAC' limit 1;";
                         $result = $conn->query($query);
@@ -278,7 +280,7 @@ if($what=="boost"){
                 $datetime = date("Y-m-d H:i:s");
                 if ((settings($conn, 'mode') & 0b1) == 0) {
                         $sel_query = "SELECT boost.id, boost.`status`, boost.sync, boost.zone_id, zone_idx.index_id, zone_type.category, zone.name,
-                        boost.temperature, boost.minute, n.id AS n_id, boost_button_id, boost_button_child_id, hvac_mode, ts.sensor_type_id
+                        boost.temperature, boost.minute, n.id AS n_id, boost_button_id, boost_button_child_id, boost.one_shot, hvac_mode, ts.sensor_type_id
                         FROM boost
                         JOIN nodes n ON n.node_id = boost.boost_button_id
                         JOIN zone ON boost.zone_id = zone.id
@@ -306,6 +308,7 @@ if($what=="boost"){
                                 $input5 = 'id'.$id;
                                 $input6 = 'hvac_mode'.$id;
                                 $input7 = 'sensor_type'.$id;
+                                $input8 = 'one_shot'.$id;
                                 $minute = $_GET[$input1];
                                 $temperature = $_GET[$input2];
                                 $boost_button_id = $_GET[$input3];
@@ -313,12 +316,15 @@ if($what=="boost"){
                                 $zone_id = $_GET[$input5];
                                 $hvac_mode = $_GET[$input6];
                                 $sensor_type = $_GET[$input7];
+                        	$one_shot =  $_GET[$input8];
+                        	if ($one_shot=='true'){$one_shot = '1';} else {$one_shot = '0';}
                         } else {
                                 $input1 = 'minute'.$id;
                                 $input2 = 'temperature'.$id;
                                 $input3 = 'zone_id'.$id;
                                 $input4 = 'hvac_mode'.$id;
                                 $input5 = 'sensor_type'.$id;
+                                $input6 = 'one_shot'.$id;
                                 $minute = $_GET[$input1];
                                 $temperature = $_GET[$input2];
                                 $boost_button_id = 0;
@@ -326,10 +332,12 @@ if($what=="boost"){
                                 $zone_id = $_GET[$input3];
                                 $hvac_mode = $_GET[$input4];
                                 $sensor_type = $_GET[$input5];
+                                $one_shot =  $_GET[$input8];
+                                if ($one_shot=='true'){$one_shot = '1';} else {$one_shot = '0';}
                         }
                         //Update Boost table
                         $upd_query = "UPDATE boost SET minute = '".$minute."', temperature = '".SensorToDB($conn, $temperature, $sensor_type)."', boost_button_id = '".$boost_button_id."',
-                                      boost_button_child_id = '".$boost_button_child_id."', hvac_mode = '".$hvac_mode."' WHERE id='".$row['id']."' LIMIT 1;";
+                                      boost_button_child_id = '".$boost_button_child_id."', one_shot = '".$one_shot."', hvac_mode = '".$hvac_mode."' WHERE id='".$row['id']."' LIMIT 1;";
                         $conn->query($upd_query);
                         $update_error=0;
                         if(!$conn->query($upd_query)){
