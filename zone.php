@@ -289,7 +289,7 @@ if (isset($_POST['submit'])) {
 
 			//Add Zone to boost table at same time
 			if ((settings($conn, 'mode') & 0b1) == 0) { //boiler mode
-				$query = "INSERT INTO `boost`(`sync`, `purge`, `status`, `zone_id`, `time`, `temperature`, `minute`, `boost_button_id`, `boost_button_child_id`, `hvac_mode`) VALUES ('0', '0', '0', '{$zone_id}', '{$date_time}', '{$boost_c}','{$max_operation_time}', '{$boost_button_id}', '{$boost_button_child_id}', '0');";
+				$query = "INSERT INTO `boost`(`sync`, `purge`, `status`, `zone_id`, `time`, `temperature`, `minute`, `one_shot`, `boost_button_id`, `boost_button_child_id`, `hvac_mode`) VALUES ('0', '0', '0', '{$zone_id}', '{$date_time}', '{$boost_c}','{$max_operation_time}', '0', '{$boost_button_id}', '{$boost_button_child_id}', '0');";
 		                $result = $conn->query($query);
         		        if ($result) {
                 		        $message_success .= "<p>".$lang['zone_boost_success']."</p>";
@@ -306,7 +306,7 @@ if (isset($_POST['submit'])) {
 					} else {
                         	                $temp = $min_c;
 					}
-	                        	$query = "INSERT INTO `boost`(`sync`, `purge`, `status`, `zone_id`, `time`, `temperature`, `minute`, `boost_button_id`, `boost_button_child_id`, `hvac_mode`) VALUES ('0', '0', '0', '{$zone_id}', '{$date_time}', '{$temp}','{$max_operation_time}', '0', '0', '{$i}');";
+	                        	$query = "INSERT INTO `boost`(`sync`, `purge`, `status`, `zone_id`, `time`, `temperature`, `minute`, `one_shot`, `boost_button_id`, `boost_button_child_id`, `hvac_mode`) VALUES ('0', '0', '0', '{$zone_id}', '{$date_time}', '{$temp}','{$max_operation_time}', '0', '0', '0', '{$i}');";
 			                $result = $conn->query($query);
                 			if ($result) {
 		        	                $message_success .= "<p>".$lang['zone_boost_success']."</p>";
