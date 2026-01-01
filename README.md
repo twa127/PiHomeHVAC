@@ -1,6 +1,6 @@
 # MaxAir - Smart Thermostat
 
-### Note: Now at Version 3.14.
+### Note: Now at Version 3.15.
 
 The previous version, PiHome, was centered around the creation of zones, this version is more centered around devices.
 
@@ -75,6 +75,8 @@ Version 3.12 Enable multiple relays controllers to be attached to a single senso
 Version 3.13 Change to Min/Max graph process to use a table to hold daily minimum and maximum vales for all sensors set to procuce a graph (rather than a csv file).
 
 Version 3.14 New Feature, 'One Shot Boost' boost will terminate once the target temperature is reached.
+
+Version 3.16 Bug Fix. Increase field size of colume 'zone_mode' in table 'relay_logs'.
 
 ## Setup:
 
