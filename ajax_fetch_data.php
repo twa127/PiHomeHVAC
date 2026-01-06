@@ -1392,5 +1392,104 @@ if ($type <= 5 || $type == 38) {
                 }
         echo $current_sc_mode;
         }
+} elseif ($type == 40) {
+        //-----------------------------
+        //update the device index table
+        //-----------------------------
+
+	// get relays and sensors which are not attached to a zone
+        $query = "SELECT CONCAT('r', `id`) AS `id`, `name`,'relay' AS `device_type`,`relay_id` AS `device_id`, `relay_child_id` AS `device_child_id`,`index_id`,`pre_post`
+        	FROM `relays`
+                WHERE `id` NOT IN (SELECT `zone_relay_id` FROM `zone_relays`) AND `type` = 0 AND `show_it` = 1
+                UNION
+                SELECT CONCAT('s', `id`) AS `id`, `name`,'sensor' AS `device_type`,`sensor_id` AS `device_id`, `sensor_child_id` AS `device_child_id`,`index_id`,`pre_post`
+                FROM `sensors`
+                WHERE `id` NOT IN (SELECT `zone_sensor_id` FROM `zone_sensors`) AND `show_it` = 1
+                ORDER BY pre_post DESC, index_id ASC;";
+	$results = $conn->query($query);
+        while ($row = mysqli_fetch_assoc($results)) {
+        	$check = ($row['pre_post'] == 1) ? 'checked' : '';
+                echo '<tr>
+                	<td>'.$row["name"].'</td>
+                        <td style="text-align:center; vertical-align:middle;">'.$row["device_type"].'</td>
+                        <td style="text-align:center; vertical-align:middle;">
+                        	<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox'.$row["id"].'" name="checkbox'.$row["id"].'" value="1" '.$check.'>
+                        </td>
+			<td>
+				<input id="index'.$row["id"].'" type="text" class="float-left text" style="border: none" name="index" size="3" value="'.$row["index_id"].'" placeholder="Index Number" required>
+			</td>
+              	</tr>';
+	}
+} elseif ($type == 41 || $type == 42 || $type == 43 || $type == 44) {
+        //-------------------------
+        //update standalone relays
+        //-------------------------
+        $query = "SELECT relays.id, relays.name, relays.relay_child_id, relays.type, relays.state, nodes.node_id, nodes.last_seen, nodes.notice_interval
+                FROM relays, nodes
+                WHERE relays.id = {$id} AND nodes.id = relays.relay_id AND `relays`.`id` NOT IN (SELECT `zone_relay_id` FROM `zone_relays`) AND  `relays`.`type` = 0 AND relays.show_it = 1
+		LIMIT 1;";
+        $result = $conn->query($query);
+        $row = mysqli_fetch_assoc($result);
+        $relay_id = $row['id'];
+        $relay_name = $row['name'];
+        $relay_child_id = $row['relay_child_id'];
+        $node_id = $row['node_id'];
+        $node_seen = $row['last_seen'];
+        $node_notice = $row['notice_interval'];
+        $relay_type_id = $row['type'];
+        $relay_state = $row['state'];
+        $shcolor = "#00C853";
+        if($node_notice > 0){
+                $now=strtotime(date('Y-m-d H:i:s'));
+                $node_seen_time = strtotime($node_seen);
+                if ($node_seen_time  < ($now - ($node_notice*60))) { $shcolor = "red"; }
+        }
+        //-------------------------------
+        //process return strings by type
+        //-------------------------------
+        switch ($type) {
+                case 41:
+                        if ($relay_state == 1) {$rcolor = 'green';} else {$rcolor = 'black';}
+                        echo '<i class="bi bi-power '.$rcolor.'" style="font-size: 1.4rem;">';
+                        break;
+                case 42:
+                        if ($relay_state == 1) {$rcolor = 'red';} else {$rcolor = 'black';}
+                        echo '<i class="bi  bi-circle-fill '.$rcolor.'" style="font-size: 0.55rem;">';
+                        break;
+                case 43:
+                        if ($relay_state == 1) {$rstate = 'ON';} else {$rstate = 'OFF';}
+                        echo $rstate;
+                        break;
+		case 44:
+                        if ($relay_state == 1) {$mode = 140;} else {$mode = 0;}
+			$rval=getIndicators($conn, $mode, 0);
+                        echo '<i class="bi ' . $rval['shactive'] . ' ' . $rval['shcolor'] . ' icon-fw">';
+			break;
+                default:
+	}
+} elseif ($type == 45) {
+        //-----------------------------
+        //update the device index table
+        //-----------------------------
+
+        // get relays and sensors which are not attached to a zone
+        $query = "SELECT `id`, `status`, `index_id`, `name`, `type_id`
+                FROM `zone`
+                ORDER BY index_id;";
+        $results = $conn->query($query);
+        while ($row = mysqli_fetch_assoc($results)) {
+                $check = ($row['status'] == 1) ? 'checked' : '';
+		$zone_type = ($row['type_id'] == 5) ? 'Add-On' : 'Heating/Water';
+                echo '<tr>
+                        <td>'.$row["name"].'</td>
+                        <td style="text-align:center; vertical-align:middle;">'.$zone_type.'</td>
+                        <td style="text-align:center; vertical-align:middle;">
+                                <input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox'.$row["id"].'" name="checkbox'.$row["id"].'" value="1" '.$check.'>
+                        </td>
+                        <td>
+                                <input id="index'.$row["id"].'" type="text" class="float-left text" style="border: none" name="index" size="3" value="'.$row["index_id"].'" placeholder="Index Number" required>
+                        </td>
+                </tr>';
+        }
 }
 ?>

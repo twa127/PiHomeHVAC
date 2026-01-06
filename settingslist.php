@@ -469,6 +469,12 @@ if ($settings_id == 1) {
        				                <h3 class="status"></small></h3>
                         	                </button>
 
+                                                <button class="btn btn-bm-<?php echo theme($conn, $theme, 'color'); ?> btn-circle <?php echo $button_style; ?> mainbtn animated fadeIn" data-href="#" data-bs-toggle="modal" data-bs-target="#index_zones">
+                                                <h3 class="buttontop"><small><?php echo $lang['index_zones']; ?></small></h3>
+                                                <h3 class="degre" ><i class="b1 bi-list-columns orange" style="font-size: 1.8rem;"></i></h3>
+                                                 <h3 class="status"></small></h3>
+                                                </button>
+
 			        		<button class="btn btn-bm-<?php echo theme($conn, $theme, 'color'); ?> btn-circle <?php echo $button_style; ?> mainbtn animated fadeIn" data-href="edit_override.php" data-bs-toggle="modal" data-bs-target="#nodes">
         	        			<h3 class="buttontop"><small><?php echo $lang['nodes']; ?></small></h3>
        				                <h3 class="degre" style="margin-top:12px;"><i class="bi bi-diagram-3-fill green" style="font-size: 2rem;"></i></h3>
@@ -517,6 +523,12 @@ if ($settings_id == 1) {
         	                                <h3 class="degre" ><i class="b1 bi-list-ol red" style="font-size: 2rem;"></i></h3>
        				                <h3 class="status"></small></h3>
                         	                </button>
+
+                                                <button class="btn btn-bm-<?php echo theme($conn, $theme, 'color'); ?> btn-circle <?php echo $button_style; ?> mainbtn animated fadeIn" data-href="#" data-bs-toggle="modal" data-bs-target="#index_devices">
+                                                <h3 class="buttontop"><small><?php echo $lang['index_devices']; ?></small></h3>
+                                                <h3 class="degre" ><i class="b1 bi-list-columns blue" style="font-size: 1.8rem;"></i></h3>
+                                                 <h3 class="status"></small></h3>
+                                                </button>
 
                                                 <button class="btn btn-bm-<?php echo theme($conn, $theme, 'color'); ?> btn-circle <?php echo $button_style; ?> mainbtn animated fadeIn" data-href="#" data-bs-toggle="modal" data-bs-target="#hide_sensor_relay">
                                                 <h3 class="buttontop"><small><?php echo $lang['hide']; ?></small></h3>

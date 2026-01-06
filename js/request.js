@@ -767,6 +767,31 @@ var idata="w=show_sensors&o=update";
     });
 }
 
+//update relays to display
+function show_relays(){
+//var x = document.getElementsByTagName("input");
+var x = document.getElementById("relay_setup").querySelectorAll("input");
+var i;
+var idata="w=show_relays&o=update";
+    for (i = 0; i < x.length; i++) {
+        idata+="&"+x[i].id+"="+x[i].checked;
+    }
+    idata+="&wid=0";
+    $.get('db.php',idata)
+    .done(function(odata){
+        if(odata.Success)
+            window.location="settings.php?s_id=6"
+        else
+            console.log(odata.Message);
+    })
+    .fail(function( jqXHR, textStatus, errorThrown ){
+        if(jqXHR==401 || jqXHR==403) return;
+        console.log("show_relays: Error.\r\n\r\njqXHR: "+jqXHR+"\r\n\r\ntextStatus: "+textStatus+"\r\n\r\nerrorThrown:"+errorThrown);
+    })
+    .always(function() {
+    });
+}
+
 //update notice interval
 function node_alerts(){
 //var x = document.getElementsByTagName("input");
@@ -1654,6 +1679,63 @@ var idata="w=enable_zone_current_state_logs&o=update";
     .fail(function( jqXHR, textStatus, errorThrown ){
         if(jqXHR==401 || jqXHR==403) return;
         console.log("enable_zone_current_state_logs: Error.\r\n\r\njqXHR: "+jqXHR+"\r\n\r\ntextStatus: "+textStatus+"\r\n\r\nerrorThrown:"+errorThrown);
+    })
+    .always(function() {
+    });
+}
+
+//update device index
+function update_device_index(){
+//var x = document.getElementsByTagName("input");
+var x = document.getElementById("index_devices").querySelectorAll("input");
+var i;
+var idata="w=device_index&o=update";
+    for (i = 0; i < x.length; i++) {
+        if(x[i].name == "index")
+             idata+="&"+x[i].id+"="+x[i].value;
+        else
+             idata+="&"+x[i].id+"="+x[i].checked;
+    }
+    idata+="&wid=0";
+    $.get('db.php',idata)
+    .done(function(odata){
+        if(odata.Success)
+	    document.getElementById("update_d_index").value = 1;
+        else
+            console.log(odata.Message);
+    })
+    .fail(function( jqXHR, textStatus, errorThrown ){
+        if(jqXHR==401 || jqXHR==403) return;
+        console.log("update_device_index: Error.\r\n\r\njqXHR: "+jqXHR+"\r\n\r\ntextStatus: "+textStatus+"\r\n\r\nerrorThrown:"+errorThrown);
+    })
+    .always(function() {
+    });
+}
+
+//update zone index
+function update_zone_index(){
+//var x = document.getElementsByTagName("input");
+var x = document.getElementById("index_zones").querySelectorAll("input");
+var i;
+var idata="w=zone_index&o=update";
+    for (i = 0; i < x.length; i++) {
+        if(x[i].name == "index")
+             idata+="&"+x[i].id+"="+x[i].value;
+        else
+             idata+="&"+x[i].id+"="+x[i].checked;
+    }
+    idata+="&wid=0";
+    console.log(idata);
+    $.get('db.php',idata)
+    .done(function(odata){
+        if(odata.Success)
+            document.getElementById("update_z_index").value = 1;
+        else
+            console.log(odata.Message);
+    })
+    .fail(function( jqXHR, textStatus, errorThrown ){
+        if(jqXHR==401 || jqXHR==403) return;
+        console.log("update_zone_index: Error.\r\n\r\njqXHR: "+jqXHR+"\r\n\r\ntextStatus: "+textStatus+"\r\n\r\nerrorThrown:"+errorThrown);
     })
     .always(function() {
     });

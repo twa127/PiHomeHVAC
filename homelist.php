@@ -388,91 +388,145 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
 						$zone_params[] = array('zone_id' =>$row['id'], 'zone_name' =>$row['name'], 'zone_category' =>$row['category']);
 					} // end of zones while loop
 
-                			// Temperature Sensors Pre System Controller
-					$sensor_params = [];
-                			$query = "SELECT sensors.id, sensors.name, sensors.sensor_child_id, sensors.sensor_type_id, nodes.node_id, nodes.last_seen, nodes.notice_interval
-						FROM sensors, nodes
-						WHERE (nodes.id = sensors.sensor_id) AND sensors.zone_id = 0 AND sensors.show_it = 1 AND sensors.pre_post = 1
-						AND (sensors.user_display & {$user_display_mask}) = 0
-						order by index_id asc;";
+                                        // arrays to define standalone devices
+                                        $sensor_params = [];
+                                        $relay_params = [];
+                			// Standalone Sensors and Relays Pre System Controller
+					$query = "SELECT CONCAT('r', `relays`.`id`) AS `id`, `relays`.`name`,'relay' AS `device_type`,`relay_id` AS `device_id`,
+						`relay_child_id` AS `device_child_id`, NULL AS `device_type_id`,`index_id`,`pre_post`, `n`.`node_id`, `n`.`last_seen`, `n`.`notice_interval`
+						FROM `relays`
+						JOIN `nodes` `n` ON `relay_id` = `n`.`id`
+						WHERE `relays`.`id` NOT IN (SELECT `zone_relay_id` FROM `zone_relays`) AND  `relays`.`type` = 0 AND `show_it` = 1 AND `pre_post` = 1
+						AND (`relays`.`user_display` & {$user_display_mask}) = 0
+						UNION
+						SELECT CONCAT('s', `sensors`.`id`) AS `id`, `sensors`.`name`,'sensor' AS `device_type`,`sensor_id` AS `device_id`,
+						`sensor_child_id` AS `device_child_id`, `sensor_type_id` AS `device_type_id`,`index_id`,`pre_post`, `n`.`node_id`, `n`.`last_seen`,
+						`n`.`notice_interval`
+						FROM `sensors`
+						JOIN `nodes` `n` ON `sensor_id` = `n`.`id`
+						WHERE `sensors`.`id` NOT IN (SELECT `zone_sensor_id` FROM `zone_sensors`) AND `show_it` = 1 AND `pre_post` = 1
+						AND (`sensors`.`user_display` & {$user_display_mask}) = 0
+						ORDER BY pre_post, index_id;";
 			                $results = $conn->query($query);
         	        		while ($row = mysqli_fetch_assoc($results)) {
-			                        $sensor_id = $row['id'];
-                			        $sensor_name = $row['name'];
-		                	        $sensor_child_id = $row['sensor_child_id'];
-                		        	$node_id = $row['node_id'];
-			                        $node_seen = $row['last_seen'];
-        	        		        $node_notice = $row['notice_interval'];
-						$sensor_type_id = $row['sensor_type_id'];
-                			        $shcolor = "green";
-		                	        if($node_notice > 0){
-                		        	        $now=strtotime(date('Y-m-d H:i:s'));
-		                                	$node_seen_time = strtotime($node_seen);
-	                		                if ($node_seen_time  < ($now - ($node_notice*60))) { $shcolor = "red"; }
-			                        }
-                			        //query to get sensor from messages_in table
-				                if ($sensor_type_id == 4) {
-                        				$query = "SELECT * FROM messages_in WHERE node_id = '{$node_id}' AND child_id = '{$sensor_child_id}' AND sub_type = 0 ORDER BY id DESC LIMIT 1;";
-                				} else {
-                        				$query = "SELECT * FROM messages_in WHERE node_id = '{$node_id}' AND child_id = '{$sensor_child_id}' ORDER BY id DESC LIMIT 1;";
-                				}
-                			        $result = $conn->query($query);
-		                        	$sensor = mysqli_fetch_array($result);
-	                		        $sensor_r = $sensor['payload'];
-			                        $ajax_modal = "ajax.php?Ajax=GetModal_Sensor_Graph,".$sensor_id.",0";
-                			        echo '<button class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-circle no-shadow '.$button_style.' mainbtn animated fadeIn" data-bs-toggle="modal" data-remote="false" data-bs-target="#ajaxModal" data-ajax="'.$ajax_modal.'">
-		        	                <h3 class="text-nowrap buttontop"><small>'.$sensor_name.'</small></h3>';
-                                                if ($sensor_type_id == 3) {
-                                                        $deg_msg = floor($sensor_r);
-                                                        $query = "SELECT message FROM sensor_messages WHERE message_id = {$deg_msg} AND sub_type = 0 AND sensor_id = {$sensor_id} LIMIT 1;";
-                                                        $result = $conn->query($query);
-                                                        $rowcount=mysqli_num_rows($result);
-                                                        if ($rowcount == 0) {
-                                                                if ($sensor_r == 0) {
-                                                                        echo '<h3 class="degre" id="sd_'.$sensor_id.'">OFF</h3>';
-                                                                } else {
-                                                                        echo '<h3 class="degre" id="sd_'.$sensor_id.'">ON</h3>';
-                                                                }
-                                                        } else {
-                                                                $sensor_message = mysqli_fetch_array($result);
-                                                                echo '<h3 class="degre" id="sd_'.$sensor_id.'">'.$sensor_message['message'].'</h3>';
+						if (strpos($row['device_type'], 'sensor') !== false) {
+				                        $sensor_id = substr($row['id'],1);
+        	        			        $sensor_name = $row['name'];
+			                	        $sensor_child_id = $row['device_child_id'];
+                			        	$node_id = $row['node_id'];
+			        	                $node_seen = $row['last_seen'];
+        	        			        $node_notice = $row['notice_interval'];
+							$sensor_type_id = $row['device_type_id'];
+	                			        $shcolor = "green";
+			                	        if($node_notice > 0){
+                			        	        $now=strtotime(date('Y-m-d H:i:s'));
+		        	                        	$node_seen_time = strtotime($node_seen);
+	                			                if ($node_seen_time  < ($now - ($node_notice*60))) { $shcolor = "red"; }
+			                	        }
+                			        	//query to get sensor from messages_in table
+					                if ($sensor_type_id == 4) {
+        	                				$query = "SELECT * FROM messages_in WHERE node_id = '{$node_id}' AND child_id = '{$sensor_child_id}' AND sub_type = 0 ORDER BY id DESC LIMIT 1;";
+                					} else {
+                        					$query = "SELECT * FROM messages_in WHERE node_id = '{$node_id}' AND child_id = '{$sensor_child_id}' ORDER BY id DESC LIMIT 1;";
+                					}
+                				        $result = $conn->query($query);
+		                        		$sensor = mysqli_fetch_array($result);
+		                		        $sensor_r = $sensor['payload'];
+				                        $ajax_modal = "ajax.php?Ajax=GetModal_Sensor_Graph,".$sensor_id.",0";
+                				        echo '<button class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-circle no-shadow '.$button_style.' mainbtn animated fadeIn" data-bs-toggle="modal" data-remote="false" data-bs-target="#ajaxModal" data-ajax="'.$ajax_modal.'">
+		        		                <h3 class="text-nowrap buttontop"><small>'.$sensor_name.'</small></h3>';
+                                	                if ($sensor_type_id == 3) {
+                                        	                $deg_msg = floor($sensor_r);
+                                                	        $query = "SELECT message FROM sensor_messages WHERE message_id = {$deg_msg} AND sub_type = 0 AND sensor_id = {$sensor_id} LIMIT 1;";
+                                                        	$result = $conn->query($query);
+	                                                        $rowcount=mysqli_num_rows($result);
+        	                                                if ($rowcount == 0) {
+                	                                                if ($sensor_r == 0) {
+                        	                                                echo '<h3 class="degre" id="sd_'.$sensor_id.'">OFF</h3>';
+                                	                                } else {
+                                        	                                echo '<h3 class="degre" id="sd_'.$sensor_id.'">ON</h3>';
+                                                	                }
+                                                        	} else {
+                                                                	$sensor_message = mysqli_fetch_array($result);
+	                                                                echo '<h3 class="degre" id="sd_'.$sensor_id.'">'.$sensor_message['message'].'</h3>';
+        	                                                }
+                	                                } elseif ($sensor_type_id == 4) {
+                        	                                $deg_msg = floor($sensor_r);
+                                	                        $query = "SELECT message FROM sensor_messages WHERE message_id = {$deg_msg} AND sub_type = 0 AND sensor_id = {$sensor_id} LIMIT 1;";
+                                        	                $result = $conn->query($query);
+                                                	        $sensor_message = mysqli_fetch_array($result);
+                                                        	echo '<h3 class="degre" id="sd_'.$sensor_id.'">'.$sensor_message['message'].'</h3>';
+							} else {
+								$unit = SensorUnits($conn,$sensor_type_id);
+        			                		echo '<h3 class="degre" id="sd_'.$sensor_id.'">'.number_format(DispSensor($conn,$sensor_r,$sensor_type_id),1).$unit.'</h3>';
+							}
+			        	                if ($sensor_type_id == 4) {
+                        				        $s_color = floor($sensor_r);
+			                        	        $query = "SELECT status_color FROM sensor_messages WHERE message_id = {$s_color} AND sub_type = 0 AND sensor_id = {$sensor_id} LIMIT 1;";
+                        			        	$result = $conn->query($query);
+				                                $sensor_message = mysqli_fetch_array($result);
+        	                			        $shcolor = $sensor_message['status_color'];
+				                        }
+                				        echo '<h3 class="status">
+		                	        	<small class="statuscircle" id="ss1_'.$sensor_id.'"><i class="bi bi-circle-fill '.$shcolor.'" style="font-size: 0.55rem;"></i></small>';
+                                        	        //Right Lower Message
+                                                	if ($sensor_type_id != 3) {
+                                                        	if ($sensor_type_id == 4) {
+                                                                	$s_msg = floor($sensor_r);
+	                                                        	$query = "SELECT message FROM sensor_messages WHERE message_id = {$s_msg} AND sub_type = 1 AND sensor_id = {$sensor_id} LIMIT 1;";
+        	                                                        $result = $conn->query($query);
+                	                                                $right_message = mysqli_fetch_array($result);
+                        	                                        $msg = $right_message['message'];
+                                	                        } else {
+                                        	                        $msg = $rval['target'];
+                                                	        }
+                                                        	echo '<small class="statuszoon" id="ss2_'.$sensor_id.'">' . $rmsg .'</small>';
+	                                                }
+		                		        echo '</h3></button>';      //close out status and button
+							$sensor_params[] = array('sensor_id' =>$sensor_id, 'sensor_name' =>$sensor_name);
+                                                // process standalone relays
+                                                } elseif (strpos($row['device_type'], 'relay') !== false) {
+                                                        $relay_id = substr($row['id'],1);
+                                                        $relay_name = $row['name'];
+                                                        $relay_child_id = $row['device_child_id'];
+                                                        $node_id = $row['node_id'];
+                                                        $node_seen = $row['last_seen'];
+                                                        $node_notice = $row['notice_interval'];
+                                                        $relay_type = $row['device_type'];
+                                                        $shcolor = "green";
+                                                        if($node_notice > 0){
+                                                                $now=strtotime(date('Y-m-d H:i:s'));
+                                                                $node_seen_time = strtotime($node_seen);
+                                                                if ($node_seen_time  < ($now - ($node_notice*60))) { $shcolor = "red"; }
                                                         }
-                                                } elseif ($sensor_type_id == 4) {
-                                                        $deg_msg = floor($sensor_r);
-                                                        $query = "SELECT message FROM sensor_messages WHERE message_id = {$deg_msg} AND sub_type = 0 AND sensor_id = {$sensor_id} LIMIT 1;";
+                                                        $query = "SELECT * FROM messages_in WHERE node_id = '{$node_id}' AND child_id = '{$relay_child_id}' ORDER BY id DESC LIMIT 1;";
                                                         $result = $conn->query($query);
-                                                        $sensor_message = mysqli_fetch_array($result);
-                                                        echo '<h3 class="degre" id="sd_'.$sensor_id.'">'.$sensor_message['message'].'</h3>';
-						} else {
-							$unit = SensorUnits($conn,$sensor_type_id);
-        		                		echo '<h3 class="degre" id="sd_'.$sensor_id.'">'.number_format(DispSensor($conn,$sensor_r,$sensor_type_id),1).$unit.'</h3>';
-						}
-			                        if ($sensor_type_id == 4) {
-                        			        $s_color = floor($sensor_r);
-			                                $query = "SELECT status_color FROM sensor_messages WHERE message_id = {$s_color} AND sub_type = 0 AND sensor_id = {$sensor_id} LIMIT 1;";
-                        			        $result = $conn->query($query);
-			                                $sensor_message = mysqli_fetch_array($result);
-                        			        $shcolor = $sensor_message['status_color'];
-			                        }
-                			        echo '<h3 class="status">
-		                        	<small class="statuscircle" id="ss1_'.$sensor_id.'"><i class="bi bi-circle-fill '.$shcolor.'" style="font-size: 0.55rem;"></i></small>';
-                                                //Right Lower Message
-                                                if ($sensor_type_id != 3) {
-                                                        if ($sensor_type_id == 4) {
-                                                                $s_msg = floor($sensor_r);
-                                                        	$query = "SELECT message FROM sensor_messages WHERE message_id = {$s_msg} AND sub_type = 1 AND sensor_id = {$sensor_id} LIMIT 1;";
-                                                                $result = $conn->query($query);
-                                                                $right_message = mysqli_fetch_array($result);
-                                                                $msg = $right_message['message'];
+                                                        $relay = mysqli_fetch_array($result);
+                                                        $relay_state = $relay['payload'];
+                                                        if ($relay_state == 1) {
+                                                                $mode = 140;
+                                                                $rcolor = "green";
+                                                                $r1color = "red";
                                                         } else {
-                                                                $msg = $rval['target'];
+                                                                $mode = 0;
+                                                                $rcolor = $r1color = "black";
                                                         }
-                                                        echo '<small class="statuszoon" id="ss2_'.$sensor_id.'">' . $rmsg .'</small>';
+                                                        $rval=getIndicators($conn, $mode, 0);
+                                                        $link = 'toggle_relay_state('.$relay_id.')';
+                                                        echo '<button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-circle no-shadow '.$button_style.' mainbtn" onclick="'.$link.'">
+                                                        <h3 class="text-nowrap buttontop"><small>'.$relay_name.'</small></h3>
+                                                        <h3 class="degre" id="rd_'.$relay_id.'"><i class="bi bi-power '.$rcolor.'" style="font-size: 1.4rem;"></i></h3>
+                                                        <h3 class="status">';
+                                                        //Left small circular icon/color status
+                                                        echo '<small class="statuscircle" id="rs1_'.$relay_id.'"><i class="bi bi-circle-fill '.$r1color.'" style="font-size: 0.55rem;"></i></small>';
+                                                	//Middle target temp
+                                                	echo '<small class="statusdegree" id="rs2_'.$relay_id.'">' . 'OFF' .'</small>';
+                                                        //Right icon for what/why
+                                                        echo '<small class="statuszoon" id="rs3_'.$relay_id.'"><i class="bi ' . $rval['shactive'] . ' ' . $rval['shcolor'] . ' icon-fw"></i></small>';
+                                                        echo '</h3></button>';      //close out status and button
+                                                        $relay_params[] = array('relay_id' =>$relay_id, 'relay_name' =>$relay_name);
                                                 }
-	                		        echo '</h3></button>';      //close out status and button
-						$sensor_params[] = array('sensor_id' =>$row['id'], 'sensor_name' =>$row['name']);
-                			}
-
+					}
 					//SYSTEM CONTROLLER BUTTON
 					if ($sc_count != 0) {
 						//query to get last system_controller statues change time
@@ -572,79 +626,134 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
 					}
 					// end if system controller button
 
-					// Temperature Sensors Post System Controller
-					$query = "SELECT sensors.id, sensors.name, sensors.sensor_child_id, sensors.sensor_type_id, sensors.user_display, nodes.node_id, nodes.last_seen,
-						nodes.notice_interval FROM sensors, nodes WHERE (nodes.id = sensors.sensor_id) AND sensors.zone_id = 0 AND sensors.show_it = 1
-						AND sensors.pre_post = 0 AND (sensors.user_display & {$user_display_mask}) = 0
-						order by index_id asc;";
-			                $results = $conn->query($query);
-                			while ($row = mysqli_fetch_assoc($results)) {
-		                	        $sensor_id = $row['id'];
-						$sensor_name = $row['name'];
-			                        $sensor_child_id = $row['sensor_child_id'];
-						$node_id = $row['node_id'];
-			                        $node_seen = $row['last_seen'];
-                			        $node_notice = $row['notice_interval'];
-						$sensor_type_id = $row['sensor_type_id'];
-						$shcolor = "green";
-				                if($node_notice > 0){
-        				                $now=strtotime(date('Y-m-d H:i:s'));
-                		        		$node_seen_time = strtotime($node_seen);
-		        	                	if ($node_seen_time  < ($now - ($node_notice*60))) { $shcolor = "red"; }
-        				        }
-		                        	//query to get sensor reading from messages_in  table
-                                                if ($sensor_type_id == 4) {
-		                                        $query = "SELECT * FROM messages_in WHERE node_id = '{$node_id}' AND child_id = '{$sensor_child_id}' AND sub_type = 0 ORDER BY id DESC LIMIT 1;";
-                                                } else {
-                                                        $query = "SELECT * FROM messages_in WHERE node_id = '{$node_id}' AND child_id = '{$sensor_child_id}' ORDER BY id DESC LIMIT 1;";
-                                                }
-			                        $result = $conn->query($query);
-                			        $sensor = mysqli_fetch_array($result);
-		        	                $sensor_r = $sensor['payload'];
-                			        $ajax_modal = "ajax.php?Ajax=GetModal_Sensor_Graph,".$sensor_id.",0";
-		   				echo '<button class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-circle no-shadow '.$button_style.' mainbtn animated fadeIn" data-bs-toggle="modal" data-remote="false" data-bs-target="#ajaxModal" data-ajax="'.$ajax_modal.'">
-	                		        <h3 class="text-nowrap buttontop"><small>'.$sensor_name.'</small></h3>';
-			                        if ($sensor_type_id == 3) {
-                			                if ($sensor_r == 0) {
-								echo '<h3 class="degre" id="sd_'.$sensor_id.'">OFF</h3>';
-							} else {
-								echo '<h3 class="degre" id="sd_'.$sensor_id.'">ON</h3>';
-							}
-						} elseif ($sensor_type_id == 4) {
-                                			$deg_msg = floor($sensor_r);
-                                			$query = "SELECT message FROM sensor_messages WHERE message_id = {$deg_msg} AND sub_type = 0 AND sensor_id = {$sensor_id} LIMIT 1;";
-                                			$result = $conn->query($query);
-                                			$sensor_message = mysqli_fetch_array($result);
-							echo '<h3 class="degre" id="sd_'.$sensor_id.'">'.$sensor_message['message'].'</h3>';
-						} else {
-							$unit = SensorUnits($conn,$sensor_type_id);
-        	                			echo '<h3 class="degre" id="sd_'.$sensor_id.'">'.number_format(DispSensor($conn,$sensor_r,$sensor_type_id),1).$unit.'</h3>';
-						}
-			                        if ($sensor_type_id == 4) {
-                        			        $s_color = floor($sensor_r);
-			                                $query = "SELECT status_color FROM sensor_messages WHERE message_id = {$s_color} AND sub_type = 0 AND sensor_id = {$sensor_id} LIMIT 1;";
-                        			        $result = $conn->query($query);
-			                                $sensor_message = mysqli_fetch_array($result);
-                        			        $shcolor = $sensor_message['status_color'];
-			                        }
-        	        		        echo '<h3 class="status">
-			                        <small class="statuscircle" id="ss1_'.$sensor_id.'"><i class="bi bi-circle-fill '.$shcolor.'" style="font-size: 0.55rem;"></i></small>';
-                                                //Right Lower Message
-                                                if ($sensor_type_id != 3) {
-				                        if ($sensor_type_id == 4) {
-                                				$s_msg = floor($sensor_r);
-				                        	$query = "SELECT message FROM sensor_messages WHERE message_id = {$s_msg} AND sub_type = 1 AND sensor_id = {$sensor_id} LIMIT 1;";
+					// Standalone Sensors and Relays Post System Controller
+                                        $query = "SELECT CONCAT('r', `relays`.`id`) AS `id`, `relays`.`name`,'relay' AS `device_type`,`relay_id` AS `device_id`,
+                                                `relay_child_id` AS `device_child_id`, NULL AS `device_type_id`,`index_id`,`pre_post`, `n`.`node_id`, `n`.`last_seen`, `n`.`notice_interval`
+                                                FROM `relays`
+                                                JOIN `nodes` `n` ON `relay_id` = `n`.`id`
+                                                WHERE `relays`.`id` NOT IN (SELECT `zone_relay_id` FROM `zone_relays`) AND  `relays`.`type` = 0 AND `show_it` = 1 AND `pre_post` = 0
+                                                AND (`relays`.`user_display` & {$user_display_mask}) = 0
+                                                UNION
+                                                SELECT CONCAT('s', `sensors`.`id`) AS `id`, `sensors`.`name`,'sensor' AS `device_type`,`sensor_id` AS `device_id`,
+                                                `sensor_child_id` AS `device_child_id`, `sensor_type_id` AS `device_type_id`,`index_id`,`pre_post`, `n`.`node_id`, `n`.`last_seen`,
+                                                `n`.`notice_interval`
+                                                FROM `sensors`
+                                                JOIN `nodes` `n` ON `sensor_id` = `n`.`id`
+                                                WHERE `sensors`.`id` NOT IN (SELECT `zone_sensor_id` FROM `zone_sensors`) AND `show_it` = 1 AND `pre_post` = 0
+                                                AND (`sensors`.`user_display` & {$user_display_mask}) = 0
+                                                ORDER BY pre_post, index_id;";
+                                        $results = $conn->query($query);
+                                        while ($row = mysqli_fetch_assoc($results)) {
+						// process standalone sensors
+                                                if (strpos($row['device_type'], 'sensor') !== false) {
+                                                        $sensor_id = substr($row['id'],1);
+                                                        $sensor_name = $row['name'];
+                                                        $sensor_child_id = $row['device_child_id'];
+                                                        $node_id = $row['node_id'];
+                                                        $node_seen = $row['last_seen'];
+                                                        $node_notice = $row['notice_interval'];
+                                                        $sensor_type_id = $row['device_type_id'];
+							$shcolor = "green";
+					                if($node_notice > 0){
+        					                $now=strtotime(date('Y-m-d H:i:s'));
+                			        		$node_seen_time = strtotime($node_seen);
+		        		                	if ($node_seen_time  < ($now - ($node_notice*60))) { $shcolor = "red"; }
+        					        }
+		                        		//query to get sensor reading from messages_in  table
+	                                                if ($sensor_type_id == 4) {
+			                                        $query = "SELECT * FROM messages_in WHERE node_id = '{$node_id}' AND child_id = '{$sensor_child_id}' AND sub_type = 0 ORDER BY id DESC LIMIT 1;";
+                	                                } else {
+                        	                                $query = "SELECT * FROM messages_in WHERE node_id = '{$node_id}' AND child_id = '{$sensor_child_id}' ORDER BY id DESC LIMIT 1;";
+                                	                }
+			                	        $result = $conn->query($query);
+                			        	$sensor = mysqli_fetch_array($result);
+			        	                $sensor_r = $sensor['payload'];
+        	        			        $ajax_modal = "ajax.php?Ajax=GetModal_Sensor_Graph,".$sensor_id.",0";
+			   				echo '<button class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-circle no-shadow '.$button_style.' mainbtn animated fadeIn" data-bs-toggle="modal" data-remote="false" data-bs-target="#ajaxModal" data-ajax="'.$ajax_modal.'">
+	                			        <h3 class="text-nowrap buttontop"><small>'.$sensor_name.'</small></h3>';
+			        	                if ($sensor_type_id == 3) {
+                				                if ($sensor_r == 0) {
+									echo '<h3 class="degre" id="sd_'.$sensor_id.'">OFF</h3>';
+								} else {
+									echo '<h3 class="degre" id="sd_'.$sensor_id.'">ON</h3>';
+								}
+							} elseif ($sensor_type_id == 4) {
+                	                			$deg_msg = floor($sensor_r);
+                        	        			$query = "SELECT message FROM sensor_messages WHERE message_id = {$deg_msg} AND sub_type = 0 AND sensor_id = {$sensor_id} LIMIT 1;";
                                 				$result = $conn->query($query);
-				                                $right_message = mysqli_fetch_array($result);
-                                				$msg = $right_message['message'];
-                        				} else {
-								$msg = $rval['target'];
+                                				$sensor_message = mysqli_fetch_array($result);
+								echo '<h3 class="degre" id="sd_'.$sensor_id.'">'.$sensor_message['message'].'</h3>';
+							} else {
+								$unit = SensorUnits($conn,$sensor_type_id);
+        		                			echo '<h3 class="degre" id="sd_'.$sensor_id.'">'.number_format(DispSensor($conn,$sensor_r,$sensor_type_id),1).$unit.'</h3>';
 							}
-							echo '<small class="statuszoon" id="ss2_'.$sensor_id.'">' . $rmsg .'</small>';
+			        	                if ($sensor_type_id == 4) {
+                        				        $s_color = floor($sensor_r);
+			                        	        $query = "SELECT status_color FROM sensor_messages WHERE message_id = {$s_color} AND sub_type = 0 AND sensor_id = {$sensor_id} LIMIT 1;";
+                        			        	$result = $conn->query($query);
+				                                $sensor_message = mysqli_fetch_array($result);
+        	                			        $shcolor = $sensor_message['status_color'];
+				                        }
+        	        			        echo '<h3 class="status">
+			        	                <small class="statuscircle" id="ss1_'.$sensor_id.'"><i class="bi bi-circle-fill '.$shcolor.'" style="font-size: 0.55rem;"></i></small>';
+                                        	        //Right Lower Message
+                                                	if ($sensor_type_id != 3) {
+				                        	if ($sensor_type_id == 4) {
+                                					$s_msg = floor($sensor_r);
+					                        	$query = "SELECT message FROM sensor_messages WHERE message_id = {$s_msg} AND sub_type = 1 AND sensor_id = {$sensor_id} LIMIT 1;";
+        	                        				$result = $conn->query($query);
+					                                $right_message = mysqli_fetch_array($result);
+                        	        				$msg = $right_message['message'];
+                        					} else {
+									$msg = $rval['target'];
+								}
+								echo '<small class="statuszoon" id="ss2_'.$sensor_id.'">' . $rmsg .'</small>';
+							}
+	                			        echo '</h3></button>';      //close out status and button
+							$sensor_params[] = array('sensor_id' =>$sensor_id, 'sensor_name' =>$sensor_name);
+						// process standalone relays
+	 					} elseif (strpos($row['device_type'], 'relay') !== false) {
+                                                        $relay_id = substr($row['id'],1);
+                                                        $relay_name = $row['name'];
+                                                        $relay_child_id = $row['device_child_id'];
+                                                        $node_id = $row['node_id'];
+                                                        $node_seen = $row['last_seen'];
+                                                        $node_notice = $row['notice_interval'];
+                                                        $relay_type = $row['device_type'];
+                                                        $shcolor = "green";
+                                                        if($node_notice > 0){
+                                                                $now=strtotime(date('Y-m-d H:i:s'));
+                                                                $node_seen_time = strtotime($node_seen);
+                                                                if ($node_seen_time  < ($now - ($node_notice*60))) { $shcolor = "red"; }
+                                                        }
+							$query = "SELECT * FROM messages_in WHERE node_id = '{$node_id}' AND child_id = '{$relay_child_id}' ORDER BY id DESC LIMIT 1;";
+                                                        $result = $conn->query($query);
+                                                        $relay = mysqli_fetch_array($result);
+                                                        $relay_state = $relay['payload'];
+							if ($relay_state == 1) {
+								$mode = 140;
+                                                                $rcolor = "green";
+                                                                $r1color = "red";
+							} else {
+								$mode = 0;
+                                                                $rcolor = $r1color = "black";
+							}
+							$rval=getIndicators($conn, $mode, 0);
+                                                        $link = 'toggle_relay_state('.$relay_id.')';
+                                                        echo '<button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-circle no-shadow '.$button_style.' mainbtn" onclick="'.$link.'">
+                                                	<h3 class="text-nowrap buttontop"><small>'.$relay_name.'</small></h3>
+							<h3 class="degre" id="rd_'.$relay_id.'"><i class="bi bi-power '.$rcolor.'" style="font-size: 1.4rem;"></i></h3>
+							<h3 class="status">';
+							//Left small circular icon/color status
+							echo '<small class="statuscircle" id="rs1_'.$relay_id.'"><i class="bi bi-circle-fill '.$r1color.'" style="font-size: 0.55rem;"></i></small>';
+                                                        //Middle target temp
+                                                        echo '<small class="statusdegree" id="rs2_'.$relay_id.'">' . 'OFF' .'</small>';
+							//Right icon for what/why
+                                           		echo '<small class="statuszoon" id="rs3_'.$relay_id.'"><i class="bi ' . $rval['shactive'] . ' ' . $rval['shcolor'] . ' icon-fw"></i></small>';
+                                                	echo '</h3></button>';      //close out status and button
+                                                        $relay_params[] = array('relay_id' =>$relay_id, 'relay_name' =>$relay_name);
 						}
-                			        echo '</h3></button>';      //close out status and button
-						$sensor_params[] = array('sensor_id' =>$row['id'], 'sensor_name' =>$row['name']);
-	 				}
+					}
 //					$js_sensor_params = json_encode($sensor_params);
 
                 			// Add-On buttons
@@ -836,8 +945,9 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
 								$sensor_params[] = array('sensor_id' =>$sensor_id, 'sensor_name' =>$sensor_name);
 							}
 	 					}
-                			} // end of zones while loop
+                			} // end of Add-On zones while loop
                                         $js_sensor_params = json_encode($sensor_params);
+                                        $js_relay_params = json_encode($relay_params);
 		                	$js_zone_params = json_encode($zone_params);
 
 					//select addional onetouch buttons
@@ -958,6 +1068,17 @@ $(document).ready(function(){
               $('#bs2_' + obj2[y].button_id).load("ajax_fetch_data.php?id=" + obj2[y].button_id + "&type=12").fadeIn("slow");
 //              console.log(obj2[y].button_id);
 //              console.log(obj2[y].button_function);
+            }
+    }
+
+    var data3 = '<?php echo $js_relay_params ?>';
+    if (data3.length > 0) {
+            var obj3 = JSON.parse(data3)
+            for (var x = 0; x < obj3.length; x++) {
+              $('#rd_' + obj3[x].relay_id).load("ajax_fetch_data.php?id=" + obj3[x].relay_id + "&type=41").fadeIn("slow");
+              $('#rs1_' + obj3[x].relay_id).load("ajax_fetch_data.php?id=" + obj3[x].relay_id + "&type=42").fadeIn("slow");
+              $('#rs2_' + obj3[x].relay_id).load("ajax_fetch_data.php?id=" + obj3[x].relay_id + "&type=43").fadeIn("slow");
+              $('#rs3_' + obj3[x].relay_id).load("ajax_fetch_data.php?id=" + obj3[x].relay_id + "&type=44").fadeIn("slow");
             }
     }
 

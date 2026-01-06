@@ -37,6 +37,8 @@ if (strpos($uri, "id=") !== false) { $link = "settings.php?s_id=8"; } else { $li
 
 //Form submit
 if (isset($_POST['submit'])) {
+        $pre_post = isset($_POST['pre_post']) ? $_POST['pre_post'] : "0";
+        $index_id = $_POST['index_id'];
 	$name = $_POST['name'];
         $type = $_POST['type_id'];
 	$selected_relay_id = $_POST['selected_relay_id'];
@@ -59,23 +61,23 @@ if (isset($_POST['submit'])) {
         } else {
                 $message_type = 2;
         }
-        $relay_child_id = $_POST['relay_child_id'];
-        $on_trigger = $_POST['trigger'];
-        $sync = '0';
-        $purge= '0';
-        $m_out_id = $_POST['m_out_id'];
 	$relay_child_id = $_POST['relay_child_id'];
 	$on_trigger = $_POST['trigger'];
         $sync = '0';
         $purge= '0';
+	$show_it = $_POST['show_it'];
+        $message_in = $_POST['message_in'];
 	$m_out_id = $_POST['m_out_id'];
 	$lag_time = $_POST['lag_time'];
         $fail_timeout = $_POST['fail_timeout'];
 	//Add or Edit relay record to relays Table
-	$query = "INSERT INTO `relays` (`id`, `sync`, `purge`, `relay_id`, `relay_child_id`, `name`, `type`, `on_trigger`, `lag_time`, `user_display`, `state`, `fail_timeout`)
-		VALUES ('{$id}', '{$sync}', '{$purge}', '{$selected_relay_id}', '{$relay_child_id}', '{$name}', '{$type}', '{$on_trigger}', '{$lag_time}', 0, 0, '{$fail_timeout}')
+	$query = "INSERT INTO `relays` (`id`, `sync`, `purge`, `relay_id`, `relay_child_id`, `name`, `type`, `index_id`, `pre_post`, `show_it`, `message_in`,`on_trigger`, `lag_time`,
+		`user_display`, `state`, `fail_timeout`)
+		VALUES ('{$id}', '{$sync}', '{$purge}', '{$selected_relay_id}', '{$relay_child_id}', '{$name}', '{$type}', '{$index_id}', 0, 1, 0, '{$on_trigger}',
+		'{$lag_time}', 0, 0, '{$fail_timeout}')
 		ON DUPLICATE KEY UPDATE sync=VALUES(sync), `purge`=VALUES(`purge`), relay_id='{$selected_relay_id}', relay_child_id='{$relay_child_id}', name=VALUES(name),
-		type=VALUES(type), on_trigger=VALUES(on_trigger), lag_time=VALUES(lag_time), fail_timeout=VALUES(fail_timeout);";
+		type=VALUES(type), `index_id` = VALUES(index_id), `pre_post` = VALUES(pre_post), `show_it` = '{$show_it}', `message_in` = '{$message_in}', on_trigger=VALUES(on_trigger),
+		lag_time=VALUES(lag_time), fail_timeout=VALUES(fail_timeout);";
 	$result = $conn->query($query);
         $temp_id = mysqli_insert_id($conn);
 	if ($result) {
@@ -158,13 +160,32 @@ if (isset($_POST['submit'])) {
 				<div class="card-body">
 					<form data-bs-toggle="validator" role="form" method="post" action="<?php $_SERVER['PHP_SELF'];?>" id="form-join">
 
+						<!-- Before or After System Controller Icon -->
+                                                <div class="form-check">
+							<input class="form-check-input form-check-input-<?php echo theme($conn, settings($conn, 'theme'), 'color'); ?>" type="checkbox" value="1" id="checkbox0" name="pre_post" <?php $check = ($row['pre_post'] == 1) ? 'checked' : ''; echo $check; ?>>
+							<label class="form-check-label" for="checkbox0"> <?php echo $lang['pre_sc_tile']; ?> </label> <small class="text-muted"><?php echo $lang['pre_sc_tile_info'];?></small>
+							<div class="help-block with-errors"></div>
+						</div>
+
+						<!-- Index Number -->
+						<?php
+						$query = "select index_id from relays order by index_id desc limit 1;";
+						$result = $conn->query($query);
+						$found_product = mysqli_fetch_array($result);
+						$new_index_id = $found_product['index_id']+1;
+						?>
+						<div class="form-group" class="control-label"><label><?php echo $lang['relay_index_number']; ?>  </label> <small class="text-muted"><?php echo $lang['relay_index_number_info'];?></small>
+							<input class="form-control" placeholder="<?php echo $lang['relay_index_number']; ?>r" value="<?php if(isset($row['index_id'])) { echo $row['index_id']; }else {echo $new_index_id; }  ?>" id="index_id" name="index_id" data-bs-error="<?php echo $lang['relay_index_number_help']; ?>" autocomplete="off" required>
+							<div class="help-block with-errors"></div>
+						</div>
+
 						<!-- messagaes_out table id -->
 						<input type="hidden" id="m_out_id" name="m_out_id" value="<?php if(isset($row_messages_out['id'])) { echo $row_messages_out['id']; } else { echo '0'; }?>"/>
 
 						<!-- Controller Type -->
 						<div class="form-group" class="control-label"><label><?php echo $lang['controller_type']; ?></label> <small class="text-muted"><?php echo $lang['controller_type_info'];?></small>
 							<select class="form-select" type="text" id="type" name="type" onchange=RelayTypeID(this.options[this.selectedIndex].value)>
-								<?php if(isset($row['type'])) { 
+								<?php if(isset($row['type'])) {
 									switch ($row['type']) {
 										case 0:
 									        	echo '<option selected >Zone</option>';
@@ -269,6 +290,8 @@ if (isset($_POST['submit'])) {
 							}
 						</script>
 						<input type="hidden" id="selected_relay_id" name="selected_relay_id" value="<?php echo $rownode['id']?>"/>
+                                                <input type="hidden" id="show_it" name="show_it" value="<?php echo $row['show_it']?>"/>
+                                                <input type="hidden" id="message_in" name="message_in" value="<?php echo $row['message_in']?>"/>
 
 						<!-- Relay Child ID -->
 						<input type="hidden" id="gpio_pin_list" name="gpio_pin_list" value="<?php echo implode(",", array_filter(Get_GPIO_List()))?>"/>

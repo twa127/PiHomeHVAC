@@ -1093,4 +1093,15 @@ $lang['access_level_info'] = "Level 1 User are able to configure all systems fea
 $lang['setup_guide_zigbee2MQTT'] = "Setup Guide Zigbee2MQTT";
 $lang['one_shot'] = "One Shot";
 $lang['one_shot_info'] = "Terminate Boost once Target Temperature is Reached.";
+$lang['relay_index_number'] = "Index Number";
+$lang['relay_index_number_help'] = "Index Number should contain numbers only! This number will dertimin where icon will be placed on home screen.";
+$lang['relay_index_number_info'] = "In the List of Relays where you want to place this Relay on home screen";
+$lang['index_devices'] = "Index Devices";
+$lang['index'] = "Index";
+$lang['index_devices_text'] = "Home Screen Position Index for Standalone Sensor and Relay Devices.<br><br>Note 1: If Pre/Post is ticked then the device will be placed AFTER the Zone tiles and BEFORE the System Controller tile.<br>Note 2: If Pre/Post is NOT ticked then the device will be placed AFTER the System Controller tile.";
+$lang['pre_post'] = "Pre/Post";
+$lang['update'] = "Update";
+$lang['index_zones'] = "Index Zones";
+$lang['index_zones_text'] = "Home Screen Position Index for Zones and Add-On Zones.<br><br>Note 1: Heating and Water Type Zones will be placed BEFORE the System Controller tile.<br>Note 2: Add-On Type Zones will be placed AFTER the System Controller tile.";
+$lang['setup_tile_indexing'] = "Home Screen Tile Positioning";
 ?>

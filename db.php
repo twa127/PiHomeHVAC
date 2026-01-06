@@ -1664,6 +1664,34 @@ if($what=="show_sensors"){
         }
 }
 
+//update relays to show
+if($what=="show_relays"){
+        $sel_query = "SELECT * FROM relays ORDER BY id asc;";
+        $results = $conn->query($sel_query);
+        while ($row = mysqli_fetch_assoc($results)) {
+                $checkbox = 'checkbox'.$row['id'];
+                $show_it =  $_GET[$checkbox];
+                if ($show_it=='true'){$show_it = '1';} else {$show_it = '0';}
+                $checkbox_msg_in = 'checkbox_msg_in'.$row['id'];
+                $msg_in =  $_GET[$checkbox_msg_in];
+                if ($msg_in=='true'){$msg_in = '1';} else {$msg_in = '0';}
+                $query = "UPDATE relays SET show_it = '".$show_it."', message_in ='".$msg_in."' WHERE id = '".$row['id']."' LIMIT 1;";
+                $update_error=0;
+                if(!$conn->query($query)){
+                        $update_error=1;
+                }
+        }
+        if($update_error==0){
+                header('Content-type: application/json');
+                echo json_encode(array('Success'=>'Success','Query'=>$query));
+                return;
+        }else{
+                header('Content-type: application/json');
+                echo json_encode(array('Message'=>'Database query failed.\r\nQuery=' . $query));
+                return;
+        }
+}
+
 //update Node Alerts Notice Interval
 if($what=="node_alerts"){
         $update_error=0;
@@ -2522,6 +2550,69 @@ if($what=="enable_zone_current_state_logs"){
         }else{
                 header('Content-type: application/json');
                 echo json_encode(array('Message'=>'Database query failed.\r\nQuery=' . $query));
+                return;
+        }
+}
+
+//update standalone sensor and relay home screen indexing
+if($what=="device_index"){
+        if($opp=="update"){
+		$sel_query = "SELECT CONCAT('r', `id`) AS `id`,`index_id`,`pre_post`
+                	FROM `relays`
+                	WHERE `id` NOT IN (SELECT `zone_relay_id` FROM `zone_relays`) AND `type` = 0 AND `show_it` = 1
+                	UNION
+                	SELECT CONCAT('s', `id`) AS `id`,`index_id`,`pre_post`
+                	FROM `sensors`
+                	WHERE `id` NOT IN (SELECT `zone_sensor_id` FROM `zone_sensors`) AND `show_it` = 1
+                	ORDER BY pre_post, index_id;";
+                $results = $conn->query($sel_query);
+                while ($row = mysqli_fetch_assoc($results)) {
+                        $id = $row['id'];
+                        $input1 = 'checkbox'.$id;
+                        $input2 = 'index'.$id;
+			$pre_post = $_GET[$input1];
+                        if ($pre_post == 'true'){$pre_post = '1';} else {$pre_post = '0';}
+                        $index = $_GET[$input2];
+			if (substr($id, 0, 1 ) === "r") {
+                        	$upd_query = "UPDATE relays SET pre_post = ".$pre_post.", index_id = ".$index." WHERE id = ".substr($id,1)." LIMIT 1;";
+			} else {
+                                $upd_query = "UPDATE sensors SET pre_post = ".$pre_post.", index_id = ".$index." WHERE id = ".substr($id,1)." LIMIT 1;";
+			}
+                        if(!$conn->query($upd_query)){
+                                header('Content-type: application/json');
+                                echo json_encode(array('Message'=>'Database query failed.\r\nQuery=' . $upd_query));
+                                return;
+                        }
+		}
+                header('Content-type: application/json');
+                echo json_encode(array('Success'=>'Success','Query'=>$upd_query));
+                return;
+	}
+}
+
+//update zonehome screen indexing
+if($what=="zone_index"){
+        if($opp=="update"){
+		$sel_query = "SELECT `id`, `status`, `index_id`, `name`, `type_id`
+                	FROM `zone`
+                	ORDER BY index_id;";
+                $results = $conn->query($sel_query);
+                while ($row = mysqli_fetch_assoc($results)) {
+                        $id = $row['id'];
+                        $input1 = 'checkbox'.$id;
+                        $input2 = 'index'.$id;
+                        $enabled = $_GET[$input1];
+                        if ($enabled == 'true'){$enabled = '1';} else {$enabled = '0';}
+                        $index = $_GET[$input2];
+                        $upd_query = "UPDATE zone SET status = ".$enabled.", index_id = ".$index." WHERE id = ".$id." LIMIT 1;";
+                        if(!$conn->query($upd_query)){
+                                header('Content-type: application/json');
+                                echo json_encode(array('Message'=>'Database query failed.\r\nQuery=' . $upd_query));
+                                return;
+                        }
+                }
+                header('Content-type: application/json');
+                echo json_encode(array('Success'=>'Success','Query'=>$upd_query));
                 return;
         }
 }

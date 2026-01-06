@@ -235,6 +235,20 @@ $(document).ready(function(){
                 $('#relay_states').load("ajax_fetch_data.php?id=0&type=37").fadeIn("slow");
         }
 
+        if ($('#index_devices').is(':visible')) {
+		if (document.getElementById("update_d_index").value == 1) {
+                	$('#device_index_table').load("ajax_fetch_data.php?id=0&type=40").fadeIn("slow");
+			document.getElementById("update_d_index").value = 0;
+		}
+        }
+
+        if ($('#index_zones').is(':visible')) {
+                if (document.getElementById("update_z_index").value == 1) {
+                        $('#zone_index_table').load("ajax_fetch_data.php?id=0&type=45").fadeIn("slow");
+                        document.getElementById("update_z_index").value = 0;
+                }
+        }
+
         $('#settings_date').load("ajax_fetch_data.php?id=0&type=13").fadeIn("slow");
         $('#footer_weather').load("ajax_fetch_data.php?id=0&type=14").fadeIn("slow");
 	$('#footer_all_running_time').load("ajax_fetch_data.php?id=0&type=17").fadeIn("slow");
