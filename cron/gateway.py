@@ -26,7 +26,7 @@ print("* MySensors Wifi/Ethernet/Serial Gateway Communication *")
 print("* Script to communicate with MySensors Nodes, for more *")
 print("* info please check MySensors API.                     *")
 print("*      Build Date: 18/09/2017                          *")
-print("*      Version 0.32 - Last Modified 16/10/2025         *")
+print("*      Version 0.33 - Last Modified 01/01/2026         *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -3482,11 +3482,26 @@ try:
                                 # node-id ; child-sensor-id ; command ; ack ; type ; payload
 
             # remove any sensor_graphs table records older than 24 hours
-            timestamp = (datetime.now()- timedelta(hours = 24)).strftime("%Y-%m-%d %H:%M:%S")
-            cur.execute(
-                'DELETE FROM sensor_graphs WHERE datetime < (%s)', (timestamp,)
-            )
-            con.commit()
+            try:
+                cur.execute(
+                    'DELETE FROM `sensor_graphs` WHERE `datetime` < (Now() - INTERVAL 24 HOUR);'
+                )
+                con.commit()
+            except mdb.Error as e:
+                # skip deadlock error (caused by something adding new data to the table)
+                if e.args[0] == 1020:
+                    pass
+                else:
+                    print("DB Error %d: %s" % (e.args[0], e.args[1]))
+                    print(traceback.format_exc())
+                    logging.error(e)
+                    logging.info(traceback.format_exc())
+                    con.close()
+                    if MQTT_CONNECTED == 1:
+                        mqttClient.disconnect()
+                        mqttClient.loop_stop()
+                    print(infomsg)
+                    sys.exit(1)
 
             ## Incoming messages
             if gatewaytype != "virtual":
