@@ -78,7 +78,7 @@ Version 3.14 New Feature, 'One Shot Boost' boost will terminate once the target 
 
 Version 3.15 Bug Fix. Increase field size of colume 'zone_mode' in table 'relay_logs'.
 
-Version 3.16 New Features, Stand-alone relays (relays not attached to a zone can be displayed on the Home Screen and their 'state' toggled by clicking on the tile), new GUI Settings/Node and Zone Configuration/Zone Indexing (to edit Home Screen tile placement of Zone and Add-On Zone tiles) and new GUI Settings/Device Configuration/Device Indexing (to edit Home Screen tile placement of Stand-alone Sensor andStand-alone Relay tiles).
+Version 3.16 New Features, Stand-alone relays (relays not attached to a zone can be displayed on the Home Screen and their 'state' toggled by clicking on the tile), new GUI Settings/Node and Zone Configuration/Zone Indexing (to edit Home Screen tile placement of Zone and Add-On Zone tiles) and new GUI Settings/Device Configuration/Device Indexing (to edit Home Screen tile placement of Stand-alone Sensor and Stand-alone Relay tiles).
 
 ## Setup:
 
