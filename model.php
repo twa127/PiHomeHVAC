@@ -4714,12 +4714,8 @@ echo '<div class="modal fade" id="relay_setup" tabindex="-1" role="dialog" aria-
                                         <td>'.$trigger.'</td>
                                         <td>'.$row["lag_time"].'</td>';
             				if($row['attached'] == 1) {
-                                                echo '<td style="text-align:center; vertical-align:middle;">
-                                                	<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox'.$row["id"].'" name="checkbox'.$row["id"].'" value="1" '.$check.' disabled>
-                                                </td>
-                                                <td style="text-align:center; vertical-align:middle;">
-                                                        <input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox_msg_in'.$row["id"].'" name="checkbox_msg_in'.$row["id"].'" value="1" '.$check_msg_in.'>
-                                                </td>
+                                                echo '<td style="text-align:center; vertical-align:middle;">N/A</td>
+                                                <td style="text-align:center; vertical-align:middle;">N/A</td>
                                         	<td><a href="relay.php?id='.$row["id"].'"><button class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-xs"><i class="bi bi-pencil"></i></button></a>&nbsp
 							<span class="tooltip-wrapper" data-bs-toggle="tooltip" title="'.$lang['confirm_del_relay_2'].$attached_to.'"><button class="btn btn-danger btn-xs disabled"><i class="bi bi-trash-fill black"></i></button></span>
 						</td>';
