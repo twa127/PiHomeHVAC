@@ -4715,7 +4715,7 @@ echo '<div class="modal fade" id="relay_setup" tabindex="-1" role="dialog" aria-
                                         <td>'.$row["lag_time"].'</td>';
             				if($row['attached'] == 1) {
                                                 echo '<td style="text-align:center; vertical-align:middle;">
-                                                	<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox'.$row["id"].'" name="checkbox'.$row["id"].'" value="1" '.$check.'>
+                                                	<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox'.$row["id"].'" name="checkbox'.$row["id"].'" value="1" checked disabled>
                                                 </td>
                                                 <td style="text-align:center; vertical-align:middle;">
                                                         <input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox_msg_in'.$row["id"].'" name="checkbox_msg_in'.$row["id"].'" value="1" '.$check_msg_in.'>
@@ -4725,7 +4725,7 @@ echo '<div class="modal fade" id="relay_setup" tabindex="-1" role="dialog" aria-
 						</td>';
 	    				} else {
                                                 echo '<td style="text-align:center; vertical-align:middle;">
-                                                	<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox'.$row["id"].'" name="checkbox'.$row["id"].'" value="1" '.$check.' disabled>
+                                                	<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox'.$row["id"].'" name="checkbox'.$row["id"].'" value="1" '.$check.'>
                                                 </td>
                                                 <td style="text-align:center; vertical-align:middle;">
                                                         <input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox_msg_in'.$row["id"].'" name="checkbox_msg_in'.$row["id"].'" value="1" '.$check_msg_in.' disabled>
