@@ -250,13 +250,13 @@ echo '
                                 if(!$file_headers || $file_headers[0] == 'HTTP/1.1 404 Not Found') {
                                 } else {
                                         $file2 = file($url);
-                                        $pieces =  explode(' ', $file2[count($file2) - 4]);
+                                        $pieces =  explode(' ', $file2[count($file2) - 5]);
                                         $code_v_github = array_pop($pieces);
-                                        $pieces =  explode(' ', $file2[count($file2) - 3]);
+                                        $pieces =  explode(' ', $file2[count($file2) - 4]);
                                         $code_b_github = array_pop($pieces);
-                                        $pieces =  explode(' ', $file2[count($file2) - 2]);
+                                        $pieces =  explode(' ', $file2[count($file2) - 3]);
                                         $db_v_github = array_pop($pieces);
-                                        $pieces =  explode(' ', $file2[count($file2) - 1]);
+                                        $pieces =  explode(' ', $file2[count($file2) - 2]);
                                         $db_b_github = array_pop($pieces);
                                 }
                                 //get latest Bootstrap version number
