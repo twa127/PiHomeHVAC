@@ -40,10 +40,13 @@ function GetModal_Sensor_Graph($conn)
         //foreach($_GET as $variable => $value) echo $variable . "&nbsp;=&nbsp;" . $value . "<br />\r\n";
 
 	//create array of colours for the graphs
-	$query ="SELECT * FROM sensors ORDER BY id ASC;";
+    $query ="SELECT `id`, `sensor_id`, `sensor_child_id` FROM sensors
+            UNION
+            SELECT `id`, `sensor_id`, 0 AS`sensor_child_id` FROM `sensor_average`
+            ORDER BY id ASC;";
 	$results = $conn->query($query);
 	$counter = 0;
-	$count = mysqli_num_rows($results) + 2; //extra space made for system temperature graph
+	$count = mysqli_num_rows($results);
 	$sensor_color = array();
 	while ($row = mysqli_fetch_assoc($results)) {
         	$graph_id = $row['sensor_id'].".".$row['sensor_child_id'];
@@ -643,3 +646,4 @@ if(explode(',', $_GET['Ajax'])[0]=='GetModal_Schedule_List')
     return;
 }
 ?>
+
