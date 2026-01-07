@@ -233,13 +233,13 @@ echo '
                         </div>
                         <div class="modal-body">';
                                 $file1 = file('/var/www/st_inc/db_config.ini');
-                                $pieces =  explode(' ', $file1[count($file1) - 4]);
+                                $pieces =  explode(' ', $file1[7]);
                                 $code_v_installed = array_pop($pieces);
-                                $pieces =  explode(' ', $file1[count($file1) - 3]);
+                                $pieces =  explode(' ', $file1[8]);
                                 $code_b_installed = array_pop($pieces);
-                                $pieces =  explode(' ', $file1[count($file1) - 2]);
+                                $pieces =  explode(' ', $file1[9]);
                                 $db_v_installed = array_pop($pieces);
-                                $pieces =  explode(' ', $file1[count($file1) - 1]);
+                                $pieces =  explode(' ', $file1[10]);
                                 $db_b_installed = array_pop($pieces);
 
                                 $query = "SELECT name FROM repository WHERE status = 1 LIMIT 1;";
@@ -250,13 +250,13 @@ echo '
                                 if(!$file_headers || $file_headers[0] == 'HTTP/1.1 404 Not Found') {
                                 } else {
                                         $file2 = file($url);
-                                        $pieces =  explode(' ', $file2[count($file2) - 5]);
+                                        $pieces =  explode(' ', $file2[7]);
                                         $code_v_github = array_pop($pieces);
-                                        $pieces =  explode(' ', $file2[count($file2) - 4]);
+                                        $pieces =  explode(' ', $file2[8]);
                                         $code_b_github = array_pop($pieces);
-                                        $pieces =  explode(' ', $file2[count($file2) - 3]);
+                                        $pieces =  explode(' ', $file2[9]);
                                         $db_v_github = array_pop($pieces);
-                                        $pieces =  explode(' ', $file2[count($file2) - 2]);
+                                        $pieces =  explode(' ', $file2[10]);
                                         $db_b_github = array_pop($pieces);
                                 }
                                 //get latest Bootstrap version number
