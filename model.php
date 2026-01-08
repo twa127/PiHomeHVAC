@@ -232,16 +232,8 @@ echo '
                                 <h5 class="modal-title">'.$lang['maxair_versions'].'</h5>
                         </div>
                         <div class="modal-body">';
-                                $file1 = file('/var/www/st_inc/db_config.ini');
-                                $pieces =  explode(' ', $file1[7]);
-                                $code_v_installed = array_pop($pieces);
-                                $pieces =  explode(' ', $file1[8]);
-                                $code_b_installed = array_pop($pieces);
-                                $pieces =  explode(' ', $file1[9]);
-                                $db_v_installed = array_pop($pieces);
-                                $pieces =  explode(' ', $file1[10]);
-                                $db_b_installed = array_pop($pieces);
-
+				// the db_config.ini file has already been parsed so values are available as system variables
+				// get and parse the db_config.ini file from GitHub
                                 $query = "SELECT name FROM repository WHERE status = 1 LIMIT 1;";
                                 $result = $conn->query($query);
                                 $row = mysqli_fetch_assoc($result);
@@ -249,19 +241,9 @@ echo '
                                 $file_headers = @get_headers($url);
                                 if(!$file_headers || $file_headers[0] == 'HTTP/1.1 404 Not Found') {
                                 } else {
-                                        $file2 = file($url);
-                                        $pieces =  explode(' ', $file2[7]);
-                                        $code_v_github = array_pop($pieces);
-                                        $pieces =  explode(' ', $file2[8]);
-                                        $code_b_github = array_pop($pieces);
-                                        $pieces =  explode(' ', $file2[9]);
-                                        $db_v_github = array_pop($pieces);
-                                        $pieces =  explode(' ', $file2[10]);
-                                        $db_b_github = array_pop($pieces);
-                                }
-                                //get latest Bootstrap version number
-                                if(!$file_headers || $file_headers[0] == 'HTTP/1.1 404 Not Found') {
-                                } else {
+					// parse the GitHub db_config.ini file
+	                                $db_config_array = parse_ini_string(file_get_contents($url));
+                                	//get latest Bootstrap version number
                                         $url = 'https://getbootstrap.com/docs/versions/';
                                         $result = file_get_contents($url);
                                         if (strlen($result) > 0) {
@@ -290,23 +272,23 @@ echo '
 
                                         <tr>
                                                 <td style="font-weight:bold">'.$lang['maxair_update_code_v'].'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$code_v_installed.'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$code_v_github.'</td>
+                                                <td style="text-align:center; vertical-align:middle;">'.$version.'</td>
+                                                <td style="text-align:center; vertical-align:middle;">'.$db_config_array["version"].'</td>
                                         </tr>
                                         <tr>
                                                 <td style="font-weight:bold">'.$lang['maxair_update_code_b'].'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$code_b_installed.'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$code_b_github.'</td>
+                                                <td style="text-align:center; vertical-align:middle;">'.$build.'</td>
+                                                <td style="text-align:center; vertical-align:middle;">'.$db_config_array["build"].'</td>
                                         </tr>
                                         <tr>
                                                 <td style="font-weight:bold">'.$lang['maxair_update_db_v'].'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$db_v_installed.'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$db_v_github.'</td>
+                                                <td style="text-align:center; vertical-align:middle;">'.$db_version.'</td>
+                                                <td style="text-align:center; vertical-align:middle;">'.$db_config_array["db_version"].'</td>
                                         </tr>
                                         <tr>
                                                 <td style="font-weight:bold">'.$lang['maxair_update_db_b'].'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$db_b_installed.'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$db_b_github.'</td>
+                                                <td style="text-align:center; vertical-align:middle;">'.$db_build.'</td>
+                                                <td style="text-align:center; vertical-align:middle;">'.$db_config_array["db_build"].'</td>
                                         </tr>
                                         <tr>
                                                 <td style="font-weight:bold">'.$lang['bs_ver'].'</td>
@@ -4176,32 +4158,36 @@ echo '<div class="modal fade" id="index_zones" tabindex="-1" role="dialog" aria-
                         <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
                                 <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
                                 <h5 class="modal-title">'.$lang['index_zones'].'</h5>
-                                <div class="dropdown float-right">
-                                        <a class="" data-bs-toggle="dropdown" href="#">
-                                                <i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
-                                        </a>
-                                        <ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
-                                                <li><a class="dropdown-item" href="pdf_download.php?file=tile_indexing.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_tile_indexing'].'</a></li>
-                                        </ul>
-                                </div>
                         </div>
                         <div class="modal-body">
-                                <p class="text-muted">'.$lang['index_zones_text'].'</p>
-                                <input type="hidden" id="update_z_index" name="update_z_index" value="1">
-                                <table class="table table-bordered">
-                                	<thead>
-                                        	<tr>
-                                               		<th class="col-md-2"><small>'.$lang['name'].'</small></th>
-                                                        <th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['type'].'</small></th>
-                                                        <th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['enabled'].'</small></th>
-                                                        <th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['index'].'</small></th>
-                                                </tr>
-                                        </thead>
-                                        <tbody id= "zone_index_table"></tbody>
-                              	</table>
-                        </div>
+                                <p class="text-muted">'.$lang['index_zones_text'].'</p>';
+                                $query = "SELECT `fullname`, `username` FROM `user` WHERE `username` NOT LIKE 'admin' ORDER BY `id`;";
+                                $user_results = $conn->query($query);
+                                $user_count = mysqli_num_rows($user_results);
+                                if ($user_count > 0) {
+                                // table body is updated by 'ajax_fetch_data.php' using type id = 40
+                                        echo '
+                                        <input type="hidden" id="update" name="update" value="1">
+                                        <table class="table table-bordered">
+                                                <thead>
+                                                        <tr>
+                                                                <th class="col-md-2"><small>'.$lang['name'].'</small></th>
+                                                                <th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['type'].'</small></th>
+                                                                <th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['enabled'].'</small></th>
+                                                                <th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['index'].'</small></th>
+                                                        </tr>
+                                                </thead>
+                                                <tbody id= "zone_index_table"></tbody>
+                                        </table>';
+
+                                } else {
+                                        echo '<p class="text-center fs-2 font-weight-bold">'.$lang['only_admin_account'].'</p>';
+                                }
+                        echo '</div>
                         <div class="modal-footer">';
-				echo '<input type="button" name="submit" value="'.$lang['update'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="update_zone_index()">';
+                                if ($user_count > 0) {
+					echo '<input type="button" name="submit" value="'.$lang['update'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="update_zone_index()">';
+                                }
                                 echo '<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
                         </div>
                 </div>
@@ -4715,7 +4701,7 @@ echo '<div class="modal fade" id="relay_setup" tabindex="-1" role="dialog" aria-
                                         <td>'.$row["lag_time"].'</td>';
             				if($row['attached'] == 1) {
                                                 echo '<td style="text-align:center; vertical-align:middle;">N/A</td>
-                                                <td style="text-align:center; vertical-align:middle;">N/A</td>
+						<td style="text-align:center; vertical-align:middle;">N/A</td>
                                         	<td><a href="relay.php?id='.$row["id"].'"><button class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-xs"><i class="bi bi-pencil"></i></button></a>&nbsp
 							<span class="tooltip-wrapper" data-bs-toggle="tooltip" title="'.$lang['confirm_del_relay_2'].$attached_to.'"><button class="btn btn-danger btn-xs disabled"><i class="bi bi-trash-fill black"></i></button></span>
 						</td>';
@@ -5557,32 +5543,36 @@ echo '<div class="modal fade" id="index_devices" tabindex="-1" role="dialog" ari
             		<div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
 				<button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
                 		<h5 class="modal-title">'.$lang['index_devices'].'</h5>
-                		<div class="dropdown float-right">
-                        		<a class="" data-bs-toggle="dropdown" href="#">
-                                		<i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
-                        		</a>
-                        		<ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
-                                		<li><a class="dropdown-item" href="pdf_download.php?file=setup_tile_indexing.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_tile_indexing'].'</a></li>
-                         		</ul>
-                		</div>
             		</div>
             		<div class="modal-body">
-				<p class="text-muted">'.$lang['index_devices_text'].'</p>
-				<input type="hidden" id="update_d_index" name="update_d_index" value="1">
-				<table class="table table-bordered">
-                        		<thead>
-                                		<tr>
-                                        		<th class="col-md-2"><small>'.$lang['name'].'</small></th>
-                                        		<th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['type'].'</small></th>
-                                        		<th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['pre_post'].'</small></th>
-                                       			<th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['index'].'</small></th>
-                                       		</tr>
-                               		</thead>
-                               		<tbody id= "device_index_table"></tbody>
-                       		</table>
-			</div>
+				<p class="text-muted">'.$lang['index_devices_text'].'</p>';
+              			$query = "SELECT `fullname`, `username` FROM `user` WHERE `username` NOT LIKE 'admin' ORDER BY `id`;";
+              			$user_results = $conn->query($query);
+				$user_count = mysqli_num_rows($user_results);
+                                if ($user_count > 0) {
+                       		// table body is updated by 'ajax_fetch_data.php' using type id = 40
+                        		echo '
+					<input type="hidden" id="update" name="update" value="1">
+					<table class="table table-bordered">
+                        			<thead>
+                                			<tr>
+                                        			<th class="col-md-2"><small>'.$lang['name'].'</small></th>
+                                        			<th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['type'].'</small></th>
+                                        			<th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['pre_post'].'</small></th>
+                                        			<th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['index'].'</small></th>
+                                        		</tr>
+                                		</thead>
+                                		<tbody id= "device_index_table"></tbody>
+                        		</table>';
+
+				} else {
+					echo '<p class="text-center fs-2 font-weight-bold">'.$lang['only_admin_account'].'</p>';
+				}
+			echo '</div>
 			<div class="modal-footer">';
-                		echo '<input type="button" name="submit" value="'.$lang['update'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="update_device_index()">';
+				if ($user_count > 0) {
+                			echo '<input type="button" name="submit" value="'.$lang['update'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="update_device_index()">';
+				}
                         	echo '<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
             		</div>
            	</div>
