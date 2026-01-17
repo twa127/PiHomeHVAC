@@ -26,7 +26,7 @@ print("* MySensors Wifi/Ethernet/Serial Gateway Communication *")
 print("* Script to communicate with MySensors Nodes, for more *")
 print("* info please check MySensors API.                     *")
 print("*      Build Date: 18/09/2017                          *")
-print("*      Version 0.33 - Last Modified 01/01/2026         *")
+print("*      Version 0.34 - Last Modified 17/01/2026         *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -1938,7 +1938,7 @@ def set_relays(
                     con.commit()
         except:
            print("\nUnable to communicate with: %s" % url[0:-3])
-    elif node_type.find("MQTT") != -1 and MQTT_CONNECTED == 1:  # process MQTT mode
+    elif node_type.find("MQTT") != -1 and MQTT_CONNECTED == 1 and enable_outgoing == 1:  # process MQTT mode
         cur.execute(
             'SELECT `mqtt_topic`, `on_payload`, `off_payload`  FROM `mqtt_devices` WHERE `type` = "1" AND `nodes_id` = (%s) AND `child_id` = (%s) LIMIT 1',
             [n_id, out_child_id],
@@ -2207,8 +2207,14 @@ def on_message(client, userdata, message):
             mqtt_node_id = child[on_msg_description_to_index["node_id"]]
             mqtt_child_sensor_id = int(child[on_msg_description_to_index["child_id"]])
             mqtt_min_value = child[on_msg_description_to_index["min_value"]]
-            # Update node last seen
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # Update the mqtt_devices last seen
+            cur_mqtt.execute(
+                'UPDATE `mqtt_devices` SET `last_seen` = %s WHERE `id` = %s',
+                [timestamp, mqtt_id],
+            )
+            con_mqtt.commit()
+            # Update node last seen
             try:
                 cur_mqtt.execute(
                     'UPDATE `nodes` SET `last_seen`= %s WHERE `node_id`= %s',
@@ -2231,12 +2237,6 @@ def on_message(client, userdata, message):
                     print(infomsg)
                     sys.exit(1)
 
-            # Update the mqtt_devices last seen
-            cur_mqtt.execute(
-                'UPDATE `mqtt_devices` SET `last_seen` = %s WHERE `id` = %s',
-                [timestamp, mqtt_id],
-            )
-            con_mqtt.commit()
             # zigbee2mqtt bridge messages (no action taken)
             if fnmatch.fnmatch(message.topic, 'zigbee2mqtt/bridge/*'):
                 if dbgLevel >= 2 and dbgMsgIn == 1:
