@@ -2434,7 +2434,7 @@ echo '<div class="modal fade" id="schedule_test" tabindex="-1" role="dialog" ari
 // Jobs Schedule modal
 echo '
 <div class="modal fade" id="jobs_schedule" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
                 <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
