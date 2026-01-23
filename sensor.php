@@ -53,7 +53,6 @@ if (isset($_POST['submit'])) {
         $sync = '0';
         $purge= '0';
 	$frost_temp = $_POST['frost_temp'];
-	if ($frost_temp == 0) { $frost_controller = 0; } else { $frost_controller = $_POST['frost_controller']; }
 	$fail_timeout = $_POST['fail_timeout'];
         $show_it = $_POST['show_it'];
         $min_max_graph = $_POST['min_max_graph'];
@@ -70,7 +69,7 @@ if (isset($_POST['submit'])) {
                            `name`, `graph_num`, `show_it`, `min_max_graph`, `message_in`, `frost_temp`, `frost_controller`, `fail_timeout`, `mode`, `timeout`, `resolution`, `current_val_1`,
 			   `current_val_2`, `user_display`)
                            VALUES ('{$id}', '{$sync}', '{$purge}', '0', '{$sensor_id}', '{$sensor_child_id}', '{$correction_factor}', '{$sensor_type_id}', '{$index_id}',
-                           '{$pre_post}', '{$name}', '0', '1', '0', 1, '{$frost_temp}', '{$frost_controller}', '{$fail_timeout}', '{$mode}', '{$timeout}', '{$resolution}', 0, 0, 0);";
+                           '{$pre_post}', '{$name}', '0', '1', '0', 1, '{$frost_temp}', 0, '{$fail_timeout}', '{$mode}', '{$timeout}', '{$resolution}', 0, 0, 0);";
         } else {
                 $query = "UPDATE `sensors` SET `sync` = '{$sync}',`purge` = '{$purge}',`sensor_id` = '{$sensor_id}',`sensor_child_id` = '{$sensor_child_id}',
                            `correction_factor` = '{$correction_factor}',`sensor_type_id` = '{$sensor_type_id}',`index_id` = '{$index_id}',`pre_post` = '{$pre_post}',
