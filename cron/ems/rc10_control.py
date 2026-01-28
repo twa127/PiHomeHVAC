@@ -26,7 +26,7 @@ print("********************************************************")
 print("*             EMS Set RC10 Emulator Script             *")
 print("*                                                      *")
 print("*               Build Date: 05/12/2025                 *")
-print("*       Version 0.03 - Last Modified 01/01/2026        *")
+print("*       Version 0.06 - Last Modified 28/01/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -63,8 +63,10 @@ dbname = config.get("db", "dbname")
 con = mdb.connect(dbhost, dbuser, dbpass, dbname)
 cur = con.cursor()
 
-global auto_reg_prev
-auto_reg_prev = 0
+read_error_count = 0
+last_ems_read_error = ''
+write_error_count = 0
+last_ems_write_error = ''
 run_22 = 0
 
 # Logging exceptions to log file
@@ -82,7 +84,7 @@ state_dict = {
     1: "",
     2: "fan",
     3: "ignition",
-    4: "",
+    4: "pump post",
     5: "boiler circuit pump",
     6: "3-way valve on WW",
     7: "circulation",
@@ -228,6 +230,37 @@ def update_maxair_sensors (conn, node_id, sensor_id, val_1, val_2, msg_in, msg_i
 
 def is_set(x, n):
     return x & 2**n != 0
+
+def ems_read(command):
+    global read_error_count
+    global last_ems_read_error
+
+    result = subprocess.run(['emsctl', command, 'r'], stdout=subprocess.PIPE)
+    response = result.stdout.decode("utf-8")
+    split = response.split(' ')
+    if "Error" not in split[0] and ":" not in split[1]:
+        return(split[1])
+    else:
+        last_ems_read_error = command + ' r'
+        read_error_count = read_error_count + 1
+        if read_error_count == 100:
+            read_error_count = 0
+        return(split[0])
+
+
+def ems_write(command, param):
+    global write_error_count
+    global last_ems_write_error
+
+    result = subprocess.run(['emsctl', command, 'w', param], stdout=subprocess.PIPE)
+    response = result.stdout.decode("utf-8")
+    if "Ok" in response:
+        return True
+    else:
+        last_ems_write_error = command + ' w ' + param
+        if write_error_count == 100:
+            write_error_count = 0
+        return False
 
 # Find the node and child ids for the dummy sensors used to pass data back to the MaxAir database
 # ***********************************************************************************************
@@ -464,6 +497,29 @@ if cur.rowcount > 0 :
         regulation_node_id = int(result[node_to_index["node_id"]])
         regulation_relay = True
 
+# check if a 'RC10' sensor exists in the database
+rc10_sensor = False
+cur.execute("SELECT * FROM sensors WHERE name = 'RC10 Temp' LIMIT 1;")
+result = cur.fetchone()
+if cur.rowcount > 0 :
+    sensor_to_index = dict(
+        (d[0], i) for i, d in enumerate(cur.description)
+    )
+    rc10_id = int(result[sensor_to_index["id"]])
+    rc10_sensor_id = int(result[sensor_to_index["sensor_id"]])
+    if int(result[sensor_to_index["message_in"]]) == 1 :
+        rc10_msg_in = True
+    else :
+        rc10_msg_in = False
+    cur.execute('SELECT node_id FROM nodes WHERE id = (%s)', (rc10_sensor_id, ))
+    result = cur.fetchone()
+    if cur.rowcount > 0 :
+        node_to_index = dict(
+            (d[0], i) for i, d in enumerate(cur.description)
+        )
+        rc10_node_id = int(result[node_to_index["node_id"]])
+        rc10_sensor = True
+
 # =================================== MAIN BOILER PROCESS ==================================
 print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - EMS BUS Control Started")
 print("-" * line_len)
@@ -505,6 +561,14 @@ f.close()
 for x in range(0,len(errordata)):
     error_bytes.append(ord(errordata[x]))
 
+# node and child id for the Weather Channel node
+node_id = 1
+child_id = 0
+outside_temp_prev = -99
+
+HW_prev = 0
+heat_curve = 5
+
 while 1:
     # get todays date and time
     today = datetime.today()
@@ -526,11 +590,9 @@ while 1:
     log_txt = time.strftime("%H:%M:%S") + ' - '
 
     # check the boiler error status
-    result = subprocess.run(['emsctl', 'servicecode', 'r'], stdout=subprocess.PIPE)
-    response = result.stdout.decode("utf-8")
+    response = ems_read('servicecode')
     if response.find('Error') == -1:
-        split = response.split(' ')
-        service_code = split[1].replace("\n", "")
+        service_code = response.replace("\n", "")
         if "CLEAR" in service_code:
             error_code = 0
         else:
@@ -569,58 +631,73 @@ while 1:
     log_txt = log_txt + message + '\n'
 
     # get the current boiler status
-    result = subprocess.run(['emsctl', 'status01', 'r'], stdout=subprocess.PIPE)
-    response = result.stdout.decode("utf-8")
-    split = response.split(' ')
-    if "Error" not in split[0]:
-        status01= int(split[1],16)
-        if status01 == 0:
-            post_phase_flag = False
-        Valve_gas = is_set(status01, 0)
-        Blower = is_set(status01, 2)
-        Ignition = is_set(status01, 3)
-        Pump_heater = is_set(status01, 5)
-        Valve_WW = is_set(status01, 6)
-        Circulation = is_set(status01, 7)
-        boiler_status_error = False
-        # add state changes to the state_bytes array
-        state_bytes_len = len(state_bytes)
-        if state_bytes_len > 0 :
-            last_state = state_bytes[len(state_bytes) - 1]
-        else :
-            last_state = 0
-        if status01 != last_state :
-            if state_bytes_len < 20:
-                state_bytes.append(status01)
-            else :
-                for x in range(0,state_bytes_len - 1) :
-                    state_bytes[x] = state_bytes[x + 1]
-                state_bytes[state_bytes_len - 1] = status01
-
-        # Write binary data to a file
-        with open('/var/www/cron/ems/StateBytes.bin', 'wb') as f:
-            for y in range(0,len(state_bytes)) :
-                f.write(chr(state_bytes[y]).encode(encoding='UTF-8'))
-        f.close()
-
-        current_state_msg = "idle"
-        for i in range(0, 7):
-            if i != 1 and i != 4:
-                if is_set(status01, i):
-                    current_state_msg = state_dict[i] + " "
-
-        if boiler_status_error :
-            log_txt = log_txt + 'Current STATE is *' + current_state_msg.rstrip()  + '\n'
-        else :
-            log_txt = log_txt + 'Current STATE is ' + current_state_msg.rstrip()  + '\n'
-
-        message = 'STATE Bytes '
-        for i in range(0, len(state_bytes)):
-            message = message + '[' + str(state_bytes[i]) + '] '
-        log_txt = log_txt + message + '\n'
-    else :
-        boiler_status_error = True
     if status_sensor:
+        response = ems_read('status01')
+        if "Error" not in response:
+            status01= int(response,16)
+            if status01 == 0:
+                post_phase_flag = False
+            Valve_gas = is_set(status01, 0)
+            Blower = is_set(status01, 2)
+            Ignition = is_set(status01, 3)
+            Pump_heater = is_set(status01, 5)
+            Valve_WW = is_set(status01, 6)
+            Circulation = is_set(status01, 7)
+            # bit 4 is unused, set to indicate that the current status follows a boiler lit state
+            post_lit = 0x10
+            boiler_status_error = False
+            # add state changes to the state_bytes array
+            state_bytes_len = len(state_bytes)
+            if state_bytes_len > 0 :
+                last_state = state_bytes[len(state_bytes) - 1]
+            else :
+                last_state = 0
+            if status01 != last_state :
+                #check if pump status is post a boiler lit state
+                if status01 == 32 and (last_state == 36 or last_state == 48):
+                    status01 = status01 | post_lit
+                if state_bytes_len < 20:
+                    state_bytes.append(status01)
+                else :
+                    for x in range(0,state_bytes_len - 1) :
+                        state_bytes[x] = state_bytes[x + 1]
+                    state_bytes[state_bytes_len - 1] = status01
+
+            # Write binary data to a file
+            with open('/var/www/cron/ems/StateBytes.bin', 'wb') as f:
+                for y in range(0,len(state_bytes)) :
+                    f.write(chr(state_bytes[y]).encode(encoding='UTF-8'))
+            f.close()
+
+            if status01 == 0:
+            	current_state_msg = "idle"
+            elif is_set(status01, 0):
+                current_state_msg = "running"
+            else:
+                for i in range(1, 7):
+                    # bits 1 and 4 are not defined in the EMS telegram, but bit 4 is used to indicate post lit phase
+                    if i != 1:
+                        if is_set(status01, i):
+                            current_state_msg = state_dict[i] + " "
+
+            if boiler_status_error :
+                log_txt = log_txt + 'Current STATE is *' + current_state_msg.rstrip()  + '\n'
+            else :
+                log_txt = log_txt + 'Current STATE is ' + current_state_msg.rstrip()  + '\n'
+
+            message = 'STATE Bytes '
+            for i in range(0, len(state_bytes)):
+                message = message + '[' + str(state_bytes[i]) + '] '
+            log_txt = log_txt + message + '\n'
+        else :
+            boiler_status_error = True
+        if status01 == 0:
+            val_1 = 0
+        elif Valve_gas:
+            val_1 = 2
+        else:
+            val_1 = 1
+        update_maxair_sensors(con, status_node_id, status_id, val_1, status01, status_msg_in, status01)
         print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Boiler Status            - " + str(status01))
 
     # set auto regulation if dummy relay exits
@@ -634,119 +711,185 @@ while 1:
             )
             relay_state = result[relay_to_index["state"]]
             if relay_state == 0:
-                result = subprocess.run(['emsctl', 'autoheatcurveregulation', 'w', 'off'], stdout=subprocess.PIPE)
+                ems_write('autoheatcurveregulation', 'off')
             else:
-                result = subprocess.run(['emsctl', 'autoheatcurveregulation', 'w', 'on'], stdout=subprocess.PIPE)
-            response = result.stdout.decode("utf-8")
+                ems_write('autoheatcurveregulation', 'on')
 
     # get the current auto regulation
-    result = subprocess.run(['emsctl', 'autoheatcurveregulation', 'r'], stdout=subprocess.PIPE)
-    response = result.stdout.decode("utf-8")
-    split = response.split(' ')
-    if "Error" not in split[0]:
-        if 'ON' in split[1]:
-            auto_reg = 1
-            regulation = 'On'
-        else:
-            auto_reg = 0
-            regulation = 'Off'
-        autoheatcurveregulation_error = False
-    else :
-        autoheatcurveregulation_error = True
     if regulation_sensor:
-        update_maxair_sensors(con, regulation_node_id, regulation_id, auto_reg, 0, regulation_msg_in, auto_reg)
-        print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Auto Regulation          - " + regulation)
+        error_code = 0
+        autoheatcurveregulation_error = heatcurve_error = heatcurve_update_error = heatingtemp1_update_error = False
+        response = ems_read('autoheatcurveregulation')
+        if "Error" not in response:
+            if 'ON' in response:
+                auto_reg = 1
+                regulation = 'On'
+            else:
+                auto_reg = 0
+                regulation = 'Off'
+            if auto_reg == 1:
+                # get the current Heat Curve
+                response = ems_read('heatcurve')
+                if "Error" not in response:
+                    heatcurve = float(response.rstrip())
+                    # check if any water type zones are active
+                    cur.execute("SELECT `zone_state` FROM `zone` WHERE `type_id` = 3 AND `zone_state` = 1;")
+                    if cur.rowcount > 0:
+                        if HW_prev == 0 or heatcurve == 5:
+                            # Hot water zone is now active so set Heat Curve 6
+                            HW_prev = 1
+                            heat_curve = 6
+                            result = subprocess.run(['emsctl', 'heatcurve', 'w', str(heat_curve)], stdout=subprocess.PIPE)
+                            response = result.stdout.decode("utf-8")
+                            if "Ok" not in response:
+                                heatcurve_update_error = True
+                                error_code = error_code | 0b0010
+                    else:
+                        if HW_prev == 1 or heatcurve == 6:
+                            # Hot water zone is no longer active so set Heat Curve 5
+                            HW_prev = 0
+                            heat_curve = 5
+                            result = subprocess.run(['emsctl', 'heatcurve', 'w', str(heat_curve)], stdout=subprocess.PIPE)
+                            response = result.stdout.decode("utf-8")
+                            if "Ok" not in response:
+                                heatcurve_update_error = True
+                                error_code = error_code | 0b0010
+                    if not heatcurve_update_error:
+                        # get current outside temperature
+                        cur.execute(
+                            "SELECT `payload` FROM `messages_in` WHERE `node_id` = %s AND `child_id` = %s ORDER BY `id` DESC LIMIT 1;",
+                            (node_id, child_id),
+                        )
+                        msg = cur.fetchone()
+                        msg_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+                        # get the outside temperature using either weather or a sensor
+                        outside_temp = msg[msg_to_index["payload"]]
+                        if outside_temp != outside_temp_prev:
+                            outside_temp_prev = outside_temp
+                            if not ems_write('heatingtemp1', str(outside_temp)):
+                                heatingtemp1_update_error = True
+                                error_code = error_code | 0b0001
+                else :
+                    heatcurve_error = True
+                    error_code = error_code | 0b0100
+        else :
+            autoheatcurveregulation_error = True
+            error_code = error_code | 0b1000 
+
+        if autoheatcurveregulation_error or heatcurve_error or heatcurve_update_error or heatingtemp1_update_error:
+            heat_curve = 99
+            update_maxair_sensors(con, regulation_node_id, regulation_id, 0, heat_curve, 0, 0)
+            print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Auto Regulation          - ERROR")
+            print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Heat Curve               - ERROR")
+            print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Error Code               - " + str(error_code))
+        else:
+            update_maxair_sensors(con, regulation_node_id, regulation_id, auto_reg, heat_curve, regulation_msg_in, auto_reg)
+            print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Auto Regulation          - " + regulation)
+            print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Heat Curve               - " + str(heat_curve))
+        log_txt = log_txt  + 'HEAT CURVE ' + str(heat_curve) + '\n'
 
     # get the current flowtempdesired
-    result = subprocess.run(['emsctl', 'flowtempdesired', 'r'], stdout=subprocess.PIPE)
-    response = result.stdout.decode("utf-8")
-    split = response.split(' ')
-    if "Error" not in split[0]:
-        flowtempdesired = float(split[1].rstrip())
-        flowtempdesired_error = False
-    else :
-        flowtempdesired_error = True
     if heating_target_sensor :
+        response = ems_read('flowtempdesired')
+        if "Error" not in response:
+            flowtempdesired = float(response.rstrip())
+            flowtempdesired_error = False
+        else :
+            flowtempdesired_error = True
         update_maxair_sensors(con, heating_target_node_id, heating_target_id, flowtempdesired, 0, heating_target_msg_in, flowtempdesired)
         print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Heating Target Temp      - " + str(flowtempdesired))
-    if flowtempdesired_error :
-        log_txt = log_txt  + 'HEATING TARGET TEMP 0C*\n'
-    else :
-        log_txt = log_txt  + 'HEATING TARGET TEMP ' + str(flowtempdesired) + 'C\n'
+        if flowtempdesired_error :
+            log_txt = log_txt  + 'HEATING TARGET TEMP 0C*\n'
+        else :
+            log_txt = log_txt  + 'HEATING TARGET TEMP ' + str(flowtempdesired) + 'C\n'
 
     # get the current flow temperature
-    result = subprocess.run(['emsctl', 'flowtemp', 'r'], stdout=subprocess.PIPE)
-    response = result.stdout.decode("utf-8")
-    split = response.split(' ')
-    if "Error" not in split[0]:
-        flowtemp = float(split[1].rstrip())
-        flow_temp_error = False
-    else :
-        flow_temp_error = True
     if heating_flow_sensor :
+        response = ems_read('flowtemp')
+        if "Error" not in response:
+            flowtemp = float(response.rstrip())
+            flow_temp_error = False
+        else :
+            flow_temp_error = True
         update_maxair_sensors(con, heating_flow_node_id, heating_flow_id, flowtemp, 0, heating_flow_msg_in, flowtemp)
         print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Heating Temp             - " + str(flowtemp))
-    if flow_temp_error :
-        log_txt = log_txt  + 'HEATING FLOW TEMP 0C*\n'
-    else :
-        log_txt = log_txt  + 'HEATING FLOW TEMP ' + str(flowtemp) + 'C\n'
+        if flow_temp_error :
+            log_txt = log_txt  + 'HEATING FLOW TEMP 0C*\n'
+        else :
+            log_txt = log_txt  + 'HEATING FLOW TEMP ' + str(flowtemp) + 'C\n'
 
     # get the current WaterTempDesired
-    result = subprocess.run(['emsctl', 'watertempdesired', 'r'], stdout=subprocess.PIPE)
-    response = result.stdout.decode("utf-8")
-    split = response.split(' ')
-    if "Error" not in split[0]:
-        watertempdesired = float(split[1].rstrip())
-        watertempdesired_error = False
-    else :
-        watertempdesired_error = True
     if water_target_sensor :
+        response = ems_read('watertempdesired')
+        if "Error" not in response:
+            watertempdesired = float(response.rstrip())
+            watertempdesired_error = False
+        else :
+            watertempdesired_error = True
         update_maxair_sensors(con, water_target_node_id, water_target_id, watertempdesired, 0, water_target_msg_in, watertempdesired)
         print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Water Target Temp        - " + str(watertempdesired))
-    if watertempdesired_error :
-        log_txt = log_txt  + 'WATER TARGET TEMP 0C*\n'
-    else :
-        log_txt = log_txt  + 'WATER TARGET TEMP ' + str(watertempdesired) + 'C\n'
+        if watertempdesired_error :
+            log_txt = log_txt  + 'WATER TARGET TEMP 0C*\n'
+        else :
+            log_txt = log_txt  + 'WATER TARGET TEMP ' + str(watertempdesired) + 'C\n'
 
     # get the current water temperature
-    result = subprocess.run(['emsctl', 'hwtemp', 'r'], stdout=subprocess.PIPE)
+    if water_flow_sensor :
+        response = ems_read('hwtemp')
+        if "Error" not in response:
+            watertemp = float(response.rstrip())
+            water_temp_error = False
+        else :
+            water_temp_error = True
+        update_maxair_sensors(con, water_flow_node_id, water_flow_id, watertemp, 0, water_flow_msg_in, watertemp)
+        print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Water Temp               - " + str(watertemp))
+        if water_temp_error :
+            log_txt = log_txt  + 'WATER FLOW TEMP 0C*\n'
+        else :
+            log_txt = log_txt  + 'WATER FLOW TEMP ' + str(watertemp) + 'C\n'
+
+    # get the current burner power
+    if burner_power_sensor :
+        response = ems_read('burnerpower')
+        if "Error" not in response:
+            burnerpower = float(response.rstrip())
+            burner_power_error = False
+        else :
+            burner_power_error = True
+        update_maxair_sensors(con, burner_power_node_id, burner_power_id, burnerpower, 0, burner_power_msg_in, burnerpower)
+        print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Burner Power             - " + str(burnerpower))
+        if burner_power_error :
+            log_txt = log_txt  + 'BURNER POWER 0%*\n'
+        else :
+            log_txt = log_txt  + 'BURNER POWER ' + str(burnerpower) + '%\n'
+
+    # get the current RC10 temperature
+    result = subprocess.run(['emsctl', 'roomtemp', 'r'], stdout=subprocess.PIPE)
     response = result.stdout.decode("utf-8")
     split = response.split(' ')
     if "Error" not in split[0]:
-        watertemp = float(split[1].rstrip())
-        water_temp_error = False
+        roomtemp = float(split[1].rstrip())
+        room_temp_error = False
     else :
-        water_temp_error = True
-    if water_flow_sensor :
-        update_maxair_sensors(con, water_flow_node_id, water_flow_id, watertemp, 0, water_flow_msg_in, watertemp)
-        print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Water Temp               - " + str(watertemp))
-    if water_temp_error :
-        log_txt = log_txt  + 'WATER FLOW TEMP 0C*\n'
+        room_temp_error = True
+    if rc10_sensor :
+        update_maxair_sensors(con, rc10_node_id, rc10_id, roomtemp, 0, rc10_msg_in, roomtemp)
+        print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - RC10 Temp                - " + str(roomtemp))
+    if room_temp_error :
+        log_txt = log_txt  + 'RC10 TEMP 0C*\n'
     else :
-        log_txt = log_txt  + 'WATER FLOW TEMP ' + str(watertemp) + 'C\n'
-
-    # get the current burner power
-    result = subprocess.run(['emsctl', 'burnerpower', 'r'], stdout=subprocess.PIPE)
-    response = result.stdout.decode("utf-8")
-    split = response.split(' ')
-    if "Error" not in split[0] and ":" not in split[1]:
-        burnerpower = float(split[1].rstrip())
-        burner_power_error = False
-    else :
-        burner_power_error = True
-    if burner_power_sensor :
-        update_maxair_sensors(con, burner_power_node_id, burner_power_id, burnerpower, 0, burner_power_msg_in, burnerpower)
-        print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Burner Power             - " + str(burnerpower))
-    if burner_power_error :
-        log_txt = log_txt  + 'BURNER POWER 0%*\n'
-    else :
-        log_txt = log_txt  + 'BURNER POWER ' + str(burnerpower) + '%\n'
+        log_txt = log_txt  + 'RC10 TEMP ' + str(roomtemp) + 'C\n'
 
     # CPU Temp
     cputemp = int(open('/sys/class/thermal/thermal_zone0/temp').read()) / 1000.0
     cpu_temp = "{0:0.1f}".format(cputemp)
     print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - CPU Temp                 - " + str(cpu_temp))
-    log_txt = log_txt + 'CPU    TEMP ' + cpu_temp + 'C\n'
+    log_txt = log_txt + 'CPU TEMP ' + cpu_temp + 'C\n'
+
+    log_txt = log_txt + 'EMS READ ERROR Count ' + str(read_error_count) + '\n'
+    log_txt = log_txt + 'LAST EMS READ ERROR ' + last_ems_read_error + '\n'
+    log_txt = log_txt + 'WRITE ERROR Count ' + str(write_error_count) + '\n'
+    log_txt = log_txt + 'LAST EMS WRITE ERROR ' + last_ems_write_error + '\n'
 
 
     log_txt = log_txt + '\n'
