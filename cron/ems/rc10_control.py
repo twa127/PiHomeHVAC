@@ -310,28 +310,51 @@ if cur.rowcount > 0 :
         status_node_id = int(result[node_to_index["node_id"]])
         status_sensor = True
 
-# check if a 'Heating Flow' sensor exists in the database
-heating_flow_sensor = False
-cur.execute("SELECT * FROM sensors WHERE name = 'Heating Flow' LIMIT 1;")
+# check if a 'Boiler Flow' sensor exists in the database
+boiler_flow_sensor = False
+cur.execute("SELECT * FROM sensors WHERE name = 'Boiler Flow' LIMIT 1;")
 result = cur.fetchone()
 if cur.rowcount > 0 :
     sensor_to_index = dict(
         (d[0], i) for i, d in enumerate(cur.description)
     )
-    heating_flow_id = int(result[sensor_to_index["id"]])
-    heating_flow_sensor_id = int(result[sensor_to_index["sensor_id"]])
+    boiler_flow_id = int(result[sensor_to_index["id"]])
+    boiler_flow_sensor_id = int(result[sensor_to_index["sensor_id"]])
     if int(result[sensor_to_index["message_in"]]) == 1 :
-        heating_flow_msg_in = True
+        boiler_flow_msg_in = True
     else :
-        heating_flow_msg_in = False
-    cur.execute('SELECT node_id FROM nodes WHERE id = (%s)', (heating_flow_sensor_id, ))
+        boiler_flow_msg_in = False
+    cur.execute('SELECT node_id FROM nodes WHERE id = (%s)', (boiler_flow_sensor_id, ))
     result = cur.fetchone()
     if cur.rowcount > 0 :
         node_to_index = dict(
             (d[0], i) for i, d in enumerate(cur.description)
         )
-        heating_flow_node_id = int(result[node_to_index["node_id"]])
-        heating_flow_sensor = True
+        boiler_flow_node_id = int(result[node_to_index["node_id"]])
+        boiler_flow_sensor = True
+
+# check if a 'Boiler Target' sensor exists in the database
+boiler_target_sensor = False
+cur.execute("SELECT * FROM sensors WHERE name = 'Boiler Target' LIMIT 1;")
+result = cur.fetchone()
+if cur.rowcount > 0 :
+    sensor_to_index = dict(
+        (d[0], i) for i, d in enumerate(cur.description)
+    )
+    boiler_target_id = int(result[sensor_to_index["id"]])
+    boiler_target_sensor_id = int(result[sensor_to_index["sensor_id"]])
+    if int(result[sensor_to_index["message_in"]]) == 1 :
+        boiler_target_msg_in = True
+    else :
+        boiler_target_msg_in = False
+    cur.execute('SELECT node_id FROM nodes WHERE id = (%s)', (boiler_target_sensor_id, ))
+    result = cur.fetchone()
+    if cur.rowcount > 0 :
+        node_to_index = dict(
+            (d[0], i) for i, d in enumerate(cur.description)
+        )
+        boiler_target_node_id = int(result[node_to_index["node_id"]])
+        boiler_target_sensor = True
 
 # check if a 'Water Flow' sensor exists in the database
 water_flow_sensor = False
@@ -355,52 +378,6 @@ if cur.rowcount > 0 :
         )
         water_flow_node_id = int(result[node_to_index["node_id"]])
         water_flow_sensor = True
-
-# check if a 'Water Target' sensor exists in the database
-water_target_sensor = False
-cur.execute("SELECT * FROM sensors WHERE name = 'Water Target' LIMIT 1;")
-result = cur.fetchone()
-if cur.rowcount > 0 :
-    sensor_to_index = dict(
-        (d[0], i) for i, d in enumerate(cur.description)
-    )
-    water_target_id = int(result[sensor_to_index["id"]])
-    water_target_sensor_id = int(result[sensor_to_index["sensor_id"]])
-    if int(result[sensor_to_index["message_in"]]) == 1 :
-        water_target_msg_in = True
-    else :
-        water_target_msg_in = False
-    cur.execute('SELECT node_id FROM nodes WHERE id = (%s)', (water_target_sensor_id, ))
-    result = cur.fetchone()
-    if cur.rowcount > 0 :
-        node_to_index = dict(
-            (d[0], i) for i, d in enumerate(cur.description)
-        )
-        water_target_node_id = int(result[node_to_index["node_id"]])
-        water_target_sensor = True
-
-# check if a 'Heating Target' sensor exists in the database
-heating_target_sensor = False
-cur.execute("SELECT * FROM sensors WHERE name = 'Heating Target' LIMIT 1;")
-result = cur.fetchone()
-if cur.rowcount > 0 :
-    sensor_to_index = dict(
-        (d[0], i) for i, d in enumerate(cur.description)
-    )
-    heating_target_id = int(result[sensor_to_index["id"]])
-    heating_target_sensor_id = int(result[sensor_to_index["sensor_id"]])
-    if int(result[sensor_to_index["message_in"]]) == 1 :
-        heating_target_msg_in = True
-    else :
-        heating_target_msg_in = False
-    cur.execute('SELECT node_id FROM nodes WHERE id = (%s)', (heating_target_sensor_id, ))
-    result = cur.fetchone()
-    if cur.rowcount > 0 :
-        node_to_index = dict(
-            (d[0], i) for i, d in enumerate(cur.description)
-        )
-        heating_target_node_id = int(result[node_to_index["node_id"]])
-        heating_target_sensor = True
 
 # check if a 'Water Target' sensor exists in the database
 water_target_sensor = False
@@ -789,34 +766,34 @@ while 1:
         log_txt = log_txt  + 'HEAT CURVE ' + str(heat_curve) + '\n'
 
     # get the current flowtempdesired
-    if heating_target_sensor :
+    if boiler_target_sensor :
         response = ems_read('flowtempdesired')
         if "Error" not in response:
             flowtempdesired = float(response.rstrip())
             flowtempdesired_error = False
         else :
             flowtempdesired_error = True
-        update_maxair_sensors(con, heating_target_node_id, heating_target_id, flowtempdesired, 0, heating_target_msg_in, flowtempdesired)
-        print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Heating Target Temp      - " + str(flowtempdesired))
+        update_maxair_sensors(con, boiler_target_node_id, boiler_target_id, flowtempdesired, 0, boiler_target_msg_in, flowtempdesired)
+        print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Flow Target Temp         - " + str(flowtempdesired))
         if flowtempdesired_error :
-            log_txt = log_txt  + 'HEATING TARGET TEMP 0C*\n'
+            log_txt = log_txt  + 'BOILER TARGET TEMP 0C*\n'
         else :
-            log_txt = log_txt  + 'HEATING TARGET TEMP ' + str(flowtempdesired) + 'C\n'
+            log_txt = log_txt  + 'BOILER TARGET TEMP ' + str(flowtempdesired) + 'C\n'
 
     # get the current flow temperature
-    if heating_flow_sensor :
+    if boiler_flow_sensor :
         response = ems_read('flowtemp')
         if "Error" not in response:
             flowtemp = float(response.rstrip())
             flow_temp_error = False
         else :
             flow_temp_error = True
-        update_maxair_sensors(con, heating_flow_node_id, heating_flow_id, flowtemp, 0, heating_flow_msg_in, flowtemp)
-        print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Heating Temp             - " + str(flowtemp))
+        update_maxair_sensors(con, boiler_flow_node_id, boiler_flow_id, flowtemp, 0, boiler_flow_msg_in, flowtemp)
+        print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Flow Temp                - " + str(flowtemp))
         if flow_temp_error :
-            log_txt = log_txt  + 'HEATING FLOW TEMP 0C*\n'
+            log_txt = log_txt  + 'BOILER FLOW TEMP 0C*\n'
         else :
-            log_txt = log_txt  + 'HEATING FLOW TEMP ' + str(flowtemp) + 'C\n'
+            log_txt = log_txt  + 'BOILER FLOW TEMP ' + str(flowtemp) + 'C\n'
 
     # get the current WaterTempDesired
     if water_target_sensor :
