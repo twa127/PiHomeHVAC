@@ -1,6 +1,6 @@
 # MaxAir - Smart Thermostat
 
-### Note: Now at Version 3.17
+### Note: Now at Version 3.18
 
 The previous version, PiHome, was centered around the creation of zones, this version is more centered around devices.
 
@@ -81,6 +81,8 @@ Version 3.15 Bug Fix. Increase field size of colume 'zone_mode' in table 'relay_
 Version 3.16 New Features, Stand-alone relays (relays not attached to a zone can be displayed on the Home Screen and their 'state' toggled by clicking on the tile), new GUI Settings/Node and Zone Configuration/Zone Indexing (to edit Home Screen tile placement of Zone and Add-On Zone tiles) and new GUI Settings/Device Configuration/Device Indexing (to edit Home Screen tile placement of Stand-alone Sensor and Stand-alone Relay tiles).
 
 Version 3.17 Update Bootstrap to version 5.3.8
+
+Version 3.18 New Feature, a local language file can be created to hold variations to the default language file.
 
 ## Setup:
 
