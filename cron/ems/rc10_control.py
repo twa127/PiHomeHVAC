@@ -26,7 +26,7 @@ print("********************************************************")
 print("*             EMS Set RC10 Emulator Script             *")
 print("*                                                      *")
 print("*               Build Date: 05/12/2025                 *")
-print("*       Version 0.06 - Last Modified 28/01/2026        *")
+print("*       Version 0.07 - Last Modified 30/01/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -84,7 +84,7 @@ state_dict = {
     1: "",
     2: "fan",
     3: "ignition",
-    4: "pump post",
+    4: "overrun",
     5: "boiler circuit pump",
     6: "3-way valve on WW",
     7: "circulation",
@@ -210,7 +210,7 @@ def update_maxair_sensors (conn, node_id, sensor_id, val_1, val_2, msg_in, msg_i
             )
             last_message_datetime = result[message_to_index["datetime"]]
             tdelta = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S").timestamp() -  datetime.strptime(str(last_message_datetime), "%Y-%m-%d %H:%M:%S").timestamp()
-        if cnx.rowcount == 0 or tdelta > timeout * 60 or val_1 != current_val_1 :
+        if cnx.rowcount == 0 or tdelta > timeout * 60 or val_1 != current_val_1 or val_2 != current_val_2:
             try :
                 cnx.execute("INSERT INTO messages_in(`sync`, `purge`, `node_id`, `child_id`, `sub_type`, `payload`) VALUES(%s,%s,%s,%s,%s,%s)",
                                     (0, 0, str(node_id), sensor_child_id, 0, msg_in_val))
@@ -609,30 +609,31 @@ while 1:
 
     # get the current boiler status
     if status_sensor:
+        boiler_status_error = False
         response = ems_read('status01')
         if "Error" not in response:
             status01= int(response,16)
-            if status01 == 0:
-                post_phase_flag = False
             Valve_gas = is_set(status01, 0)
             Blower = is_set(status01, 2)
             Ignition = is_set(status01, 3)
             Pump_heater = is_set(status01, 5)
             Valve_WW = is_set(status01, 6)
             Circulation = is_set(status01, 7)
-            # bit 4 is unused, set to indicate that the current status follows a boiler lit state
-            post_lit = 0x10
-            boiler_status_error = False
             # add state changes to the state_bytes array
             state_bytes_len = len(state_bytes)
             if state_bytes_len > 0 :
                 last_state = state_bytes[len(state_bytes) - 1]
             else :
                 last_state = 0
-            if status01 != last_state :
+            # mask bit 4 as it's artificial, used to indicate post lit phase
+            if is_set(last_state, 4):
+                last_state = last_state & 0b11101111
+            # status has changed
+            if status01 != last_state:
                 #check if pump status is post a boiler lit state
                 if status01 == 32 and (last_state == 36 or last_state == 48):
-                    status01 = status01 | post_lit
+                    # bit 4 is unused, set to indicate that the current status follows a boiler lit state
+                    status01 = status01 | 0b00010000
                 if state_bytes_len < 20:
                     state_bytes.append(status01)
                 else :
@@ -640,41 +641,69 @@ while 1:
                         state_bytes[x] = state_bytes[x + 1]
                     state_bytes[state_bytes_len - 1] = status01
 
-            # Write binary data to a file
-            with open('/var/www/cron/ems/StateBytes.bin', 'wb') as f:
-                for y in range(0,len(state_bytes)) :
-                    f.write(chr(state_bytes[y]).encode(encoding='UTF-8'))
-            f.close()
+                # Write binary data to a file
+                with open('/var/www/cron/ems/StateBytes.bin', 'wb') as f:
+                    for y in range(0,len(state_bytes)) :
+                        f.write(chr(state_bytes[y]).encode(encoding='UTF-8'))
+                f.close()
 
-            if status01 == 0:
-            	current_state_msg = "idle"
-            elif is_set(status01, 0):
-                current_state_msg = "running"
-            else:
-                for i in range(1, 7):
-                    # bits 1 and 4 are not defined in the EMS telegram, but bit 4 is used to indicate post lit phase
-                    if i != 1:
-                        if is_set(status01, i):
-                            current_state_msg = state_dict[i] + " "
+                # create message text for current state
+                if status01 == 0:
+                    current_state_msg = "idle"
+                elif is_set(status01, 0):
+                    current_state_msg = "running"
+                elif is_set(status01, 4):
+                    current_state_msg = state_dict[4]
+                else:
+                    for i in range(1, 7):
+                        # bits 1 and 4 are not defined in the EMS telegram, but bit 4 is used to indicate post lit phase
+                        if i != 1 and i != 4:
+                            if is_set(status01, i):
+                                current_state_msg = state_dict[i] + " "
 
-            if boiler_status_error :
-                log_txt = log_txt + 'Current STATE is *' + current_state_msg.rstrip()  + '\n'
-            else :
-                log_txt = log_txt + 'Current STATE is ' + current_state_msg.rstrip()  + '\n'
+                if status01 == 0:
+                    val_1 = 0
+                elif Valve_gas:
+                    val_1 = 2
+                else:
+                    val_1 = 1
 
-            message = 'STATE Bytes '
-            for i in range(0, len(state_bytes)):
-                message = message + '[' + str(state_bytes[i]) + '] '
-            log_txt = log_txt + message + '\n'
+                update_maxair_sensors(con, status_node_id, status_id, val_1, status01, status_msg_in, status01)
+
         else :
             boiler_status_error = True
+
+        # use the last state bytpe
+        state_bytes_len = len(state_bytes)
+        if state_bytes_len > 0 :
+            status01 = state_bytes[len(state_bytes) - 1]
+        else :
+            status01 = 0
+
+        # create message text for current state
         if status01 == 0:
-            val_1 = 0
-        elif Valve_gas:
-            val_1 = 2
+            current_state_msg = "idle"
+        elif is_set(status01, 0):
+            current_state_msg = "running"
+        elif is_set(status01, 4):
+            current_state_msg = state_dict[4]
         else:
-            val_1 = 1
-        update_maxair_sensors(con, status_node_id, status_id, val_1, status01, status_msg_in, status01)
+            for i in range(1, 7):
+                # bits 1 and 4 are not defined in the EMS telegram, but bit 4 is used to indicate post lit phase
+                if i != 1 and i != 4:
+                    if is_set(status01, i):
+                        current_state_msg = state_dict[i] + " "
+
+        if not boiler_status_error:
+            log_txt = log_txt + 'Current STATE is ' + current_state_msg.rstrip()  + '\n'
+        else:
+            log_txt = log_txt + 'Current STATE is *' + current_state_msg.rstrip()  + '\n'
+
+        # display state bytes list
+        message = 'STATE Bytes '
+        for i in range(0, len(state_bytes)):
+            message = message + '[' + str(state_bytes[i]) + '] '
+        log_txt = log_txt + message + '\n'
         print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Boiler Status            - " + str(status01))
 
     # set auto regulation if dummy relay exits
