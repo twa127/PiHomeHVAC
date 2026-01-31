@@ -631,7 +631,7 @@ while 1:
             # status has changed
             if status01 != last_state:
                 #check if pump status is post a boiler lit state
-                if status01 == 32 and (last_state == 36 or last_state == 48):
+                if status01 == 32 and (last_state == 36 or last_state == 37 or last_state == 48):
                     # bit 4 is unused, set to indicate that the current status follows a boiler lit state
                     status01 = status01 | 0b00010000
                 if state_bytes_len < 20:
