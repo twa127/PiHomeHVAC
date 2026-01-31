@@ -872,19 +872,22 @@ while 1:
     # get the current RC10 temperature
     result = subprocess.run(['emsctl', 'roomtemp', 'r'], stdout=subprocess.PIPE)
     response = result.stdout.decode("utf-8")
-    split = response.split(' ')
-    if "Error" not in split[0]:
-        roomtemp = float(split[1].rstrip())
-        room_temp_error = False
-    else :
-        room_temp_error = True
-    if rc10_sensor :
-        update_maxair_sensors(con, rc10_node_id, rc10_id, roomtemp, 0, rc10_msg_in, roomtemp)
-        print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - RC10 Temp                - " + str(roomtemp))
-    if room_temp_error :
-        log_txt = log_txt  + 'RC10 TEMP 0C*\n'
-    else :
-        log_txt = log_txt  + 'RC10 TEMP ' + str(roomtemp) + 'C\n'
+    if "No RTC Module" not in response:
+        split = response.split(' ')
+        if "Error" not in split[0]:
+            roomtemp = float(split[1].rstrip())
+            room_temp_error = False
+        else :
+            room_temp_error = True
+        if rc10_sensor :
+            update_maxair_sensors(con, rc10_node_id, rc10_id, roomtemp, 0, rc10_msg_in, roomtemp)
+            print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - RC10 Temp                - " + str(roomtemp))
+        if room_temp_error :
+            log_txt = log_txt  + 'RC10 TEMP 0C*\n'
+        else :
+            log_txt = log_txt  + 'RC10 TEMP ' + str(roomtemp) + 'C\n'
+    else:
+        log_txt = log_txt  + 'NO REAL TIME CLOCK MODULE\n'
 
     # CPU Temp
     cputemp = int(open('/sys/class/thermal/thermal_zone0/temp').read()) / 1000.0
@@ -910,4 +913,4 @@ while 1:
     else :
         with open('/var/www/cron/ems/ems.log', 'a') as f:
             f.write(log_txt)
-    time.sleep(10)
+    time.sleep(30)
