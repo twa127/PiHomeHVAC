@@ -913,4 +913,4 @@ while 1:
     else :
         with open('/var/www/cron/ems/ems.log', 'a') as f:
             f.write(log_txt)
-    time.sleep(30)
+    time.sleep(15)
