@@ -792,12 +792,15 @@ while 1:
             update_maxair_sensors(con, regulation_node_id, regulation_id, 0, heat_curve, 0, 0)
             print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Auto Regulation          - ERROR")
             print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Heat Curve               - ERROR")
+            print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Control Temp             - ERROR")
             print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Error Code               - " + str(error_code))
         else:
             update_maxair_sensors(con, regulation_node_id, regulation_id, auto_reg, heat_curve, regulation_msg_in, auto_reg)
             print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Auto Regulation          - " + regulation)
             print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Heat Curve               - " + str(heat_curve))
+            print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Control Temp             - " + str(outside_temp))
         log_txt = log_txt  + 'HEAT CURVE ' + str(heat_curve) + '\n'
+        log_txt = log_txt  + 'CONTROL TEMP ' + str(outside_temp) + 'C\n'
 
     # get the current flowtempdesired
     if boiler_target_sensor :
