@@ -766,15 +766,20 @@ while 1:
                             "SELECT `payload` FROM `messages_in` WHERE `node_id` = %s AND `child_id` = %s ORDER BY `id` DESC LIMIT 1;",
                             (node_id, child_id),
                         )
-                        msg = cur.fetchone()
-                        msg_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
-                        # get the outside temperature using either weather or a sensor
-                        outside_temp = msg[msg_to_index["payload"]]
-                        if outside_temp != outside_temp_prev:
-                            outside_temp_prev = outside_temp
-                            if not ems_write('heatingtemp1', str(outside_temp)):
-                                heatingtemp1_update_error = True
-                                error_code = error_code | 0b0001
+                        # check that the outside temperature has been retrieved from the database
+                        if cur.rowcount > 0 :
+                            msg = cur.fetchone()
+                            msg_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+                            # get the outside temperature using either weather or a sensor
+                            outside_temp = msg[msg_to_index["payload"]]
+                            if outside_temp != outside_temp_prev:
+                                outside_temp_prev = outside_temp
+                                if not ems_write('heatingtemp1', str(outside_temp)):
+                                    heatingtemp1_update_error = True
+                                    error_code = error_code | 0b0001
+                        else:
+                            heatingtemp1_update_error = True
+                            error_code = error_code | 0b0001
                 else :
                     heatcurve_error = True
                     error_code = error_code | 0b0100
