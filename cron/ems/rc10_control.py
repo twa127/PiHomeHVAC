@@ -26,7 +26,7 @@ print("********************************************************")
 print("*             EMS Set RC10 Emulator Script             *")
 print("*                                                      *")
 print("*               Build Date: 05/12/2025                 *")
-print("*       Version 0.07 - Last Modified 30/01/2026        *")
+print("*       Version 0.08 - Last Modified 03/02/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -68,6 +68,8 @@ last_ems_read_error = ''
 write_error_count = 0
 last_ems_write_error = ''
 run_22 = 0
+current_state_time = time.time()
+previous_state_time = '(NO Data)'
 
 # Logging exceptions to log file
 logfile = "/var/www/logs/main.log"
@@ -630,6 +632,9 @@ while 1:
                 last_state = last_state & 0b11101111
             # status has changed
             if status01 != last_state:
+                # reset the time count
+                previous_state_time = time.strftime("%H:%M:%S", time.gmtime(time.time() - current_state_time))
+                current_state_time = time.time()
                 #check if pump status is post a boiler lit state
                 if status01 == 32 and (last_state == 36 or last_state == 37 or last_state == 48):
                     # bit 4 is unused, set to indicate that the current status follows a boiler lit state
@@ -698,6 +703,8 @@ while 1:
             log_txt = log_txt + 'Current STATE is ' + current_state_msg.rstrip()  + '\n'
         else:
             log_txt = log_txt + 'Current STATE is *' + current_state_msg.rstrip()  + '\n'
+        log_txt = log_txt + 'Current STATE has been active for ' + time.strftime("%H:%M:%S", time.gmtime(time.time() - current_state_time)) + '\n'
+        log_txt = log_txt + 'Previous STATE was active for ' + previous_state_time + '\n'
 
         # display state bytes list
         message = 'STATE Bytes '
@@ -785,7 +792,7 @@ while 1:
                     error_code = error_code | 0b0100
         else :
             autoheatcurveregulation_error = True
-            error_code = error_code | 0b1000 
+            error_code = error_code | 0b1000
 
         if autoheatcurveregulation_error or heatcurve_error or heatcurve_update_error or heatingtemp1_update_error:
             heat_curve = 99
