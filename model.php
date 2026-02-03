@@ -4695,7 +4695,7 @@ echo '<div class="modal fade" id="relay_setup" tabindex="-1" role="dialog" aria-
             				<td>'.$row["relay_child_id"].'</td>
                                         <td>'.$trigger.'</td>
                                         <td>'.$row["lag_time"].'</td>';
-            				if($row['attached'] == 1) {
+            				if($row['attached'] == 0) {
                                                 echo '<td style="text-align:center; vertical-align:middle;">
                                                 	<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox'.$row["id"].'" name="checkbox'.$row["id"].'" value="1" '.$check.'>
                                                 </td>
