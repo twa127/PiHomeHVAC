@@ -13,7 +13,6 @@ else
 fi
 
 sudo apt -y install python3-mysqldb
-sudo apt -y install libgpiod2 python3-libgpiod gpiod
 sudo apt -y install net-tools
 
 echo "Installing adafruit-blinka"
@@ -34,8 +33,13 @@ echo "Installing python3-mysqldb"
 sudo apt-get -y install python3-mysqldb
 
 echo "Installing libgpiod"
-sudo apt install -y libgpiod2 python3-libgpiod gpiod
-
+var=$(cat /etc/debian_version)
+if [[ $var == *"12."* ]]; then
+  sudo apt install -y libgpiod2
+else
+  sudo apt install -y libgpiod3
+fi
+sudo apt install -y python3-libgpiod gpiod
 echo "Installing apache2"
 sudo apt -y install apache2 apache2-doc apache2-utils
 
@@ -47,7 +51,11 @@ echo "Installing PHP support"
 sudo apt -y install php php-common
 sudo apt -y install php-cli php-fpm php-json php-pdo php-mysql php-zip php-gd  php-mbstring php-curl php-xml php-pear php-bcmath
 sudo apt -y install libapache2-mod-php
-sudo apt -y install php8.2-mysqlnd
+if [[ $var == *"12."* ]]; then
+  sudo apt -y install php8.2-mysqlnd
+else
+  sudo apt -y install php8.4-mysqlnd
+fi
 sudo apt-get install -y php-zip
 
 echo "Creating users SQL file"
@@ -177,37 +185,45 @@ fi
 echo "Enabling Apache rewrite"
 sudo a2enmod rewrite
 
-echo "Creating sudoers file"
-sudo cat <<EOT >> /etc/sudoers.d/maxair
-www-data ALL=(ALL) NOPASSWD:/sbin/iwlist wlan0 scan
-www-data ALL=(ALL) NOPASSWD:/sbin/reboot
-www-data ALL=(ALL) NOPASSWD:/sbin/shutdown -h now
-www-data ALL=(ALL) NOPASSWD:/bin/mv myfile1.tmp /etc/wpa_supplicant/wpa_supplicant.conf
-www-data ALL=(ALL) NOPASSWD:/sbin/ifconfig eth0
-www-data ALL=/bin/systemctl
-www-data ALL=NOPASSWD: /bin/systemctl
-www-data ALL=(ALL) NOPASSWD:/usr/bin/pkill
-EOT
+read -p "Do you want to install logtoram y/n? " -n 1 -r
+echo    # (optional) move to a new line
+if [[ $REPLY =~ ^[Yy]$ ]]
+then
+    echo "Installing log2ram as a service (only install on Raspberry Pi)"
+    VAR1=$(cat /proc/device-tree/model | awk '{print $1}')
+    VAR2="Raspberry"
+    if [[ "$VAR1" == "$VAR2" ]]; then
+        cd /home/maxair
+        wget https://github.com/azlux/log2ram/archive/master.tar.gz -O log2ram.tar.gz
+        tar xf log2ram.tar.gz
+        rm log2ram.tar.gz
+        cd /home/maxair/log2ram-master
+        ./install.sh
+        cd ../
+        rm -R log2ram-master
 
-echo "Installing log2ram as a service (only install on Raspberry Pi)"
-VAR1=$(cat /proc/device-tree/model | awk '{print $1}')
-VAR2="Raspberry"
-if [[ "$VAR1" == "$VAR2" ]]; then
-    cd /home/maxair
-    wget https://github.com/azlux/log2ram/archive/master.tar.gz -O log2ram.tar.gz
-    tar xf log2ram.tar.gz
-    rm log2ram.tar.gz
-    cd /home/maxair/log2ram-master
-    ./install.sh
-    cd ../
-    rm -R log2ram-master
-
-    FILE=/etc/log2ram.conf
-    echo "Modifying File: $FILE"
-    if grep -q "SIZE=40M" $FILE
-    then
-        sudo sed -i "s|/SIZE=40M|/SIZE=100M|" "$FILE"
+        FILE=/etc/log2ram.conf
+        echo "Modifying File: $FILE"
+        if grep -q "SIZE=40M" $FILE
+        then
+            sudo sed -i "s|/SIZE=40M|/SIZE=100M|" "$FILE"
+        fi
     fi
 fi
-
+read -p "Do you want to install emsctl y/n? " -n 1 -r
+echo    # (optional) move to a new line
+if [[ $REPLY =~ ^[Yy]$ ]]
+then
+    echo "Installing emsctl in /usr/bin"
+    chmod +x /var/www/cron/ems/emsctl
+    cp /var/www/cron/ems/emsctl /usr/bin
+fi
+echo "Install Prerequisites Completed"
+echo "Installing MaxAir"
+rm -R /var/www
+apt -y install git
+git clone https://github.com/twa127/PiHomeHVAC.git "/var/www"
+chown -R www-data:www-data /var/www
+cd /var/www
+php ./setup.php
 echo "Installation Script Completed"
