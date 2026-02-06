@@ -13,7 +13,7 @@ echo "                \033[45m S M A R T   T H E R M O S T A T \033[0m \n";
 echo "\033[31m";
 echo "***************************************************************\n";
 echo "*   MaxAir Datase Script Version 0.01 Build Date 20/12/2020   *\n";
-echo "*   Last Modified on 13/09/2022                               *\n";
+echo "*   Last Modified on 06/02/2026                               *\n";
 echo "*                                      Have Fun - PiHome.eu   *\n";
 echo "***************************************************************\n";
 echo "\033[0m";
@@ -326,6 +326,8 @@ $query_job_scheduling .= "('system_c','/var/www/cron/system_c.php',1,0,'300','',
 $query_job_scheduling .= "('weather_update','/var/www/cron/weather_update.php',1,0,'1800','',now()),";
 $query_job_scheduling .= "('reboot_wifi','/var/www/cron/reboot_wifi.sh',1,0,'120','',now()),";
 $query_job_scheduling .= "('check_ds18b20','/var/www/cron/check_ds18b20.php',0,0,'60','',now()),";
+$query_job_scheduling .= "('check_ebus','/var/www/cron/check_ebus.php',1,0,'60','',now()),";
+$query_job_scheduling .= "('check_ems','/var/www/cron/check_ems.php',1,0,'60','',now()),";
 $query_job_scheduling .= "('notice','/var/www/cron/notice.py',0,0,'60','',now()),";
 $query_job_scheduling .= "('sw_install','/var/www/cron/sw_install.py',1,0,'10','',now()),";
 $query_job_scheduling .= "('update_code','/var/www/cron/update_code.py',1,0,'00:00','',now());";
