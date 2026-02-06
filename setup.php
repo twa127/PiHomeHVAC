@@ -350,16 +350,6 @@ if ($results) {
                 echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Sensor Type Records \033[41mSensor Types\033[0m Data Failed \n";
 }
 
-//Setting Default Repository
-echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Setting the Default Repository to 'twa127/PiHomeHVAC'\n";
-$query_repository = "UPDATE `repository` SET `status` = CASE WHEN name = 'twa127/PiHomeHVAC' THEN 1 ELSE 0 END;";
-$results = $conn->query($query_repository);
-if ($results) {
-                echo  "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Repository Record Updated \033[41mRepository\033[0m Data  Succeeded \n";
-} else {
-                echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Repository Record \033[41mRepository\033[0m Data Failed \n";
-}
-
 //check if database_updates table already exist
 $query = "SELECT * FROM information_schema.tables WHERE table_schema = 'maxair' AND table_name = 'database_backup' LIMIT 1;";
 $result = $conn->query($query);
@@ -441,6 +431,16 @@ if ($ffs) {
 	}
 } else {
        	echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - There are No Database Updates to Apply.\n";
+}
+
+//Setting Default Repository
+echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Setting the Default Repository to 'twa127/PiHomeHVAC'\n";
+$query_repository = "UPDATE `repository` SET `status` = CASE WHEN name = 'twa127/PiHomeHVAC' THEN 1 ELSE 0 END;";
+$results = $conn->query($query_repository);
+if ($results) {
+                echo  "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Repository Record Updated \033[41mRepository\033[0m Data  Succeeded \n";
+} else {
+                echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Repository Record \033[41mRepository\033[0m Data Failed \n";
 }
 
 // Check if running Orange Pi OS and if so create a symlink for Adafruit Platform  Detect
