@@ -219,16 +219,4 @@ then
     cp /var/www/cron/ems/emsctl /usr/bin
 fi
 echo "Install Prerequisites Completed"
-read -p "Do you want to install MaxAir y/n? " -n 1 -r
-echo    # (optional) move to a new line
-if [[ $REPLY =~ ^[Yy]$ ]]
-then
-    echo "Installing MaxAir"
-    rm -R /var/www
-    apt -y install git
-    git clone https://github.com/twa127/PiHomeHVAC.git "/var/www"
-    chown -R www-data:www-data /var/www
-    cd /var/www
-    php ./setup.php
-fi
 echo "Installation Script Completed"
