@@ -36,12 +36,12 @@ if($nopids==0) { // Script not running
 	echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Python  EMS Script \033[41mNot Running\033[0m \n";
 	echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Starting Python Script for EMS \n";
 	exec("$ems_script_txt </dev/null >/dev/null 2>&1 & ");
-	exec("ps aux | grep '$EMS_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
+	exec("ps aux | grep '$ems_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
 	echo "\033[36m".date('Y-m-d H:i:s')."\033[0m - The PID is: \033[41m".$out[0]."\033[0m \n";
 } else {
 	if($nopids>1) { // Proceed if more than one EMS script running
 		echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Multiple EMS Scripts are Detected \033[41m$nopids\033[0m \n";
-		$regex = preg_quote($EMS_script_txt, '/');
+		$regex = preg_quote($ems_script_txt, '/');
 		exec("ps -eo s,pid,cmd | grep 'T.*$regex' | grep -v grep | awk '{ print $2 }'", $tpids);
 		$notpids=count($tpids);
 		echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Number of Terminated Script Killed \033[41m$notpids\033[0m \n";
@@ -50,7 +50,7 @@ if($nopids==0) { // Script not running
 		}
 		if($nopids-$notpids>1 || $nopids-$notpids==0) { // Proceed if none or more than one script runs
 			if($nopids-$notpids>1) { // Proceed if more than one active EMS script 
-				exec("ps -eo s,pid,cmd | grep '$EMS_script_txt' | grep -v grep | awk '{ print $2 }'", $tpids);
+				exec("ps -eo s,pid,cmd | grep '$ems_script_txt' | grep -v grep | awk '{ print $2 }'", $tpids);
 				$notpids=$nopids-$notpids;
 				echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Multiple Active EMS Script are Running \033[41m$notpids\033[0m \n";
 				foreach($tpids as $tpid){
@@ -58,12 +58,12 @@ if($nopids==0) { // Script not running
 				}
 			}
 			echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - All Script Killed. Started New \n";
-			exec("$EMS_script_txt </dev/null >/dev/null 2>&1 & ");
-			exec("ps aux | grep '$EMS_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
+			exec("$ems_script_txt </dev/null >/dev/null 2>&1 & ");
+			exec("ps aux | grep '$ems_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
 		}
 	}
 	echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Python EMS Script is \033[42mRunning\033[0m \n";
-	exec("ps -eo s,pid,cmd | grep '$EMS_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
+	exec("ps -eo s,pid,cmd | grep '$ems_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
 	echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - The PID is: \033[42m" . $out[0]."\033[0m \n";
 }
 echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Python EMS Script Status Check Script Ended \n"; 
