@@ -210,7 +210,7 @@ EOT
     fi
 
     echo "Enabling Apache rewrite"
-    sudo a2enmod rewrite
+    a2enmod rewrite
 
     read -p "Do you want to install logtoram y/n? " -n 1 -r
     echo    # (optional) move to a new line
@@ -233,7 +233,7 @@ EOT
             echo "Modifying File: $FILE"
             if grep -q "SIZE=40M" $FILE
             then
-                sudo sed -i "s|/SIZE=40M|/SIZE=100M|" "$FILE"
+                sed -i "s|/SIZE=40M|/SIZE=100M|" "$FILE"
             fi
         fi
     fi
