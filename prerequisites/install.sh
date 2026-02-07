@@ -220,14 +220,13 @@ EOT
         VAR1=$(cat /proc/device-tree/model | awk '{print $1}')
         VAR2="Raspberry"
         if [[ "$VAR1" == "$VAR2" ]]; then
-            cd /home/maxair
-            wget https://github.com/azlux/log2ram/archive/master.tar.gz -O log2ram.tar.gz
-            tar xf log2ram.tar.gz
-            rm log2ram.tar.gz
-            cd /home/maxair/log2ram-master
+            wget https://github.com/azlux/log2ram/archive/master.tar.gz -O /var/www/log2ram.tar.gz
+            tar xf /var/www/log2ram.tar.gz -C /var/www
+            rm /var/www/log2ram.tar.gz
+            cd /var/www/log2ram-master
             ./install.sh
             cd ../
-            rm -R log2ram-master
+            rm -R /var/www/log2ram-master
 
             FILE=/etc/log2ram.conf
             echo "Modifying File: $FILE"
