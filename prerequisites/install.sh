@@ -253,6 +253,8 @@ echo    # (optional) move to a new line
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
     echo "Initial Setup of Maxair"
+    echo "Setting Permissions"
+    sudo chown -R www-data:www-data /var/www
     sudo cd /var/www
     sudo php setup.php
     echo "Initial Setup of Maxair Complete"
