@@ -255,13 +255,13 @@ then
     echo "Initial Setup of Maxair"
     echo "Setting Permissions"
     if [ -d "/var/www" ]; then
-        sudo chown -R www-data:www-data /var/www
-        sudo cd /var/www
+        chown -R www-data:www-data /var/www
+        cd /var/www
     else
-        sudo chown -R http:http /srv/http
-        sudo cd /srv/http
+        chown -R http:http /srv/http
+        cd /srv/http
     fi
-    sudo php setup.php
+    php setup.php
     echo "Initial Setup of Maxair Complete"
 fi
 echo "MaxAir Install Complete"
