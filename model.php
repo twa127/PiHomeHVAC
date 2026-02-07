@@ -1304,6 +1304,25 @@ echo '
 						</div>
                                         	<p class="text-muted">Install ReWrite for Apache Web Server</p>
 					</div>';
+                                        $installpath = "/var/www/cron/ems/install_emsctl.sh";
+                                        $installname = "Install emsctl Utility";
+                                        if (file_exists("/usr/bin/emsctl")) {
+                                                $prompt = $lang['re_install'];
+                                        } else {
+                                                $prompt = $lang['install'];
+                                        }
+                                        echo '<div class="list-group-item">
+                                                <div class="d-flex justify-content-between">
+                                                        <div>
+                                                                <i class="bi bi-terminal-fill green" style="font-size: 2rem;"></i> '.$installname.'
+                                                        </div>
+                                                        <div>
+                                                                <span class="text-muted small"><button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm"
+                                                                onclick="install_software(`'.$installpath.'`)">'.$prompt.'</button></span>
+                                                        </div>
+                                                </div>
+                                                <p class="text-muted">Install emsctl for EMS Bus Control</p>
+                                        </div>';
                                         $path = '/var/www/add_on';
                                         $dir = new DirectoryIterator($path);
                                         foreach ($dir as $fileinfo) {
@@ -4630,6 +4649,8 @@ echo '<div class="modal fade" id="relay_setup" tabindex="-1" role="dialog" aria-
                                 <li class="dropdown-divider"></li>
 				<li><a class="dropdown-item" href="pdf_download.php?file=setup_pump_type_relays.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_pump_type_relays'].'</a></li>
                                 <li class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="pdf_download.php?file=setup_stand_alone_relays.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_stand_alone_relays'].'</a></li>
+                                <li class="dropdown-divider"></li>
 				<li><a class="dropdown-item" href="pdf_download.php?file=delete_zones_relays_sensors_nodes.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['delete_zones_relays_sensors_nodes'].'</a></li>
                         </ul>
                 </div>
@@ -4637,17 +4658,20 @@ echo '<div class="modal fade" id="relay_setup" tabindex="-1" role="dialog" aria-
             <div class="modal-body">
 		<p class="text-muted">'.$lang['relay_settings_text'].'</p>';
                 $query = "SELECT DISTINCT relays.id, relays.relay_id, relays.relay_child_id, relays.on_trigger, relays.lag_time, relays.name, relays.type, relays.show_it,
-                        IF(zr.zone_id IS NULL, 0, 1) OR IF(sc.heat_relay_id IS NULL, 0, 1) AS attached, nd.node_id, nd.last_seen
+                        IF(rg.id IS NULL, 'NONE', rg.name) AS relay_group_id, IF(zr.zone_id IS NULL, 0, 1) OR IF(sc.heat_relay_id IS NULL, 0, 1) AS attached, 
+			IF(sdtr.id IS NULL, 0, 1) AS relay_schedule, nd.node_id, nd.last_seen
                         FROM relays
+			LEFT JOIN relay_group rg ON relays.group_id = rg.id
                         LEFT join zone_relays zr ON relays.id = zr.zone_relay_id
                         LEFT JOIN zone z ON zr.zone_id = z.id
                         JOIN nodes nd ON relays.relay_id = nd.id
                         LEFT JOIN system_controller sc ON relays.id = sc.heat_relay_id
+			LEFT JOIN schedule_daily_time_relays sdtr ON relays.id = sdtr.relay_id
                         ORDER BY relay_id asc, relay_child_id ASC;";
 		$results = $conn->query($query);
 		echo '<table class="table table-bordered">
     			<tr>
-        			<th class="col-md-3"><small>'.$lang['relay_name'].'</small></th>
+        			<th class="col-md-2"><small>'.$lang['relay_name'].'</small></th>
         			<th class="col-md-1"><small>'.$lang['type'].'</small></th>
         			<th class="col-md-1"><small>'.$lang['node_id'].'</small></th>
         			<th class="col-md-1"><small>'.$lang['relay_child_id'].'</small></th>
@@ -4655,6 +4679,7 @@ echo '<div class="modal fade" id="relay_setup" tabindex="-1" role="dialog" aria-
                                 <th class="col-md-1">'.$lang['lag_time'].'</th>
                                 <th class="col-md-1"><small>'.$lang['show'].'</small></th>
                                 <th class="col-lg-1"><small>'.$lang['msg_in'].'</small></th>
+                                <th class="col-lg-1"><small>Group</small></th>
                               <th class="col-md-2"></th>
     			</tr>';
 
@@ -4684,12 +4709,16 @@ echo '<div class="modal fade" id="relay_setup" tabindex="-1" role="dialog" aria-
                                                 $relay_type ="Pump";
                                                 $attached_to = $row["zone_name"]." Zone";
                                                 break;
+                                        case 6:
+                                                $relay_type ="Stand Alone";
+                                                $attached_to = "Stand Alone Relay Schedule";
+                                                break;
     				}
 				if ($row["on_trigger"] == 0) { $trigger = "LOW"; } else { $trigger = "HIGH"; }
                                 $check = ($row['show_it'] == 1) ? 'checked' : '';
                                 $check_msg_in = ($row['message_in'] == 1) ? 'checked' : '';
     				echo '<tr>
-            				<td>'.$row["name"].'<br> <small>('.$row["last_seen"].')</small></td>
+            				<td>'.$row["name"].'<br> <small>'.$row["last_seen"].'</small></td>
             				<td>'.$relay_type.'</td>
             				<td>'.$row["node_id"].'</td>
             				<td>'.$row["relay_child_id"].'</td>
@@ -4702,18 +4731,20 @@ echo '<div class="modal fade" id="relay_setup" tabindex="-1" role="dialog" aria-
                                                 <td style="text-align:center; vertical-align:middle;">
                                                         <input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox_msg_in'.$row["id"].'" name="checkbox_msg_in'.$row["id"].'" value="1" '.$check_msg_in.'>
                                                 </td>
-                                        	<td><a href="relay.php?id='.$row["id"].'"><button class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-xs"><i class="bi bi-pencil"></i></button></a>&nbsp
-							<span class="tooltip-wrapper" data-bs-toggle="tooltip" title="'.$lang['confirm_del_relay_2'].$attached_to.'"><button class="btn btn-danger btn-xs disabled"><i class="bi bi-trash-fill black"></i></button></span>
-						</td>';
+                                                <td style="text-align:center; vertical-align:middle;">'.$row["relay_group_id"].'</td>
+                                        	<td><a href="relay.php?id='.$row["id"].'"><button class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-xs"><i class="bi bi-pencil"></i></button></a>&nbsp';
+							if($row['relay_schedule'] == 0) {
+                                                        	echo '<button class="btn warning btn-danger btn-xs" onclick="delete_relay('.$row["id"].');" data-confirm="'.$lang['confirm_del_relay_1'].'"><span class="bi bi-trash-fill black"></span></button>';
+							} else {
+                                                        	echo '<span class="tooltip-wrapper" data-bs-toggle="tooltip" title="'.$lang['confirm_del_relay_2'].$attached_to.'"><button class="btn btn-danger btn-xs disabled"><i class="bi bi-trash-fill black"></i></button></span>';
+							}
+						echo '</td>';
 	    				} else {
-                                                echo '<td style="text-align:center; vertical-align:middle;">
-                                                	<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox'.$row["id"].'" name="checkbox'.$row["id"].'" value="1" '.$check.' disabled>
-                                                </td>
-                                                <td style="text-align:center; vertical-align:middle;">
-                                                        <input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox_msg_in'.$row["id"].'" name="checkbox_msg_in'.$row["id"].'" value="1" '.$check_msg_in.' disabled>
-                                                </td>
+                                                echo '<td style="text-align:center; vertical-align:middle;">N/A</td>
+                                                <td style="text-align:center; vertical-align:middle;">N/A</td>
+                                                <td style="text-align:center; vertical-align:middle;">N/A</td>
                                         	<td><a href="relay.php?id='.$row["id"].'"><button class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-xs"><i class="bi bi-pencil"></i></button></a>&nbsp
-                					<button class="btn warning btn-danger btn-xs" onclick="delete_relay('.$row["id"].');" data-confirm="'.$lang['confirm_del_relay_1'].'"><span class="bi bi-trash-fill black"></span></button>
+                                                        <span class="tooltip-wrapper" data-bs-toggle="tooltip" title="'.$lang['confirm_del_relay_2'].$attached_to.'"><button class="btn btn-danger btn-xs disabled"><i class="bi bi-trash-fill black"></i></button></span>
 						</td>';
             				}
         			echo '</tr>';
@@ -4743,6 +4774,78 @@ if ($show_relay_modal == 1) {
         </script>
         <?php
 }
+
+//Relay Group
+echo '
+<div class="modal fade" id="relay_group_setup" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+        	<div class="modal-content">
+            		<div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                		<button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                		<h5 class="modal-title">'.$lang['relay_groups'].'</h5>
+                		<div class="dropdown float-right">
+                        		<a class="" data-bs-toggle="dropdown" href="#">
+                                		<i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
+                        		</a>
+                        		<ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
+                                		<li><a class="dropdown-item" href="pdf_download.php?file=setup_stand_alone_relays.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_stand_alone_relays'].'</a></li>
+                			</ul>
+                		</div>
+            		</div>
+            		<div class="modal-body">
+				<p class="text-muted"> '.$lang['relay_groups_text'].' </p>';
+
+				echo '<table class="table table-bordered">
+    					<tr>
+        					<th class="col-11"><small>'.$lang['group'].'</small></th>
+        					<th class="col-1"></th>
+    					</tr>';
+
+					$query = "SELECT `id`, `name` FROM `relay_group` WHERE `purge`=0;";
+					$results = $conn->query($query);
+                                        $rowcount=mysqli_num_rows($results);
+                                        if($rowcount > 0) {
+						while ($row = mysqli_fetch_assoc($results)) {
+    							echo '<tr>
+            							<td>'.$row["name"].'</td>
+            							<td><button class="btn warning btn-danger btn-xs" onclick="delete_relay_group('.$row["id"].');" data-confirm="'.$content_msg.'"><span class="bi bi-trash-fill black"></span></button> </td>
+        						</tr>';
+						}
+					}
+				echo '</table>
+			</div>
+            		<div class="modal-footer">
+                		<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                		<button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" data-bs-href="#" data-bs-toggle="modal" data-bs-target="#add_group">'.$lang['group_add'].'</button>
+            		</div>
+        	</div>
+    	</div>
+</div>';
+
+//Add Relay Group
+echo '
+<div class="modal fade" id="add_group" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    	<div class="modal-dialog">
+        	<div class="modal-content">
+            		<div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                        	<button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                		<h5 class="modal-title">'.$lang['relay_group_add'].'</h5>
+            		</div>
+            		<div class="modal-body">';
+				echo '<p class="text-muted">'.$lang['relay_group_add_info_text'].'</p>
+        			<form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
+        			<div class="form-group" class="control-label"><label>'.$lang['relay_group_name'].'</label> <small class="text-muted">'.$lang['relay_group_name_info'].'</small>
+        				<input class="form-control" type="text" id="relay_group" name="relay_group" value="" placeholder="'.$lang['relay_group'].'">
+        				<div class="help-block with-errors"></div>
+				</div>
+			</div>
+            		<div class="modal-footer">
+                        	<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                                <input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="add_relay_group()">
+            		</div>
+        	</div>
+    	</div>
+</div>';
 
 //Test Relays
 echo '<div class="modal fade" id="test_relays" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
