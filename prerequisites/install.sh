@@ -254,8 +254,13 @@ if [[ $REPLY =~ ^[Yy]$ ]]
 then
     echo "Initial Setup of Maxair"
     echo "Setting Permissions"
-    sudo chown -R www-data:www-data /var/www
-    sudo cd /var/www
+    if [ -d "/var/www" ]; then
+        sudo chown -R www-data:www-data /var/www
+        sudo cd /var/www
+    else
+        sudo chown -R http:http /srv/http
+        sudo cd /srv/http
+    fi
     sudo php setup.php
     echo "Initial Setup of Maxair Complete"
 fi
