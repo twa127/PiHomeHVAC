@@ -62,9 +62,9 @@ if($nopids==0) { // Script not running
 			exec("ps aux | grep '$ems_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
 		}
 	}
-	echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Python EMS Script is \033[42mRunning\033[0m \n";
-	exec("ps -eo s,pid,cmd | grep '$ems_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
-	echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - The PID is: \033[42m" . $out[0]."\033[0m \n";
+        echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Python EMS Script is \033[0;32;40mRunning\033[0m \n";
+        exec("ps -eo s,pid,cmd | grep '$ems_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
+        echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - The PID is: \033[0;32;40m" . $out[0]."\033[0m \n";
 }
 echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Python EMS Script Status Check Script Ended \n"; 
 echo "\033[32m***************************************************************************\033[0m";
