@@ -319,7 +319,6 @@ echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Adding Job Scheduling Records\n"
 $query_job_scheduling = "INSERT INTO `jobs`(`job_name`, `script`, `enabled`, `log_it`, `time`, `output`, `datetime`) ";
 $query_job_scheduling .= "VALUES ('shutdown_reboot','/var/www/cron/shutdown_reboot.py',1,0,'15','',now()),";
 $query_job_scheduling .= "('check_sc','/var/www/cron/check_sc.php',1,0,'60','',now()),";
-$query_job_scheduling .= "('controller','/var/www/cron/controller.php',1,0,'60','',now()),";
 $query_job_scheduling .= "('db_cleanup','/var/www/cron/db_cleanup.php',1,0,'02:00','',now()),";
 $query_job_scheduling .= "('check_gw','/var/www/cron/check_gw.php',1,0,'60','',now()),";
 $query_job_scheduling .= "('system_c','/var/www/cron/system_c.php',1,0,'300','',now()),";
