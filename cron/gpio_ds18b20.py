@@ -34,7 +34,7 @@ print("*                                    Have Fun - PiHome.eu *")
 print("***********************************************************")
 print(" " + bc.ENDC)
 
-#Determine if the enable expnential weighted moving average
+#Determine if the enable expnential weighted moving average flag is present and set
 if len(sys.argv) == 1:
     ewma_flag = True
 else:
