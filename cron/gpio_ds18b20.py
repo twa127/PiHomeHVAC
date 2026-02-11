@@ -34,7 +34,7 @@ print("*                                    Have Fun - PiHome.eu *")
 print("***********************************************************")
 print(" " + bc.ENDC)
 
-#Determine if the enable expnential weighted moving average flag is present and set
+#Determine if the enable exponential weighted moving average flag is present and set
 if len(sys.argv) == 1:
     ewma_flag = True
 else:
@@ -70,7 +70,7 @@ update_rate = 10  # Update rate for DS18b20 sensors in seconds
 # Parameters for spike removal and data smoothing
 dT_max = 3   # Maximum difference in tempearture between consecuive readings of the seonsor
 skip_max = 3 # Maximum number of readings skipped if dT is greater than dT_Max
-alpha = 1     # Alpha for expnential weighted moving average. Value must be between 0 and 1 (alpha = 1 means EWMA is disabled)
+alpha = 1     # Alpha for exponential weighted moving average. Value must be between 0 and 1 (alpha = 1 means EWMA is disabled)
 
 print(bc.dtm + time.ctime() + bc.ENDC + ' - DS18B20 Temperature Sensors Script Started')
 print("-" * 72)
