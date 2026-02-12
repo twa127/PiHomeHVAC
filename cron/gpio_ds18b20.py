@@ -29,7 +29,7 @@ print("***********************************************************")
 print("*   PiHome DS18B20 Temperature Sensors Data to MySQL DB   *")
 print("* Use this script if you have DS18B20 Temperature sensors *")
 print("* Connected directly on Raspberry Pi GPIO.                *")
-print("*                                  Build Date: 11/02/2026 *")
+print("*                                  Build Date: 12/02/2026 *")
 print("*                                    Have Fun - PiHome.eu *")
 print("***********************************************************")
 print(" " + bc.ENDC)
@@ -330,7 +330,7 @@ while True:
                 #print lines
                 # If we got data then proceed
                 if len(lines) > 0:
-                    if lines[0].find("YES"):
+                    if "YES" in lines[0]:
                         pok = lines[1].find('=')
                         if not ewma_flag:
                             temperature.append(float(lines[1][pok+1:pok+6])/1000)
