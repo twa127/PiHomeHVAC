@@ -330,7 +330,7 @@ while True:
                 #print lines
                 # If we got data then proceed
                 if len(lines) > 0:
-                    if lines[0].find("YES") != -1:
+                    if lines[0].find("YES") != -1 and lines[0][-7:-5].find("00") == -1:
                         pok = lines[1].find('=')
                         if not ewma_flag:
                             temperature.append(float(lines[1][pok+1:pok+6])/1000)
