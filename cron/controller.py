@@ -181,7 +181,7 @@ def process_pump_relays(
                         con.commit()  # commit above
 
 #return schedule status
-def get_schedule_status(
+def get_zone_schedule_status(
     zone_id,
     holidays_status,
     away_status,
@@ -192,7 +192,7 @@ def get_schedule_status(
     #get raw data
     qry_str = """SELECT schedule_daily_time.id AS time_id, schedule_daily_time.start, schedule_daily_time.start_sr, schedule_daily_time.start_ss, schedule_daily_time.start_offset,
         schedule_daily_time.end, schedule_daily_time.end_sr, schedule_daily_time.end_ss, schedule_daily_time.end_offset,
-        schedule_daily_time.WeekDays, schedule_daily_time.status AS time_status, schedule_daily_time.sch_name, schedule_daily_time.type AS sch_type
+        schedule_daily_time.WeekDays, schedule_daily_time.status AS time_status, schedule_daily_time.sch_name, schedule_daily_time.type AS sch_type, schedule_daily_time.smart_off
         FROM `schedule_daily_time`, `schedule_daily_time_zone`
         WHERE (schedule_daily_time.id = schedule_daily_time_zone.schedule_daily_time_id) AND schedule_daily_time_zone.status = 1
         AND schedule_daily_time.status = 1 AND zone_id = %s"""
@@ -247,6 +247,7 @@ def get_schedule_status(
             end_offset = s[sch_to_index["end_offset"]]
             time_status = s[sch_to_index["time_status"]]
             sch_name = s[sch_to_index["sch_name"]]
+            smart_off = s[sch_to_index["smart_off"]]
             #use sunrise/sunset if any flags set
             if start_sr == 1 or start_ss == 1 or end_sr == 1 or end_ss == 1:
                 #get the sunrise and sunset times
@@ -325,15 +326,30 @@ def get_schedule_status(
             con.commit()  # commit above
             if time_now > start_time and time_now < end_time and WeekDays  > 0 and time_status == 1:
                 sch_status = 1
+                #set the smart_off flag
+                if smart_off != 0:
+                    if time_now >= end_time - (smart_off * 60):
+                        smart_off_flag = True
+                        smart_off_time = end_time - (smart_off * 60)
+                    else:
+                        smart_off_flag = False
+                        smart_off_time = 0
+                else:
+                    smart_off_flag = False
+                    smart_off_time = 0
                 break #exit the loop if an active schedule found
             else:
-                sch_status = 0;
+                sch_status = 0
+                smart_off_flag = False
+                smart_off_time = 0
         #end for s in sch: loop
     else:
         sch_name = ""
         sch_status = 0
         time_id = 0
         sch_count = 0
+        smart_off_flag = False
+        smart_off_time = 0
 
     rval_dict = {}
     rval_dict["sch_name"] = sch_name
@@ -341,6 +357,8 @@ def get_schedule_status(
     rval_dict["time_id"] = time_id
     rval_dict["end_time"] = end_time
     rval_dict["sch_count"] = sch_count
+    rval_dict["smart_off_flag"] = smart_off_flag
+    rval_dict["smart_off_time"] = smart_off_time
     return rval_dict
 
 #resysnc the relays if MySensor type and shetch_version > 0.35 (multi controller type interface)
@@ -1154,6 +1172,7 @@ try:
                         sensor_name = sensors_dict[zone_id][key]["sensor_name"]
                         sensor_notice = sensors_dict[zone_id][key]["sensor_notice_interval"]
                         temp_reading_time = sensors_dict[zone_id][key]["sensor_last_seen"]
+                        print(sensor_name,sensor_notice,temp_reading_time)
                         if sensor_notice > 0 and temp_reading_time is not None and settings_dict["test_mode"] != 3:
                             sensor_seen_time = temp_reading_time #using time from messages_in
                             if exceeded_timeout(sensor_notice, sensor_seen_time):
@@ -1185,13 +1204,20 @@ try:
 
                 #only process active zones with a sensor or a category 2 type zone
                 if zone_status == 1 and (zone_sensor_found or zone_category == 2):
-                    rval = get_schedule_status(
+                    rval = get_zone_schedule_status(
                         zone_id,
                         holidays_status,
                         away_status,
                     )
                     sch_status = rval['sch_status'];
                     sch_name = rval['sch_name'];
+                    #if currently idle then get end buffer status
+                    if zone_status_current == 0:
+                        smart_off_flag =  rval['smart_off_flag']
+                        smart_off_time = rval['smart_off_time']
+                        smart_off_time_str = datetime.datetime.fromtimestamp(smart_off_time).strftime('%Y-%m-%d %H:%M:%S')
+                    else:
+                        smart_off_flag = False
                     if sch_active == 0 and sch_status == 1:
                         sch_active = 1
                     if rval['sch_count'] == 0:
@@ -1617,12 +1643,15 @@ try:
                         #check if hysteresis is passed its time or not
                         #only ptocess hysteresis for EU systems when stop time is set
                         #also only process if not in test mode 3 using a false run time
-                        if system_controller_mode == 0 and sc_stop_datetime is not None and settings_dict["test_mode"] != 3:
-                            hysteresis_time = sc_stop_datetime + datetime.timedelta(minutes = system_controller_hysteresis_time)
-                            if hysteresis_time > time_stamp:
-                                hysteresis = 1
-                                if dbgLevel >= 2:
-                                    print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Hysteresis time: " + hysteresis_time.strftime('%Y-%m-%d %H:%M:%S'))
+                        if not smart_off_flag:
+                            if system_controller_mode == 0 and sc_stop_datetime is not None and settings_dict["test_mode"] != 3:
+                                hysteresis_time = sc_stop_datetime + datetime.timedelta(minutes = system_controller_hysteresis_time)
+                                if hysteresis_time > time_stamp:
+                                    hysteresis = 1
+                                    if dbgLevel >= 2:
+                                        print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Hysteresis time: " + hysteresis_time.strftime('%Y-%m-%d %H:%M:%S'))
+                                else:
+                                    hysteresis = 0
                             else:
                                 hysteresis = 0
                         else:
@@ -1640,6 +1669,7 @@ try:
                         active_sc_mode = 1
                     else:
                         active_sc_mode = sc_mode
+                    smart_off_log_it = False
 
                     #check no zone fault and if not a switch zone (cat 2) that there is a valid zone sensor reading
                     if zone_fault == 0 and (zone_c is not None or zone_category == 2):
@@ -1710,14 +1740,22 @@ try:
                                                     stop_cause = ""
                                                     if night_climate_status == 0:
                                                         if sch_status == 1 and zone_c < temp_cut_out_rising and (sch_coop == 0 or system_controller_active_status == 1):
-                                                            zone_status = 1
-                                                            zone_mode = 81
-                                                            if zone_schedule_current == 0 and sch_status == 1:
-                                                                start_cause = "Schedule Started"
+                                                            if not smart_off_flag:
+                                                                zone_status = 1
+                                                                zone_mode = 81
+                                                                if zone_schedule_current == 0 and sch_status == 1:
+                                                                    start_cause = "Schedule Started"
+                                                                else:
+                                                                    start_cause = "Schedule Restarted"
+                                                                expected_end_date_time = sch_end_time_str
+                                                                zone_state = 1
                                                             else:
-                                                                start_cause = "Schedule Restarted"
-                                                            expected_end_date_time = sch_end_time_str
-                                                            zone_state = 1
+                                                                zone_mode = 88
+                                                                zone_state = 0
+                                                                stop_cause = "Schedule Override Smart Off (" + smart_off_time_str + ")"
+                                                                # create a trigger event for zone_controller_log entry
+                                                                if zone_mode_prev != 88:
+                                                                    smart_off_log_it = True
                                                         if (system_controller_mode == 0 and sch_status == 1 and zone_c < temp_cut_out_rising) and (sch_coop == 1 and system_controller_mode == 0) and system_controller_active_status == 0:
                                                             zone_status = 0
                                                             zone_mode = 83
@@ -3383,6 +3421,24 @@ try:
                                 if dbgLevel >= 2:
                                     print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - System Controller Log table update failed.")
 
+
+                    #catch event where the system has tried to switch ON when in end buffer zone of an active schedule
+                    if smart_off_log_it:
+                        #zone
+                        for key in zone_log_dict:
+                            #use the zone stop_cause for the system controller log record
+                            sc_stop_cause = z_stop_cause_dict[key]
+                            qry_str = """UPDATE controller_zone_logs SET stop_datetime = '{}', stop_cause = '{}' WHERE `zone_id` = {} ORDER BY id DESC LIMIT 1;""".format(
+                                      time_stamp.strftime("%Y-%m-%d %H:%M:%S"), z_stop_cause_dict[key], key
+                                      )
+                            try:
+                                cur.execute(qry_str)
+                                con.commit()
+                                if dbgLevel >= 2:
+                                    print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Zone Log table updated Successfully.")
+                            except:
+                                if dbgLevel >= 2:
+                                    print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Zone Log table update failed.")
 
                 #if HVAC mode get the heat, cool and fan relay on/off state
                 if system_controller_mode == 1:

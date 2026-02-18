@@ -1087,6 +1087,8 @@ $lang['update'] = "Update";
 $lang['index_zones'] = "Index Zones";
 $lang['index_zones_text'] = "Home Screen Position Index for Zones and Add-On Zones.<br><br>Note 1: Heating and Water Type Zones will be placed BEFORE the System Controller tile.<br>Note 2: Add-On Type Zones will be placed AFTER the System Controller tile.";
 $lang['setup_tile_indexing'] = "Home Screen Tile Positioning";
+$lang['smart_off'] = "Smart Off";
+$lang['smart_off_info'] = "Zone state will not re-activate within this number of minutes of the schedule end.";
 
 if (file_exists(__DIR__.'/lo.php')) { require_once(__DIR__.'/lo.php'); }
 ?>

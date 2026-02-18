@@ -189,8 +189,8 @@ $schedule_time = [];
 						//delete and edit button for each schedule
 						echo '<div class="row mt-2"></div>
 						<div class="d-flex justify-content-end">
+                                                <a href="scheduling.php?id=' . $row["time_id"] . '" class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-sm login"><span class="bi bi-pencil"></span></a> &nbsp;&nbsp;
 						<button class="btn warning btn-danger btn-sm" onclick="delete_schedule(' . $row["time_id"] . ');"><span class="bi bi-trash-fill"></span></button> </a> &nbsp;&nbsp;
-						<a href="scheduling.php?id=' . $row["time_id"] . '" class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-sm login"><span class="bi bi-pencil"></span></a>
 						</div>
 					</div>
 					<!-- /.collapse -->

@@ -136,6 +136,12 @@ if (isset($_POST['submit'])) {
 		}
         } else {
                 $sch_name = $_POST['sch_name'];
+                $schedule_type = 1; // set with introduction of relay scheduling
+                if ($schedule_type == 2) {
+                        $smart_off = 0;
+                } else {
+                        $smart_off = $_POST['smart_off'];
+                }
 		if (isset($_POST['start_time_state'])) {
 			switch ($_POST['start_time_state']) {
 				case 0:
@@ -187,11 +193,21 @@ if (isset($_POST['submit'])) {
                 $query = "SELECT * FROM `schedule_daily_time` WHERE id = {$time_id};";
                 $result = $conn->query($query);
                 $sdt_count = $result->num_rows;
-               	if ($sdt_count == 0) {
-	                $query = "INSERT INTO `schedule_daily_time`(`id`, `sync`, `purge`, `status`, `start`, `start_sr`, `start_ss`, `start_offset`, `end`, `end_sr`, `end_ss`, `end_offset`, `WeekDays`, `run_time`, `sch_name`, `type`) VALUES ('{$time_id}','0', '0', '{$sc_en}', '{$start_time}', '{$start_sr}', '{$start_ss}', '{$start_offset}','{$end_time}', '{$end_sr}', '{$end_ss}', '{$end_offset}','{$mask}', 0, '{$sch_name}', '{$aw_en}');";
-		} else {
-			$query = "UPDATE schedule_daily_time SET sync = '0', status = '{$sc_en}', start = '{$start_time}', start_sr = '{$start_sr}', start_ss = '{$start_ss}', start_offset = '{$start_offset}', end = '{$end_time}', end_sr = '{$end_sr}', end_ss = '{$end_ss}', end_offset = '{$end_offset}', WeekDays = '{$mask}', run_time = 0, sch_name = '{$sch_name}' , type = '{$aw_en}' WHERE id = '{$time_id}';";
-		}
+                if ($sdt_count == 0) {
+                        $query = "INSERT INTO `schedule_daily_time`(`id`, `sync`, `purge`, `status`, `start`, `start_sr`, `start_ss`, `start_offset`, `end`, `end_sr`, `end_ss`,
+                                `end_offset`, `WeekDays`, `run_time`, `sch_name`, `type`, `smart_off`)
+                                VALUES ('{$time_id}','0', '0', '{$sc_en}', '{$start_time}', '{$start_sr}', '{$start_ss}', '{$start_offset}','{$end_time}', '{$end_sr}', '{$end_ss}',
+                                '{$end_offset}','{$mask}', 0, '{$sch_name}', '{$aw_en}',  '{$smart_off}');";
+                } else {
+                        $query = "UPDATE schedule_daily_time SET sync = '0', status = '{$sc_en}', start = '{$start_time}', start_sr = '{$start_sr}', start_ss = '{$start_ss}',
+                                start_offset = '{$start_offset}', end = '{$end_time}', end_sr = '{$end_sr}', end_ss = '{$end_ss}', end_offset = '{$end_offset}', WeekDays = '{$mask}',
+                                run_time = 0, sch_name = '{$sch_name}', type = '{$aw_en}'";
+                        if ($schedule_type == 2) {
+                                $query = $query . " WHERE id = '{$time_id}';";
+                        } else {
+                                $query = $query . ", smart_off = '{$smart_off}' WHERE id = '{$time_id}';";
+                        }
+                }
 		$result = $conn->query($query);
 		$schedule_daily_time_id = mysqli_insert_id($conn);
 
@@ -537,7 +553,35 @@ if(!isset($_GET['nid'])) {
                                                 <div class="help-block with-errors"></div>
                                         </div>
 
-					<label><?php echo $lang['select_zone']; ?></label>
+                                        <?php if ($schedule_type != 2) { ?>
+                                                <!-- End Buffer -->
+                                                <br><div class="form-group" class="control-label" id="smart_off_label" style="display:block"><label><?php echo $lang['smart_off'];?></label> <small class="text-muted"><?php echo $lang['smart_off_info'];?></small>
+                                                        <select id="smart_off" name="smart_off" class="form-control select2" autocomplete="off">
+                                                                <?php
+                                                                if ($time_id == 0) {
+                                                                        $query = "SELECT smart_off FROM schedule_daily_time ORDER BY id DESC LIMIT 1;";
+                                                                        $result = $conn->query($query);
+                                                                        if ($result->num_rows > 0) {
+                                                                                $eb_row = mysqli_fetch_array($result);
+                                                                                $eb = $eb_row['smart_off'];
+                                                                        } else {
+                                                                                $eb = 0;
+                                                                        }
+                                                                }
+                                                                for ($x = 0; $x <=  120; $x = $x + 10) {
+                                                                        if ($time_id == 0) {
+                                                                                echo '<option value="'.$x.'" ' . ($x == $eb ? 'selected' : '') . '>'.$x.'</option>';
+                                                                        } else {
+                                                                                echo '<option value="'.$x.'" ' . ($x == $time_row['smart_off'] ? 'selected' : '') . '>'.$x.'</option>';
+                                                                        }
+                                                                }
+                                                                ?>
+                                                        </select>
+                                                        <div class="help-block with-errors"></div>
+                                                </div>
+                                        <?php } ?>
+
+					<br><label><?php echo $lang['select_zone']; ?></label>
 					<?php
 					// Zone List Loop
 					while ($row = mysqli_fetch_assoc($zoneresults)) {
@@ -553,7 +597,7 @@ if(!isset($_GET['nid'])) {
 						<!-- Zone Enable Checkbox -->
 						<div class="form-check">
 							<input class="form-check-input form-check-input-<?php echo theme($conn, settings($conn, 'theme'), 'color'); ?>" type="checkbox" value="1" id="<?php echo $row["tz_id"];?>" name="status[<?php echo $row["tz_id"];?>]" <?php if($time_id != 0){ $check = ($row['tz_status'] == 1) ? 'checked' : ''; echo $check;} ?> onclick="$('#collapse_<?php echo $row["tz_id"];?>').collapse('toggle');">
-    							<label class="form-check-label" for="checkbox<?php echo $row["tz_id"];?>"><?php echo $row["zone_name"];?></label>
+    							<label class="form-check-label" for="checkbox<?php echo $row["tz_id"];?>"><h6><?php echo $row["zone_name"];?></label>
 
     							<div class="help-block with-errors"></div>
 						</div>

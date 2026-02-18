@@ -619,7 +619,11 @@ function getIndicators($conn, $zone_mode, $zone_temp_target)
                 	//if not coop start waiting for the system_controller
                 	if($zone_mode_sub <> 3){
                         	$shactive='bi-clock';
-                		$shcolor='';
+                                if($zone_mode_sub <> 8){
+                                        $shcolor='';
+                                } else {
+                                        $shcolor='red';
+                                }
                 	}
                 	//if coop start waiting for the system_controller
                 	else{
