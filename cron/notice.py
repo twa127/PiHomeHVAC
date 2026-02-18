@@ -539,7 +539,7 @@ try:
             id = i[sensor_to_index['id']]
             name = i[sensor_to_index['name']]
             notice_interval = i[sensor_to_index['fail_timeout']]
-            lst_seen = i[sensor_to_index['last_seen']]
+            last_seen = i[sensor_to_index['last_seen']]
             timeDifference = (datetime.datetime.now() - last_seen)
             time_difference_in_minutes = (timeDifference.days * 24 * 60) + (timeDifference.seconds / 60)
             message = "TIMEOUT ALERT - Sensor " + name + " " + str(id) + " last reported on " + str(last_seen)
