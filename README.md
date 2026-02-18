@@ -1,6 +1,6 @@
 # MaxAir - Smart Thermostat
 
-### Note: Now at Version 3.18
+### Note: Now at Version 3.19
 
 The previous version, PiHome, was centered around the creation of zones, this version is more centered around devices.
 
@@ -83,6 +83,8 @@ Version 3.16 New Features, Stand-alone relays (relays not attached to a zone can
 Version 3.17 Update Bootstrap to version 5.3.8
 
 Version 3.18 New Feature, a local language file can be created to hold variations to the default language file.
+
+Version 3.19 New Feature, Smart Off - Zone state will not re‑activate within a set number of minutes of a schedule end time. 
 
 ## Setup:
 
