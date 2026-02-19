@@ -157,6 +157,7 @@ To install on ArchLinux:
 * sudo rm -R /srv/http
 * sudo pacman -S git
 * sudo git clone https://github.com/twa127/PiHomeHVAC.git "/srv/http"
+* sudo chown -R http:http /srv/http
 * cd /srv/http/prerequisites
 * sudo bash ./install.sh (accept all defaults, when asked to enter a new password for the mariadb us passw0rd)
 * Note: setup.php will create a symbolic link /var/www to /srv/http, for compatibility
