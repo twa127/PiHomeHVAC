@@ -577,7 +577,7 @@ if ($type <= 5 || $type == 38) {
         $row = mysqli_fetch_array($result);
         $username = isset($_SESSION['username']) ? $_SESSION['username'] : 'Session Timed Out';
         if ($row['test_mode'] == 0) {
-        	if ($id == 0) { echo $username.'&nbsp;&nbsp; - '.date("H:i"); } else { echo '&nbsp;&nbsp;'.$username.'&nbsp;&nbsp; - '.date("H:i"); }
+        	if ($id == 0) { echo $username.'&nbsp;&nbsp; - '.date("H:i:s"); } else { echo '&nbsp;&nbsp;'.$username.'&nbsp;&nbsp; - '.date("H:i"); }
 	} else {
                 if ($id == 0) { echo $username.'&nbsp;&nbsp; - '.$row['test_run_time'].'&nbsp;(TEST TIME)'; } else { echo '&nbsp;&nbsp;'.$username.'&nbsp;&nbsp; - '.$row['test_run_time'].'&nbsp;(TEST TIME)'; }
 	}
@@ -1424,7 +1424,7 @@ if ($type <= 5 || $type == 38) {
         //-------------------------
         //update standalone relays
         //-------------------------
-        $query = "SELECT relays.id, relays.name, relays.relay_child_id, relays.type, relays.state, nodes.node_id, nodes.last_seen, nodes.notice_interval
+        $query = "SELECT relays.id, relays.name, relays.relay_child_id, relays.type, relays.state, relays.current_val_2, nodes.node_id, nodes.last_seen, nodes.notice_interval
                 FROM relays, nodes
                 WHERE relays.id = {$id} AND nodes.id = relays.relay_id AND `relays`.`id` NOT IN (SELECT `zone_relay_id` FROM `zone_relays`) AND  `relays`.`type` = 0 AND relays.show_it = 1
 		LIMIT 1;";
@@ -1438,6 +1438,7 @@ if ($type <= 5 || $type == 38) {
         $node_notice = $row['notice_interval'];
         $relay_type_id = $row['type'];
         $relay_state = $row['state'];
+        $val_2 = $row['current_val_2'];
         $shcolor = "#00C853";
         if($node_notice > 0){
                 $now=strtotime(date('Y-m-d H:i:s'));
@@ -1462,8 +1463,20 @@ if ($type <= 5 || $type == 38) {
                         break;
 		case 44:
                         if ($relay_state == 1) {$mode = 140;} else {$mode = 0;}
-			$rval=getIndicators($conn, $mode, 0);
-                        echo '<i class="bi ' . $rval['shactive'] . ' ' . $rval['shcolor'] . ' icon-fw">';
+                        $query = "SELECT message FROM relay_messages WHERE relay_id = {$relay_id} AND message_id = {$val_2} LIMIT 1;";
+                        $mresult = $conn->query($query);
+                        $rowcount = mysqli_num_rows($mresult);
+                        if ($rowcount > 0) {
+                                $relay_message = mysqli_fetch_array($mresult);
+                                if ($relay_state == 1) {
+                                        echo $relay_message['message'];
+                                } else {
+                                        echo '';
+                                }
+                        } else {
+                                $rval=getIndicators($conn, $mode, 0);
+                                echo '<i class="bi ' . $rval['shactive'] . ' ' . $rval['shcolor'] . ' icon-fw">';
+                        }
 			break;
                 default:
 	}

@@ -2616,5 +2616,40 @@ if($what=="zone_index"){
                 return;
         }
 }
+
+//Relay Messages
+if($what=="relay_message"){
+        if($opp=="delete"){
+                //Delete from relay_messages
+                $query = "DELETE FROM relay_messages WHERE id = '".$wid."';";
+                $conn->query($query);
+                if($conn->query($query)){
+                        header('Content-type: application/json');
+                        echo json_encode(array('Success'=>'Success','Query'=>$query));
+                        return;
+                }else{
+                        header('Content-type: application/json');
+                        echo json_encode(array('Message'=>'Database query failed.\r\nQuery=' . $query));
+                        return;
+                }
+        }
+        if($opp=="add"){
+                $msg_relay_id = $_GET['msg_relay_id'];
+                $msg_id = $_GET['msg_id'];
+                $msg_text = $_GET['msg_text'];
+                //Add record to sensor_messages table
+                $query = "INSERT INTO `relay_messages`(`sync`, `purge`, `relay_id`, `message_id`, `message`)
+                        VALUES ('0', '0', '{$msg_relay_id}', '{$msg_id}', '{$msg_text}'); ";
+                if($conn->query($query)){
+                        header('Content-type: application/json');
+                        echo json_encode(array('Success'=>'Success','Query'=>$query));
+                        return;
+                }else{
+                        header('Content-type: application/json');
+                        echo json_encode(array('Message'=>'Database query failed.\r\nQuery=' . $query));
+                        return;
+                }
+        }
+}
 ?>
 <?php if(isset($conn)) { $conn->close();} ?>

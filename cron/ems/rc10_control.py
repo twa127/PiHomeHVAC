@@ -26,7 +26,7 @@ print("********************************************************")
 print("*             EMS Set RC10 Emulator Script             *")
 print("*                                                      *")
 print("*               Build Date: 05/12/2025                 *")
-print("*       Version 0.08 - Last Modified 03/02/2026        *")
+print("*       Version 0.09 - Last Modified 19/02/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -107,7 +107,7 @@ fault_dict = {
    "CLEAR": "Faults Clear"
 }
 
-# Update MaxAir Database
+# Update MaxAir Database Sensors
 def update_maxair_sensors (conn, node_id, sensor_id, val_1, val_2, msg_in, msg_in_val) :
     cnx = conn.cursor()
     # get 'current_val_1
@@ -225,6 +225,38 @@ def update_maxair_sensors (conn, node_id, sensor_id, val_1, val_2, msg_in, msg_i
                 conn.close()
                 print(infomsg)
                 sys.exit(1)
+
+        cnx.close()
+#        print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Database Update")
+        return True
+
+# Update MaxAir Database Relays
+def update_maxair_relays (conn, relay_id, val_2) :
+    cnx = conn.cursor()
+    # get 'current_val_1
+    cnx.execute("SELECT * FROM `relays` WHERE `id` = (%s) LIMIT 1;",
+    (relay_id,))
+    result = cnx.fetchone()
+    relay_to_index = dict(
+        (d[0], i) for i, d in enumerate(cnx.description)
+    )
+    relay_name = result[relay_to_index["name"]]
+    relay_child_id = int(result[relay_to_index["relay_child_id"]])
+    current_val_2 = float(result[relay_to_index["current_val_2"]])
+    if val_2 != current_val_2 :
+        # update 'current_val_1' and 'current_val_2'
+        try :
+            query = ("UPDATE `relays` SET `current_val_2` = " + str(val_2) + " WHERE `id` = " + str(relay_id) + ";")
+            cnx.execute(query)
+            conn.commit()
+        except mdb.Error as e:
+            print("DB Error %d: %s" % (e.args[0], e.args[1]))
+            print(traceback.format_exc())
+            logging.error(e)
+            logging.info(traceback.format_exc())
+            conn.close()
+            print(infomsg)
+            sys.exit(1)
 
         cnx.close()
 #        print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Database Update")
@@ -883,6 +915,11 @@ while 1:
             log_txt = log_txt  + 'BURNER POWER 0%*\n'
         else :
             log_txt = log_txt  + 'BURNER POWER ' + str(burnerpower) + '%\n'
+
+    # set lower right message if dummy relay exits
+    if regulation_relay:
+        # update 'current_val_2'
+        update_maxair_relays(con, auto_reg_id, heat_curve)
 
     # get the current RC10 temperature
     result = subprocess.run(['emsctl', 'roomtemp', 'r'], stdout=subprocess.PIPE)

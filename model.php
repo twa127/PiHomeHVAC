@@ -4744,6 +4744,97 @@ if ($show_relay_modal == 1) {
         <?php
 }
 
+//Relay Message
+echo '
+<div class="modal fade" id="relay_messages" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                        <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                <h5 class="modal-title">'.$lang['custom_relay_messages'].'</h5>
+                <div class="dropdown float-right">
+                        <a class="" data-bs-toggle="dropdown" href="#">
+                                <i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
+                                <li><a class="dropdown-item" href="pdf_download.php?file=custom_sensor_messages.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['custom_sensor_messages'].'</a></li>
+                        </ul>
+                </div>
+            </div>
+            <div class="modal-body">
+<p class="text-muted"> '.$lang['custom_sensor_messages_info'].' </p>';
+
+echo '<table class="table table-bordered">
+    <tr>
+        <th class="col-2"><small>'.$lang['relay'].'</small></th>
+        <th class="col-2"><small>'.$lang['msg_id'].'</small></th>
+        <th class="col-3"><small>'.$lang['message'].'</small></th>
+       <th class="col-1"></th>
+    </tr>';
+
+$content_msg = "DELETE This Message";
+
+$query = "SELECT relay_messages.*, relays.name FROM relay_messages, relays WHERE (relay_messages.relay_id = relays.id) AND relay_messages.purge = 0;";
+$results = $conn->query($query);
+while ($row = mysqli_fetch_assoc($results)) {
+    if ($row["sub_type"] == 0 || $row["sub_type"] == '0') { $pos = $lang['centre']; } else { $pos = $lang['lower_right']; }
+    echo '
+        <tr>
+            <td>'.$row["name"].'</td>
+            <td>'.$row["message_id"].'</td>
+            <td>'.$row["message"].'</td>
+            <td><button class="btn warning btn-danger btn-xs" onclick="delete_relay_message('.$row["id"].');" data-confirm="'.$content_msg.'"><span class="bi bi-trash-fill black"></span></button> </a></td>
+        </tr>';
+}
+echo '</table></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                <button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" data-bs-href="#" data-bs-toggle="modal" data-bs-target="#add_relay_messages">'.$lang['msg_add'].'</button>
+            </div>
+        </div>
+    </div>
+</div>';
+
+//Add Relay Message
+echo '
+<div class="modal fade" id="add_relay_messages" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                        <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                <h5 class="modal-title">'.$lang['add_message'].'</h5>
+            </div>
+            <div class="modal-body">';
+                $query = "SELECT id, name FROM relays WHERE type <> 1;";
+                $results = $conn->query($query);
+
+        echo '<p class="text-muted">'.$lang['add_message_info_text'].'</p>
+        <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
+        <div class="form-group" class="control-label"><label>'.$lang['relay'].'</label> <small class="text-muted">'.$lang['msg_sensor_id_info'].'</small>
+                <select class="form-select" type="text" id="msg_relay_id" name="msg_relay_id">';
+                        while ($srow=mysqli_fetch_array($results)) {
+                                echo '<option value="'.$srow['id'].'">'.$srow['name'].'</option>';
+                        }
+                echo '</select>
+                <div class="help-block with-errors"></div>
+        </div>
+        <div class="form-group" class="control-label"><label>'.$lang['msg_id'].'</label> <small class="text-muted">'.$lang['msg_id_info'].'</small>
+                <input class="form-control" type="text" id="msg_id" name="msg_id" value="" placeholder="'.$lang['msg_id'].'">
+                <div class="help-block with-errors"></div>
+        </div>
+        <div class="form-group" class="control-label"><label>'.$lang['msg_text'].'</label> <small class="text-muted">'.$lang['msg_text_info'].'</small>
+                <input class="form-control" type="text" id="msg_text" name="msg_text" value="" placeholder="'.$lang['msg_text'].'">
+                <div class="help-block with-errors"></div>
+        </div>
+</div>
+            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+				<input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="add_relay_message()">
+            </div>
+        </div>
+    </div>
+</div>';
+
 //Test Relays
 echo '<div class="modal fade" id="test_relays" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">
