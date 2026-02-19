@@ -149,6 +149,7 @@ To install on Debian/Ubuntu:
 * sudo rm -R /var/www
 * sudo apt -y install git
 * sudo git clone https://github.com/twa127/PiHomeHVAC.git "/var/www"
+* sudo chown -R www-data:www-data /var/www
 * cd /var/www/prerequisites
 * sudo bash ./install.sh (accept all defaults, when asked to enter a new password for the mariadb us passw0rd)
 
