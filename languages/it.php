@@ -1111,6 +1111,9 @@ $lang['index_zones_text'] = "Home Screen Position Index for Zones and Add-On Zon
 $lang['setup_tile_indexing'] = "Home Screen Tile Positioning";
 $lang['smart_off'] = "Smart Off";
 $lang['smart_off_info'] = "Zone state will not re-activate within this number of minutes of the schedule end.";
+$lang['relay_message'] = "Relay Msg";
+$lang['custom_relay_messages'] = "Custom Relay Messages";
+$lang['relay'] = "Relay";
 
 if (file_exists(__DIR__.'/lo.php')) { require_once(__DIR__.'/lo.php'); }
 ?>
