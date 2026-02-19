@@ -568,7 +568,7 @@ if(!isset($_GET['nid'])) {
                                                                                 $eb = 0;
                                                                         }
                                                                 }
-                                                                for ($x = 0; $x <=  120; $x = $x + 10) {
+                                                                for ($x = 0; $x <=  120; $x = $x + 5) {
                                                                         if ($time_id == 0) {
                                                                                 echo '<option value="'.$x.'" ' . ($x == $eb ? 'selected' : '') . '>'.$x.'</option>';
                                                                         } else {
