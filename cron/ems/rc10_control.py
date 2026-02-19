@@ -233,7 +233,7 @@ def update_maxair_sensors (conn, node_id, sensor_id, val_1, val_2, msg_in, msg_i
 # Update MaxAir Database Relays
 def update_maxair_relays (conn, relay_id, val_2) :
     cnx = conn.cursor()
-    # get 'current_val_1
+    # get 'current_val_2
     cnx.execute("SELECT * FROM `relays` WHERE `id` = (%s) LIMIT 1;",
     (relay_id,))
     result = cnx.fetchone()
