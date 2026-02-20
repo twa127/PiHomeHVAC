@@ -12,6 +12,7 @@ sudo systemctl enable mosquitto
 echo "Creating File"
 sudo cat <<EOT >> /etc/mosquitto/conf.d/maxair.conf
 per_listener_settings true
+listener 1883 0.0.0.0
 allow_anonymous false
 password_file /etc/mosquitto/credentials
 EOT
