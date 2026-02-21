@@ -4757,7 +4757,7 @@ echo '
                                 <i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
-                                <li><a class="dropdown-item" href="pdf_download.php?file=custom_relay_messages.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['custom_sensor_messages'].'</a></li>
+                                <li><a class="dropdown-item" href="pdf_download.php?file=custom_relay_messages.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['custom_relay_messages'].'</a></li>
                         </ul>
                 </div>
             </div>
