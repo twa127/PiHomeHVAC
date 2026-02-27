@@ -27,7 +27,7 @@ print("********************************************************")
 print("*              System Controller Script                *")
 print("*                                                      *")
 print("*               Build Date: 10/02/2023                 *")
-print("*       Version 0.08 - Last Modified 05/08/2025        *")
+print("*       Version 0.09 - Last Modified 27/02/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -2725,6 +2725,8 @@ try:
                 #                               Zone Commands loop
                 #***************************************************************************************
                 pump_relays_dict = {}
+                combined_zone_state = 0
+                combined_zone_state_prev = 0
                 for zc in zone_commands_dict:
                     controllers = zone_commands_dict[zc]["controllers"]
                     zone_id = zone_commands_dict[zc]["zone_id"]
@@ -2746,6 +2748,8 @@ try:
                     zone_sensor_fault = zone_commands_dict[zc]["zone_sensor_fault"]
                     sensor_seen_time = zone_commands_dict[zc]["sensor_seen_time"]
                     temp_reading_time = zone_commands_dict[zc]["temp_reading_time"]
+                    combined_zone_state = combined_zone_state | zone_status
+                    combined_zone_state_prev = combined_zone_state_prev | zone_status_prev
 
                     #Zone category 0 and system controller is not requested calculate if overrun needed
                     if (zone_category == 0 or cz_logs_count > 0) and not 1 in system_controller_dict.values():
@@ -2945,11 +2949,11 @@ try:
                             # create dictionary for each pump relay id, containing the current and previous zone ON/OFF commands
                             if not pump_relays_dict: #add first pump type relay
                                 pump_relays_dict[controller_relay_id] = {}
-                                pump_relays_dict[controller_relay_id]["zone_command"] = zone_command
-                                pump_relays_dict[controller_relay_id]["zone_status_prev"] = zone_status_prev
-                            elif controller_relay_id in pump_relays_dict and zone_command == 1:
-                                pump_relays_dict[controller_relay_id]["zone_command"] = zone_command
-                                pump_relays_dict[controller_relay_id]["zone_status_prev"] = zone_status_prev
+                                pump_relays_dict[controller_relay_id]["zone_command"] = combined_zone_state
+                                pump_relays_dict[controller_relay_id]["zone_status_prev"] = combined_zone_state_prev
+                            else:
+                                pump_relays_dict[controller_relay_id]["zone_command"] = combined_zone_state
+                                pump_relays_dict[controller_relay_id]["zone_status_prev"] = combined_zone_state_prev
 
                     #for key in controllers_dict[zone_id]:
                 #end for zc in zone_commands_dict:
