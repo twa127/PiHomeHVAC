@@ -1092,6 +1092,24 @@ $lang['smart_off_info'] = "Zone state will not re-activate within this number of
 $lang['relay_message'] = "Relay Msg";
 $lang['custom_relay_messages'] = "Custom Relay Messages";
 $lang['relay'] = "Relay";
+$lang['zone_schedule_add'] = "Add Zone Schedule";
+$lang['relay_schedule_add'] = "Add Relay Schedule";
+$lang['select_relay'] = "Select Relay/s";
+$lang['zones'] = "Zones";
+$lang['schedule_relay_disble'] = "You can Disable a Schedule by clicking on the Orange circle, <br>While the pop-up is open the Schedule cab be re-enabled by clicking on the 'D' circle.<br>After closing the pop-up the relay will resort to being toggleable by click on the tile, the schedule can be re-activated from the 'Schedule List screen.";
+$lang['relay_groups'] = "Relay Groups";
+$lang['relay_groups_text'] = "Relay Groups are used to group relays together, so that actions can be applied to multiple relays at the same time";
+$lang['group'] = "Group";
+$lang['group_add'] = "ADD Group";
+$lang['relay_group_add'] = "ADD Relay Group";
+$lang['relay_group_add_info_text'] = "Add a New Relay Group Name";
+$lang['relay_group_name_info'] = "Create a Name for the New Relay Group";
+$lang['relay_group_name'] = "Relay Group Name";
+$lang['relay_group_info'] = "Allocate the Relay to a Group of Relays.";
+$lang['setup_stand_alone_relays'] = "Setup Guide Stand-Alone Relays";
+$lang['brand'] = "Brand";
+$lang['brand_info'] = "Select Device Manufacturer or Default";
+$lang['about_maxair'] = "About MaxAir";
 
 if (file_exists(__DIR__.'/lo.php')) { require_once(__DIR__.'/lo.php'); }
 ?>

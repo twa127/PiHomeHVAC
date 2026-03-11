@@ -26,7 +26,7 @@ print("********************************************************")
 print("*             EMS Set RC10 Emulator Script             *")
 print("*                                                      *")
 print("*               Build Date: 05/12/2025                 *")
-print("*       Version 0.09 - Last Modified 19/02/2026        *")
+print("*       Version 0.10 - Last Modified 05/03/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -761,7 +761,7 @@ while 1:
                 ems_write('autoheatcurveregulation', 'on')
 
     # get the current auto regulation
-    if regulation_sensor:
+    if regulation_sensor or regulation_relay:
         error_code = 0
         autoheatcurveregulation_error = heatcurve_error = heatcurve_update_error = heatingtemp1_update_error = False
         response = ems_read('autoheatcurveregulation')
@@ -828,13 +828,15 @@ while 1:
 
         if autoheatcurveregulation_error or heatcurve_error or heatcurve_update_error or heatingtemp1_update_error:
             heat_curve = 99
-            update_maxair_sensors(con, regulation_node_id, regulation_id, 0, heat_curve, 0, 0)
+            if regulation_sensor:
+                update_maxair_sensors(con, regulation_node_id, regulation_id, 0, heat_curve, 0, 0)
             print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Auto Regulation          - ERROR")
             print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Heat Curve               - ERROR")
             print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Control Temp             - ERROR")
             print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Error Code               - " + str(error_code))
         else:
-            update_maxair_sensors(con, regulation_node_id, regulation_id, auto_reg, heat_curve, regulation_msg_in, auto_reg)
+            if regulation_sensor:
+                update_maxair_sensors(con, regulation_node_id, regulation_id, auto_reg, heat_curve, regulation_msg_in, auto_reg)
             print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Auto Regulation          - " + regulation)
             print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Heat Curve               - " + str(heat_curve))
             print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Control Temp             - " + str(outside_temp))

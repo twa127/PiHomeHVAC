@@ -96,15 +96,15 @@ function ShowWeather($conn)
     $weather = mysqli_fetch_array($result);
     $c_f = settings($conn, 'c_f');
 
-    echo 'Outside: ' .DispTemp($conn,$weather['c']). '&deg;&nbsp;';
+    echo '<strong class="rfooter">Outside: ' .DispTemp($conn,$weather['c']). '&deg;';
     if($c_f==1 || $c_f=='1')
-        echo 'F';
+        echo 'F</strong>';
     else
-        echo 'C';
+        echo 'C</strong>';
     $Img='images/' . $weather['img'] . '.png';
     if(file_exists($Img))
-        echo '<span><img border="0" width="24" src="' . $Img . '" title="' . $weather['title'] . ' - ' . $weather['description'] . '"></span>';
-    echo '<span>' . $weather['title'] . ' - ' . $weather['description'] . '</span>';
+        echo '<strong class="rfooter"><span><img border="0" width="30" src="' . $Img . '" title="' . $weather['title'] . ' - ' . $weather['description'] . '"></span></strong>';
+    echo '<strong class="rfooter"><span>' . $weather['title'] . ' - ' . $weather['description'] . '</span></strong>';
 }
 
 //ref: http://stackoverflow.com/questions/14721443/php-convert-seconds-into-mmddhhmmss

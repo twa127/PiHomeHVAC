@@ -130,20 +130,26 @@ if(($what=="user") && ($opp=="delete")){
 
 //Heating Schedule
 if($what=="schedule"){
-	if($opp=="active"){
-		$query = "SELECT * FROM schedule_daily_time WHERE id ='".$wid."'";
-		$results = $conn->query($query);
-		$row = mysqli_fetch_assoc($results);
-		$da= $row['status'];
-		if($da=="1"){ $set="0"; }else{ $set="1"; }
-		$query  = "UPDATE schedule_daily_time SET sync = '0', status='".$set."' WHERE id = '".$wid."'";
-		$conn->query($query);
-	}elseif ($opp=="delete") {
-		$query  = "UPDATE schedule_daily_time_zone SET schedule_daily_time_zone.purge = '1', schedule_daily_time_zone.sync = '0' WHERE schedule_daily_time_id = '".$wid."';";
-		$conn->query($query);
-		$query  = "UPDATE schedule_daily_time SET schedule_daily_time.purge = '1', schedule_daily_time.sync = '0' WHERE id = '".$wid."';";
-		$conn->query($query);
-	}
+        $query = "SELECT * FROM schedule_daily_time WHERE id ='".$wid."'";
+        $results = $conn->query($query);
+        $row = mysqli_fetch_assoc($results);
+        $da= $row['status'];
+        $sch_type = $row['type'];
+        if($opp=="active"){
+                $da= $row['status'];
+                if($da=="1"){ $set="0"; }else{ $set="1"; }
+                $query  = "UPDATE schedule_daily_time SET sync = '0', status='".$set."' WHERE id = '".$wid."'";
+                $conn->query($query);
+        } elseif ($opp=="delete") {
+                if($sch_type <> 2) {
+                        $query = "UPDATE schedule_daily_time_zone SET schedule_daily_time_zone.purge = '1', schedule_daily_time_zone.sync = '0' WHERE schedule_daily_time_id = '".$wid."';";
+                } elseif($sch_type == 2) {
+                    $query = "UPDATE schedule_daily_time_relays SET schedule_daily_time_relays.purge = '1', schedule_daily_time_relays.sync = '0' WHERE schedule_daily_time_id = '".$wid."';";
+                }
+                $conn->query($query);
+                $query  = "UPDATE schedule_daily_time SET schedule_daily_time.purge = '1', schedule_daily_time.sync = '0' WHERE id = '".$wid."';";
+                $conn->query($query);
+        }
 }
 
 //update each schedule from model from homelist
@@ -2640,6 +2646,71 @@ if($what=="relay_message"){
                 //Add record to sensor_messages table
                 $query = "INSERT INTO `relay_messages`(`sync`, `purge`, `relay_id`, `message_id`, `message`)
                         VALUES ('0', '0', '{$msg_relay_id}', '{$msg_id}', '{$msg_text}'); ";
+                if($conn->query($query)){
+                        header('Content-type: application/json');
+                        echo json_encode(array('Success'=>'Success','Query'=>$query));
+                        return;
+                }else{
+                        header('Content-type: application/json');
+                        echo json_encode(array('Message'=>'Database query failed.\r\nQuery=' . $query));
+                        return;
+                }
+        }
+}
+
+//Relay Group
+if($what=="relay_group"){
+        if($opp=="delete"){
+                //Delete from Zone Type
+                $query = "UPDATE relay_group SET relay_group.purge='1' WHERE id = '".$wid."'";
+                $conn->query($query);
+                if($conn->query($query)){
+                        header('Content-type: application/json');
+                        echo json_encode(array('Success'=>'Success','Query'=>$query));
+                        return;
+                }else{
+                        header('Content-type: application/json');
+                        echo json_encode(array('Message'=>'Database query failed.\r\nQuery=' . $query));
+                        return;
+                }
+        }
+        if($opp=="add"){
+                $relay_group = $_GET['relay_group'];
+                //Add record to zone_type table
+                $query = "INSERT INTO `relay_group`(`sync`, `purge`, `name`) VALUES ('0', '0', '{$relay_group}')";
+                if($conn->query($query)){
+                        header('Content-type: application/json');
+                        echo json_encode(array('Success'=>'Success','Query'=>$query));
+                        return;
+                }else{
+                        header('Content-type: application/json');
+                        echo json_encode(array('Message'=>'Database query failed.\r\nQuery=' . $query));
+                        return;
+                }
+        }
+}
+
+//update each schedule from model from homelist
+if($what=="schedule_relay"){
+        if($opp=="active"){
+                $update_error = 0;
+                $query = "SELECT status, schedule_daily_time_id FROM schedule_daily_time_relays WHERE id ='".$wid."' LIMIT 1";
+                $result = $conn->query($query);
+                $row = mysqli_fetch_assoc($result);
+                $time_id = $row['schedule_daily_time_id'];
+
+                $sel_query = "SELECT COUNT(id) AS cnt, status FROM schedule_daily_time WHERE id = {$time_id};";
+                $result = $conn->query($sel_query);
+                $srow = mysqli_fetch_assoc($result);
+                if($srow['cnt'] == 1) {
+                        $da= $srow['status'];
+                        if($da=="1"){ $set="0"; $dis="1"; }else{ $set="1"; $dis="0"; }
+                        $query  = "UPDATE schedule_daily_time SET sync = '0', status='".$set."' WHERE id = '".$time_id."'";
+                } else {
+                        $da= $row['status'];
+                        if($da=="1"){ $set="0"; $dis="1"; }else{ $set="1"; $dis="0"; }
+                        $query  = "UPDATE schedule_daily_time_relays SET sync = '0', status='".$set."', disabled = '".$dis."' WHERE id = '".$wid."'";
+                }
                 if($conn->query($query)){
                         header('Content-type: application/json');
                         echo json_encode(array('Success'=>'Success','Query'=>$query));

@@ -222,14 +222,14 @@ echo '
         </div>
 </div>';
 
-//MaxAir Versions
+//About MaxAir
 echo '
-<div class="modal fade" id="maxair_versions" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="about_maxair" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
         <div class="modal-dialog">
                 <div class="modal-content">
                         <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
                                 <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
-                                <h5 class="modal-title">'.$lang['maxair_versions'].'</h5>
+                                <h5 class="modal-title">'.$lang['about_maxair'].'</h5>
                         </div>
                         <div class="modal-body">';
 				// the db_config.ini file has already been parsed so values are available as system variables
@@ -265,7 +265,7 @@ echo '
                                 echo '<p class="text-muted"> '.$lang['maxair_versions_text'].' <br>'.$lang['repository'].' - https://github.com/'.$row['name'].'.git</p>
                                 <table class="table table-bordered">
                                         <tr>
-                                                <th class="col-8"></th>
+                                                <th class="col-8 "not_mapped_style" style="text-align:center">'.$lang['title'].'<br>'.$lang['copyright'].'</th>
                                                 <th class="col-2" "not_mapped_style" style="text-align:center">'.$lang['maxair_update_installed'].'</th>
                                                 <th class="col-2" "not_mapped_style" style="text-align:center">'.$lang['maxair_update_github'].'</th>
                                         </tr>
@@ -2228,11 +2228,27 @@ echo '
         </select>
         <div class="help-block with-errors"></div></div>
 	<div class="form-group" class="control-label"><label>'.$lang['email_username'].' </label>
-	<input class="form-control" type="text" id="e_username" name="e_username" value="'.$erow['username'].'" placeholder="Username for e-mail Server">
-	<div class="help-block with-errors"></div></div>
-	<div class="form-group" class="control-label"><label>'.$lang['email_password'].' </label>
-	<input class="form-control" type="password" id="e_password" name="e_password" value="'.$erow['password'].'" placeholder="Password for e-mail Server">
-	<div class="help-block with-errors"></div></div>
+                <div class="input-group mb-3">
+                        <span class="input-group-text bg-'.theme($conn, $theme, 'color').'"><i class="bi bi-person-plus-fill text-white"></i></span>
+                        <input class="form-control" type="text" id="e_username" name="e_username" value="'.$erow['username'].'" placeholder="Username for e-mail Server">
+                </div>
+                <div class="help-block with-errors"></div>
+        </div>
+        <div class="form-group" class="control-label"><label>'.$lang['email_password'].' </label>
+                <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                                <span class="input-group-text bg-'.theme($conn, $theme, 'color').'" id="basic-addon1"><i class="bi bi-key-fill text-white"></i></span>
+                        </div>
+                        <input name="e_password" type="password" value="'.dec_passwd($erow['password']).'" class="input form-control" id="e_password" placeholder="password" required="true" aria-label="password" aria-describedby="basic-addon1" />
+                        <div class="input-group-append">
+                                <span class="input-group-text" onclick="e_password_show_hide();">
+                                        <i class="bi bi-eye-fill" id="show_eye"></i>
+                                        <i class="bi bi-eye-slash-fill d-none" id="hide_eye"></i>
+                                </span>
+                        </div>
+                </div>
+            <div class="help-block with-errors"></div>
+        </div>
 	<div class="form-group" class="control-label"><label>'.$lang['email_from_address'].' </label>
 	<input class="form-control" type="text" id="e_from_address" name="e_from_address" value="'.$erow['from'].'" placeholder="From e-mail" >
 	<div class="help-block with-errors"></div></div>
@@ -2248,6 +2264,26 @@ echo '</div>
         </div>
     </div>
 </div>';
+
+?>
+    <script>
+    function e_password_show_hide() {
+      var x = document.getElementById("e_password");
+      var show_eye = document.getElementById("show_eye");
+      var hide_eye = document.getElementById("hide_eye");
+      hide_eye.classList.remove("d-none");
+      if (x.type === "password") {
+        x.type = "text";
+        show_eye.style.display = "none";
+        hide_eye.style.display = "block";
+      } else {
+        x.type = "password";
+        show_eye.style.display = "block";
+        hide_eye.style.display = "none";
+      }
+    }
+    </script>
+<?php
 
 //Time Zone
 echo '
@@ -3209,14 +3245,26 @@ echo '
                                         <input type="text" class="form-control" name="inp_Port" id="inp_Port" placeholder="Enter Broker Port">
                                         <div class="help-block with-errors"></div>
                                 </div>
-                                <div class="form-group">
-                                        <label>Username</label>
-                                        <input type="text" class="form-control" name="inp_Username" id="inp_Username" placeholder="Enter Connectiom Username">
+                                <div class="form-group" class="control-label"><label>'.$lang['username'].' </label>
+                                        <div class="input-group mb-3">
+                                                <span class="input-group-text bg-'.theme($conn, $theme, 'color').'"><i class="bi bi-person-plus-fill text-white"></i></span>
+                                                <input class="form-control" type="text" id="inp_Username" name="inp_Username" placeholder="Username for MQTT Broker">
+                                        </div>
                                         <div class="help-block with-errors"></div>
                                 </div>
-                                <div class="form-group">
-                                        <label>Password</label>
-                                        <input type="password" class="form-control" name="inp_Password" id="inp_Password" placeholder="Enter Connection Password">
+                                <div class="form-group" class="control-label"><label>'.$lang['password'].' </label>
+                                        <div class="input-group mb-3">
+                                                <div class="input-group-prepend">
+                                                        <span class="input-group-text bg-'.theme($conn, $theme, 'color').'" id="basic-addon1"><i class="bi bi-key-fill text-white"></i></span>
+                                                </div>
+                                                <input name="inp_Password" type="password" class="input form-control" id="inp_Password" placeholder="MQTT Broker Password" required="true" aria-label="password" aria-describedby="basic-addon1" />
+                                                        <div class="input-group-append">
+                                                                <span class="input-group-text" onclick="mqtt_password_show_hide();">
+                                                                        <i class="bi bi-eye-fill" id="show_eye"></i>
+                                                                        <i class="bi bi-eye-slash-fill d-none" id="hide_eye"></i>
+                                                                </span>
+                                                        </div>
+                                        </div>
                                         <div class="help-block with-errors"></div>
                                 </div>
                                 <div class="form-group">
@@ -3267,6 +3315,22 @@ function set_enabled(value){
 function set_type(value){
         var valuetext = value;
         document.getElementById("inp_Type").value = valuetext;
+}
+
+function mqtt_password_show_hide() {
+        var x = document.getElementById("inp_Password");
+        var show_eye = document.getElementById("show_eye");
+        var hide_eye = document.getElementById("hide_eye");
+        hide_eye.classList.remove("d-none");
+        if (x.type === "password") {
+                x.type = "text";
+                show_eye.style.display = "none";
+                hide_eye.style.display = "block";
+        } else {
+                x.type = "password";
+                show_eye.style.display = "block";
+                hide_eye.style.display = "none";
+        }
 }
 </script>
 <?php
@@ -4684,6 +4748,10 @@ echo '<div class="modal fade" id="relay_setup" tabindex="-1" role="dialog" aria-
                                                 $relay_type ="Pump";
                                                 $attached_to = $row["zone_name"]." Zone";
                                                 break;
+                                        case 6:
+                                                $relay_type ="Stand Alone";
+                                                $attached_to = "";
+                                                break;
     				}
 				if ($row["on_trigger"] == 0) { $trigger = "LOW"; } else { $trigger = "HIGH"; }
                                 $check = ($row['show_it'] == 1) ? 'checked' : '';
@@ -4757,7 +4825,7 @@ echo '
                                 <i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
-                                <li><a class="dropdown-item" href="pdf_download.php?file=custom_relay_messages.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['custom_relay_messages'].'</a></li>
+                                <li><a class="dropdown-item" href="pdf_download.php?file=custom_sensor_messages.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['custom_sensor_messages'].'</a></li>
                         </ul>
                 </div>
             </div>
@@ -4833,6 +4901,80 @@ echo '
             </div>
         </div>
     </div>
+</div>';
+
+//Relay Group
+echo '
+<div class="modal fade" id="relay_group_setup" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['relay_groups'].'</h5>
+                                <div class="dropdown float-right">
+                                        <a class="" data-bs-toggle="dropdown" href="#">
+                                                <i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
+                                        </a>
+                                        <ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
+						<li><a class="dropdown-item" href="pdf_download.php?file=zone_types.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['zone_types'].'</a></li>
+                                                <li class="dropdown-divider"></li>
+						<li><a class="dropdown-item" href="pdf_download.php?file=switch_zones.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['switch_zones'].'</a></li>
+                                        </ul>
+                                </div>
+                        </div>
+                        <div class="modal-body">
+                                <p class="text-muted"> '.$lang['relay_groups_text'].' </p>';
+
+                                echo '<table class="table table-bordered">
+                                        <tr>
+                                                <th class="col-11"><small>'.$lang['group'].'</small></th>
+                                                <th class="col-1"></th>
+                                        </tr>';
+
+                                        $query = "SELECT `id`, `name` FROM `relay_group` WHERE `purge`=0;";
+                                        $results = $conn->query($query);
+                                        $rowcount=mysqli_num_rows($results);
+                                        if($rowcount > 0) {
+                                                while ($row = mysqli_fetch_assoc($results)) {
+                                                        echo '<tr>
+                                                                <td>'.$row["name"].'</td>
+								<td><button class="btn warning btn-danger btn-xs" onclick="delete_relay_group('.$row["id"].');" data-confirm="'.$content_msg.'"><span class="bi bi-trash-fill black"></span></button> </td>
+                                                        </tr>';
+                                                }
+                                        }
+                                echo '</table>
+                        </div>
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+				<button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" data-bs-href="#" data-bs-toggle="modal" data-bs-target="#add_group">'.$lang['group_add'].'</button>
+                        </div>
+                </div>
+        </div>
+</div>';
+
+//Add Relay Group
+echo '
+<div class="modal fade" id="add_group" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['relay_group_add'].'</h5>
+                        </div>
+                        <div class="modal-body">';
+                                echo '<p class="text-muted">'.$lang['relay_group_add_info_text'].'</p>
+                                <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
+                                <div class="form-group" class="control-label"><label>'.$lang['relay_group_name'].'</label> <small class="text-muted">'.$lang['relay_group_name_info'].'</small>
+                                        <input class="form-control" type="text" id="relay_group" name="relay_group" value="" placeholder="'.$lang['relay_group'].'">
+                                        <div class="help-block with-errors"></div>
+                                </div>
+                        </div>
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                                <input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="add_relay_group()">
+                        </div>
+                </div>
+        </div>
 </div>';
 
 //Test Relays
@@ -5992,7 +6134,7 @@ $(document).ready(function(){
   $('[data-bs-toggle="popover"]').popover();
   $('[data-bs-toggle="tooltip"]').tooltip();
 
-  $("#maxair_versions").on('show.bs.modal', function () {
+  $("#about_maxair").on('show.bs.modal', function () {
     document.getElementById("bs_local").innerHTML=$.fn.popover.Constructor.VERSION;
   });
 });

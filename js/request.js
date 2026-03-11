@@ -1779,3 +1779,59 @@ var idata="w=relay_message&o=delete&wid="+wid;
     .always(function() {
     });
 }
+
+//activate and deactivate relay schedule
+function schedule_relay(wid){
+    var idata="w=schedule_relay&o=active&wid=" + wid + "&frost_temp=0";
+    $.get('db.php',idata)
+    .done(function(odata){
+        if(odata.Success) {
+            $("#sdtr_" + wid).load("ajax_fetch_data.php?id=" + wid + "&type=46").fadeIn("slow");
+        } else {
+            console.log(odata.Message);
+        }
+    })
+    .fail(function( jqXHR, textStatus, errorThrown ){
+        if(jqXHR==401 || jqXHR==403) return;
+        console.log("schedule_relay: Error.\r\n\r\njqXHR: "+jqXHR+"\r\n\r\ntextStatus: "+textStatus+"\r\n\r\nerrorThrown:"+errorThrown);
+    })
+    .always(function() {
+    });
+}
+
+//Add Relay Group
+function add_relay_group(){
+var idata="w=relay_group&o=add&relay_group="+document.getElementById("relay_group").value;
+    idata+="&wid=0";
+    $.get('db.php',idata)
+    .done(function(odata){
+        if(odata.Success)
+            window.location="settings.php?s_id=6"
+        else
+            console.log(odata.Message);
+    })
+    .fail(function( jqXHR, textStatus, errorThrown ){
+        if(jqXHR==401 || jqXHR==403) return;
+        console.log("add_relay_group: Error.\r\n\r\njqXHR: "+jqXHR+"\r\n\r\ntextStatus: "+textStatus+"\r\n\r\nerrorThrown:"+errorThrown);
+    })
+    .always(function() {
+    });
+}
+
+//Delete Relay Group
+function delete_relay_group(wid){
+var idata="w=relay_group&o=delete&wid="+wid;
+    $.get('db.php',idata)
+    .done(function(odata){
+        if(odata.Success)
+            window.location="settings.php?s_id=6"
+        else
+            console.log(odata.Message);
+    })
+    .fail(function( jqXHR, textStatus, errorThrown ){
+        if(jqXHR==401 || jqXHR==403) return;
+        console.log("delete_relay_group: Error.\r\n\r\njqXHR: "+jqXHR+"\r\n\r\ntextStatus: "+textStatus+"\r\n\r\nerrorThrown:"+errorThrown);
+    })
+    .always(function() {
+    });
+}

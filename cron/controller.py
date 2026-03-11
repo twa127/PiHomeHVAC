@@ -27,7 +27,7 @@ print("********************************************************")
 print("*              System Controller Script                *")
 print("*                                                      *")
 print("*               Build Date: 10/02/2023                 *")
-print("*       Version 0.09 - Last Modified 27/02/2026        *")
+print("*       Version 0.10 - Last Modified 27/02/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -87,10 +87,11 @@ def script_run_time(script_start_timestamp, int_time_stamp):
     return date_time
 
 #set on/off for pump type relays
-def process_pump_relays(
+def process_none_zone_relays(
     relay_id,
     command,
-    command_prev
+    command_prev,
+    label
 ):
     #Get data from relays table
     cur.execute(
@@ -137,7 +138,7 @@ def process_pump_relays(
                         relay_status = relay_on
                     else:
                         relay_status = relay_off
-                    print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Pump: GIOP Relay Status:  " + bc.red + relay_status + bc.ENDC + " ("  + relay_on + "=On, " + relay_off + "=off)")
+                    print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - " + label + ": GIOP Relay Status:  " + bc.red + relay_status + bc.ENDC + " ("  + relay_on + "=On, " + relay_off + "=off)")
                     cur.execute(
                         "UPDATE `messages_out` set sent = 0, payload = %s  WHERE node_id = %s AND child_id = %s;",
                         [str(command), relay_node_id, relay_child_id],
@@ -149,7 +150,7 @@ def process_pump_relays(
                 #*************************************************************************************
                 if 'I2C' in relay_node_type:
                     subprocess.call("/var/www/cron/i2c/i2c_relay.py " + relay_node_id + " " + relay_child_id + " " + str(command), shell=True)
-                    print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Pump: Relay Board: " + relay_node_id + " Relay No: "  + relay_child_id + " Status: " + str(command))
+                    print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - " + label + ": Relay Board: " + relay_node_id + " Relay No: "  + relay_child_id + " Status: " + str(command))
 
                 #************************************************************************************
                 # Pump Wireless Section: MySensors Wireless or MQTT Relay module for your Pump control.
@@ -180,7 +181,126 @@ def process_pump_relays(
                         )
                         con.commit()  # commit above
 
-#return schedule status
+#return relay schedule status
+def get_relay_schedule_status(
+    relay_id,
+    holidays_status,
+    away_status,
+):
+
+    end_time = int_time_stamp
+
+    #get raw data
+    qry_str = """SELECT schedule_daily_time.id AS time_id, schedule_daily_time.start, schedule_daily_time.start_sr, schedule_daily_time.start_ss, schedule_daily_time.start_offset,
+        schedule_daily_time.end, schedule_daily_time.end_sr, schedule_daily_time.end_ss, schedule_daily_time.end_offset,
+        schedule_daily_time.WeekDays, schedule_daily_time.status AS time_status, schedule_daily_time.sch_name, schedule_daily_time.type AS sch_type
+        FROM `schedule_daily_time`, `schedule_daily_time_relays`
+        WHERE (schedule_daily_time.id = schedule_daily_time_relays.schedule_daily_time_id) AND schedule_daily_time_relays.status = 1
+        AND schedule_daily_time.status = 1 AND relay_id = %s"""
+    if away_status == 1:
+        qry_str = qry_str + " AND schedule_daily_time.type = 1"
+    else:
+        qry_str = qry_str + " AND schedule_daily_time.type = 2"
+    if holidays_status == 0:
+        qry_str = qry_str + " AND holidays_id = 0;"
+    else:
+        qry_str = qry_str + " AND holidays_id > 0;"
+    cur.execute(qry_str,
+        (relay_id,),
+    )
+    if cur.rowcount > 0:
+        sch_count = cur.rowcount
+        sch_status = 0;
+        sch = cur.fetchall()
+        sch_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+        for s in sch:
+            #check each schedule for this zone
+            time_now = int_time_stamp
+            midnight = time_stamp.replace(hour=0, minute=0, second=0, microsecond=0)
+            seconds_since_midnight = (time_stamp - midnight).seconds
+            time_id = s[sch_to_index["time_id"]]
+            WeekDays = s[sch_to_index["WeekDays"]]
+            start_time = s[sch_to_index["start"]]
+            end_time = s[sch_to_index["end"]]
+            #process case where end time is tomorrow, ie starts day 1 and stops day 2
+            if end_time.total_seconds() < start_time.total_seconds():
+                #time now is day 2
+                if (start_time.total_seconds() - seconds_since_midnight >= 0) and (seconds_since_midnight < end_time.total_seconds()):
+                    WeekDays = WeekDays  & (1 << prev_dow)
+                    start_time = yesterday_date + ", " + str(start_time)
+                    end_time = today_date + ", " + str(end_time)
+                #time now is day 1
+                else:
+                    WeekDays = WeekDays  & (1 << dow)
+                    start_time = today_date + ", " + str(start_time)
+                    end_time = tomorrow_date + ", " + str(end_time)
+            else: #start and stop time on the same day
+                WeekDays = WeekDays  & (1 << dow)
+                start_time = today_date + ", " + str(start_time)
+                end_time = today_date + ", " + str(end_time)
+            start_time = time.mktime(datetime.datetime.strptime(start_time, "%d/%m/%Y, %H:%M:%S").timetuple())
+            start_sr = s[sch_to_index["start_sr"]]
+            start_ss = s[sch_to_index["start_ss"]]
+            start_offset = s[sch_to_index["start_offset"]]
+            end_time = time.mktime(datetime.datetime.strptime(end_time, "%d/%m/%Y, %H:%M:%S").timetuple())
+            end_sr = s[sch_to_index["end_sr"]]
+            end_ss = s[sch_to_index["end_ss"]]
+            end_offset = s[sch_to_index["end_offset"]]
+            time_status = s[sch_to_index["time_status"]]
+            sch_name = s[sch_to_index["sch_name"]]
+            #use sunrise/sunset if any flags set
+            if start_sr == 1 or start_ss == 1 or end_sr == 1 or end_ss == 1:
+                #get the sunrise and sunset times
+                cur.execute("SELECT * FROM weather WHERE last_update > DATE_SUB( NOW(), INTERVAL 24 HOUR);")
+                if cur.rowcount > 0:
+                    weather = cur.fetchone()
+                    weather_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+                    sunrise_time = int(weather[weather_to_index["sunrise"]])
+                    sunrise_time = today_date + ", " + datetime.datetime.fromtimestamp(sunrise_time).strftime("%H:%M:%S")
+                    sunrise_time = time.mktime(datetime.datetime.strptime(sunrise_time, "%d/%m/%Y, %H:%M:%S").timetuple())
+                    sunset_time = int(weather[weather_to_index["sunset"]])
+                    sunset_time = today_date + ", " + datetime.datetime.fromtimestamp(sunset_time).strftime("%H:%M:%S")
+                    sunset_time = time.mktime(datetime.datetime.strptime(sunset_time, "%d/%m/%Y, %H:%M:%S").timetuple())
+                    if start_sr == 1 or start_ss == 1:
+                        if start_sr == 1:
+                            start_time = sunrise_time
+                        else:
+                             start_time = sunset_time
+                        start_time = start_time + (start_offset * 60)
+                    if end_sr == 1 or end_ss == 1:
+                        if end_sr == 1:
+                            end_time = sunrise_time
+                        else:
+                            end_time = sunset_time
+                        end_time = end_time + (end_offset * 60);
+
+            run_time = end_time - start_time
+            cur.execute(
+                "UPDATE schedule_daily_time SET run_time = %s WHERE id = %s;",
+                (run_time, time_id),
+            )
+            con.commit()  # commit above
+            if time_now > start_time and time_now < end_time and WeekDays  > 0 and time_status == 1:
+                sch_status = 1
+                break #exit the loop if an active schedule found
+            else:
+                sch_status = 0;
+        #end for s in sch: loop
+    else:
+        sch_name = ""
+        sch_status = 0
+        time_id = 0
+        sch_count = 0
+
+    rval_dict = {}
+    rval_dict["sch_name"] = sch_name
+    rval_dict["sch_status"] = sch_status
+    rval_dict["time_id"] = time_id
+    rval_dict["end_time"] = end_time
+    rval_dict["sch_count"] = sch_count
+    return rval_dict
+
+#return zone schedule status
 def get_zone_schedule_status(
     zone_id,
     holidays_status,
@@ -363,26 +483,88 @@ def get_zone_schedule_status(
 
 #resysnc the relays if MySensor type and shetch_version > 0.35 (multi controller type interface)
 def resync():
-    cur.execute("""UPDATE messages_out
-                     JOIN relays r ON r.relay_id = messages_out.n_id AND r.relay_child_id = messages_out.child_id
-                     JOIN nodes n ON n.id = messages_out.n_id
-                     JOIN zone_relays zr ON zr.zone_relay_id = r.id
-                     SET messages_out.payload = zr.state, messages_out.sent = 0
-                     WHERE (CAST(zr.state as char(255)) != messages_out.payload OR CAST(r.state as char(255)) != messages_out.payload) AND n.type = 'MySensor'
-                     AND ((n.node_id != '0' AND n.sketch_version >= 0.35) OR (n.node_id = '0' AND n.sketch_version >= 0.38));"""
-               )
-    con.commit()  # commit above
+    try:
+        cur.execute("""UPDATE messages_out
+                         JOIN relays r ON r.relay_id = messages_out.n_id AND r.relay_child_id = messages_out.child_id
+                         JOIN nodes n ON n.id = messages_out.n_id
+                         JOIN zone_relays zr ON zr.zone_relay_id = r.id
+                         SET messages_out.payload = zr.state, messages_out.sent = 0
+                         WHERE (CAST(zr.state as char(255)) != messages_out.payload OR CAST(r.state as char(255)) != messages_out.payload) AND n.type = 'MySensor'
+                         AND ((n.node_id != '0' AND n.sketch_version >= 0.35) OR (n.node_id = '0' AND n.sketch_version >= 0.38));"""
+                   )
+        con.commit()  # commit above
+    except mdb.Error as e:
+        # skip deadlock error (caused by something adding new data to the table)
+        if e.args[0] == 2014 or e.args[0] == 1020:
+            pass
+        else:
+            print("DB Error %d: %s" % (e.args[0], e.args[1]))
+            print(traceback.format_exc())
+            logging.error(e)
+            logging.info(traceback.format_exc())
+            con.close()
+            if MQTT_CONNECTED == 1:
+                mqttClient.disconnect()
+                mqttClient.loop_stop()
+            print(infomsg)
+            sys.exit(1)
 
     #check and update system controller relay
-    cur.execute("""UPDATE messages_out
-                     JOIN relays r ON r.relay_id = messages_out.n_id AND r.relay_child_id = messages_out.child_id
-                     JOIN nodes n ON n.id = messages_out.n_id
-                     JOIN system_controller sc ON sc.heat_relay_id = r.id
-                     SET messages_out.payload = sc.active_status, messages_out.sent = 0
-                     WHERE CAST(r.state as char(255)) != messages_out.payload  AND n.type = 'MySensor'
-                     AND ((n.node_id != '0' AND n.sketch_version >= 0.35) OR (n.node_id = '0' AND n.sketch_version >= 0.38));"""
-               )
-    con.commit()  # commit above
+    try:
+        cur.execute("""UPDATE messages_out
+                         JOIN relays r ON r.relay_id = messages_out.n_id AND r.relay_child_id = messages_out.child_id
+                         JOIN nodes n ON n.id = messages_out.n_id
+                         JOIN system_controller sc ON sc.heat_relay_id = r.id
+                         SET messages_out.payload = sc.active_status, messages_out.sent = 0
+                         WHERE CAST(r.state as char(255)) != messages_out.payload  AND n.type = 'MySensor'
+                         AND ((n.node_id != '0' AND n.sketch_version >= 0.35) OR (n.node_id = '0' AND n.sketch_version >= 0.38));"""
+                   )
+        con.commit()  # commit above
+    except mdb.Error as e:
+        # skip deadlock error (caused by something adding new data to the table)
+        if e.args[0] == 2014 or e.args[0] == 1020:
+            pass
+        else:
+            print("DB Error %d: %s" % (e.args[0], e.args[1]))
+            print(traceback.format_exc())
+            logging.error(e)
+            logging.info(traceback.format_exc())
+            con.close()
+            if MQTT_CONNECTED == 1:
+                mqttClient.disconnect()
+                mqttClient.loop_stop()
+            print(infomsg)
+            sys.exit(1)
+
+# check if any MQTT relays which report back a state value in column 'current_val_2'
+def resync_mqtt():
+    # check zone_relays against 'zone_relays' table column 'current_state'
+    cur.execute("""SELECT `relays`.`id`, `relays`.`name`, `relays`.`current_val_2`, `zr`.`current_state`
+                   FROM `relays`
+                   JOIN `zone_relays` `zr` ON `relays`.`id` = `zr`.`zone_relay_id`
+                   JOIN `mqtt_devices` `md` ON `relays`.`relay_id` = `md`.`nodes_id` AND `relays`.`relay_child_id` = `md`.`child_id`
+                   WHERE `md`.`attribute` LIKE "state%" AND `relays`.`current_val_2` != `zr`.`current_state`;"""
+                )
+    if cur.rowcount > 0:
+        relays = cur.fetchall()
+        relays_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+        for r in relays:
+            state = r[relays_to_index["current_state"]]
+            process_none_zone_relays(r[relays_to_index["id"]], state, state ^ 1, "MQTT Sync")
+
+    # check system controller relay  against 'system_controller' table column 'active_status'
+    cur.execute("""SELECT `relays`.`id`, `relays`.`name`, `relays`.`current_val_2`, `sc`.`active_status`
+                   FROM `relays`
+                   JOIN `system_controller` `sc` ON `relays`.`id` = `sc`.`heat_relay_id`
+                   JOIN `mqtt_devices` `md` ON `relays`.`relay_id` = `md`.`nodes_id` AND `relays`.`relay_child_id` = `md`.`child_id`
+                   WHERE `md`.`attribute` LIKE "state%" AND `relays`.`current_val_2` != `sc`.`active_status`;"""
+                )
+    if cur.rowcount > 0:
+        relays = cur.fetchall()
+        relays_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+        for r in relays:
+            state = r[relays_to_index["active_status"]]
+            process_none_zone_relays(r[relays_to_index["id"]], state, state ^ 1, "MQTT Sync")
 
 def check_frost_control (zone_id):
     rval_dict = dict.fromkeys(["frost_temp", "frost_sensor_c", "frost_sp_deadband"], None)
@@ -538,6 +720,7 @@ try:
 
             #resync relays
             resync()
+            resync_mqtt()
 
             #Mode 0 is EU Boiler Mode, Mode 1 is US HVAC Mode
             system_controller_mode = settings_dict.get('mode') & 0b1
@@ -789,6 +972,23 @@ try:
                 livetemp_zone_id = ""
                 livetemp_active = 0
                 livetemp_c = 0
+
+            #create a previous state dictionary for the stand alone relays
+            cur.execute("""SELECT `id`,`schedule_prev`, `schedule`,`sch_time_id`, `state`, `group_id`
+                           FROM `relays`
+                           WHERE `id` NOT IN (SELECT `zone_relay_id` FROM `zone_relays`) AND (`type` = 0 OR `type` = 6)
+                           ORDER BY `id` ASC;""")
+            relays = cur.fetchall()
+            relays_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+            relay_dict = {}
+            for relay in relays:
+                r_id = relay[relays_to_index["id"]]
+                relay_dict[r_id] = {}
+                relay_dict[r_id]["schedule_prev"] = relay[relays_to_index["schedule_prev"]]
+                relay_dict[r_id]["schedule"] = relay[relays_to_index["schedule"]]
+                relay_dict[r_id]["sch_time_id"] = relay[relays_to_index["sch_time_id"]]
+                relay_dict[r_id]["state"] = relay[relays_to_index["state"]]
+                relay_dict[r_id]["group_id"] = relay[relays_to_index["group_id"]]
 
             sch_active = 0
             cur.execute("""SELECT zone.id, zone.status, zone.zone_state, zone.name, zone_type.type, zone_type.category, zone.max_operation_time FROM zone, zone_type
@@ -1172,7 +1372,6 @@ try:
                         sensor_name = sensors_dict[zone_id][key]["sensor_name"]
                         sensor_notice = sensors_dict[zone_id][key]["sensor_notice_interval"]
                         temp_reading_time = sensors_dict[zone_id][key]["sensor_last_seen"]
-                        print(sensor_name,sensor_notice,temp_reading_time)
                         if sensor_notice > 0 and temp_reading_time is not None and settings_dict["test_mode"] != 3:
                             sensor_seen_time = temp_reading_time #using time from messages_in
                             if exceeded_timeout(sensor_notice, sensor_seen_time):
@@ -1209,8 +1408,8 @@ try:
                         holidays_status,
                         away_status,
                     )
-                    sch_status = rval['sch_status'];
-                    sch_name = rval['sch_name'];
+                    sch_status = rval['sch_status']
+                    sch_name = rval['sch_name']
                     #if currently idle then get end buffer status
                     if zone_status_current == 0:
                         smart_off_flag =  rval['smart_off_flag']
@@ -2705,7 +2904,7 @@ try:
                     #process Zone Cat 1 and 2 logs
                 else: #end if($zone_status == 1)
                     # capture any zone controller faults skipped due to zone sensor failure
-                    print(zone_mode)
+#                    print(zone_mode)
 #                    cur.execute(
 #                        """UPDATE zone_current_state SET mode = %s, controler_fault = %s, sensor_fault = %s
 #                        WHERE zone_id = %s LIMIT 1;""",
@@ -2962,7 +3161,7 @@ try:
                 if pump_relays_dict:
                     #array_walk($pump_relays, "process_pump_relays");
                     for key in pump_relays_dict:
-                        process_pump_relays(key, pump_relays_dict[key]["zone_command"], pump_relays_dict[key]["zone_status_prev"])
+                        process_none_zone_relays(key, pump_relays_dict[key]["zone_command"], pump_relays_dict[key]["zone_status_prev"],"Pump")
 
                 #For debug info only
                 if dbgLevel == 1:
@@ -3443,6 +3642,18 @@ try:
                             except:
                                 if dbgLevel >= 2:
                                     print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Zone Log table update failed.")
+                        #system controller update, do not set timestamp so as not to trigger hysteresis indicator on tile
+#                        qry_str = """UPDATE controller_zone_logs SET stop_cause = '{}' WHERE `zone_id` = {} ORDER BY id DESC LIMIT 1;""".format(
+#                                  sc_stop_cause, system_controller_id
+#                                  )
+#                        try:
+#                            cur.execute(qry_str)
+#                            con.commit()
+#                            if dbgLevel >= 2:
+#                                print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - System Controller Log table updated Successfully.")
+#                        except:
+#                            if dbgLevel >= 2:
+#                                print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - System Controller Log table update failed.")
 
                 #if HVAC mode get the heat, cool and fan relay on/off state
                 if system_controller_mode == 1:
@@ -3500,6 +3711,7 @@ try:
                 qry_tuple = ('DELETE FROM boost WHERE `purge`= 1 LIMIT 1;',
                             'DELETE FROM override WHERE `purge`= 1  LIMIT 1;',
                             'DELETE FROM schedule_daily_time_zone WHERE `purge`= 1;',
+                            'DELETE FROM schedule_daily_time_relays WHERE `purge`= 1;',
                             'DELETE FROM schedule_night_climat_zone WHERE `purge`= 1;',
                             'DELETE FROM controller_zone_logs WHERE `purge`= 1;',
                             'DELETE FROM zone_sensors WHERE `purge`= 1;',
@@ -3510,7 +3722,7 @@ try:
                             'DELETE FROM zone WHERE `purge`= 1 LIMIT 1;',
                             'DELETE FROM schedule_daily_time_zone WHERE `purge`= 1;',
                             'DELETE FROM holidays WHERE `purge`= 1;',
-                            'DELETE FROM schedule_daily_time WHERE `purge`= 1;')
+                            'DELETE FROM schedule_daily_time WHERE `purge`= 1 AND `type` <> 2;')
                 for q in qry_tuple:
                     try:
                         cur.execute(q)
@@ -3524,12 +3736,104 @@ try:
                 if dbgLevel >= 1:
                     print("-" * line_len)
 
-            #no zones to process
+            # no zones to process
+            #####################
             else:
                 if dbgLevel >= 1:
                     print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - NO Zones to Process.")
                     print("-" * line_len)
 
+            ##############################
+            # Process Stand Alone Relays #
+            ##############################
+
+            # check if any stand alone relays are present
+            if bool(relay_dict):
+                print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Process Stand Alone Relays.")
+                print("-" * line_len)
+                # check for any schedule attached to each stand alone relay
+                group_members = []
+                for key in relay_dict:
+                    if key not in group_members:
+                        # get the schedule status
+                        rval = get_relay_schedule_status(
+                            key,
+                            holidays_status,
+                            away_status,
+                        )
+                        sch_status = rval['sch_status'];
+                        sch_time_id = rval['time_id'];
+                        if sch_status == 0:
+                            relay_state = 0
+                        else:
+                            relay_state = 1
+                            # get the current_val_2 to check syncronization
+                            qry_str = "SELECT `current_val_2` FROM `relays` WHERE `id` = {} LIMIT 1;".format(key)
+                            cur.execute(qry_str)
+                            if cur.rowcount > 0:
+                                relay = cur.fetchone()
+                                relay_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+                                if relay[relay_to_index["current_val_2"]] != relay_state:
+                                    process_none_zone_relays(key, 1, 0, "Stand Alone")
+
+                        sch_name = rval['sch_name'];
+                        relay_state_prev = relay_dict[key]["state"]
+                        sch_status_prev = relay_dict[key]["schedule"]
+                        if sch_status != sch_status_prev and relay_state != relay_state_prev:
+                            process_none_zone_relays(key, relay_state, relay_state_prev, "Stand Alone")
+                            #update the current schedule status
+                            qry_str = "UPDATE relays SET schedule_prev = {}, schedule = {}, sch_time_id = {} WHERE id = {};".format(sch_status_prev, sch_status, sch_time_id, key)
+                        else:
+                            qry_str = "UPDATE relays SET schedule_prev = {} WHERE id = {};".format(sch_status_prev, key)
+                        cur.execute(qry_str)
+                        con.commit()  # commit above
+                        #does this relay belong to a group
+                        group_id = relay_dict[key]["group_id"]
+                        if group_id != 0:
+                            qry_str = "SELECT `id`, `state`, `schedule` FROM `relays` WHERE `group_id` = {} AND `id` <> {};".format(group_id, key)
+                            cur.execute(qry_str)
+                            if cur.rowcount > 0:
+                                relays = cur.fetchall()
+                                relays_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+                                for relay in relays:
+                                    relay_id = relay[relays_to_index["id"]]
+                                    group_members.append(relay_id)
+                                    relay_state_prev = relay[relays_to_index["state"]]
+                                    sch_status_prev = relay[relays_to_index["schedule"]]
+                                    if sch_status != sch_status_prev and relay_state != relay_state_prev:
+                                        process_none_zone_relays(relay_id, relay_state, relay_state_prev, "Stand Alone")
+                                        #update the current schedule status
+                                        qry_str = "UPDATE relays SET schedule_prev = {}, schedule = {}, sch_time_id = {} WHERE id = {};".format(sch_status_prev, sch_status, sch_time_id, relay_id)
+                                    else:
+                                        qry_str = "UPDATE relays SET schedule_prev = {} WHERE id = {};".format(sch_status_prev, relay_id)
+                                    cur.execute(qry_str)
+                                    con.commit()  # commit above
+                if dbgLevel >= 2:
+                    print("-" * line_len)
+                    print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Purging Marked Records.")
+                #delete records where purge is set to 1
+                qry_tuple = ('''UPDATE `relays`
+                JOIN `relay_group` ON `relays`.`group_id` = `relay_group`.`id`
+                SET `relays`.`group_id` = 0
+                WHERE `relay_group`.`purge` = 1 AND `relays`.`type` = 6;''',
+                            'DELETE FROM relay_group WHERE `purge`= 1 LIMIT 1;',
+                            'DELETE FROM schedule_daily_time_relays WHERE `purge`= 1;',
+                            'DELETE FROM schedule_daily_time WHERE `purge`= 1 AND `type` = 2;')
+                for q in qry_tuple:
+                    try:
+                        cur.execute(q)
+                        con.commit()
+                        if dbgLevel == 1:
+                            print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Query '" + q + "' Successful.")
+                    except:
+                        if dbgLevel == 1:
+                            print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Query '" + q + " 'Failed.")
+
+                if dbgLevel >= 1:
+                    print("-" * line_len)
+            else:
+                print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - NO Stand Alone Relays to Process.")
+                print("-" * line_len)
             print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Controller Scan Ended")
             print(bc.grn + "*" * line_len + bc.ENDC)
             if dbgLevel >= 1:

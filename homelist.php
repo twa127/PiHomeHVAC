@@ -379,11 +379,12 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
 		        	                //Middle target temp
                 			        if ($sensor_type_id != 3) { echo '<small class="statusdegree" id="zs2_'.$zone_id.'">' . $rval['target'] .'</small>'; }
 		                        	//Right icon for what/why
-	                		     	echo '<small class="statuszoon" id="zs3_'.$zone_id.'"><i class="bi ' . $rval['shactive'] . ' ' . $rval['shcolor'] . ' icon-fw"></i></small>';
-			                        //Overrun Icon
-                			        if($overrun == 1) {
-		        	                    echo '<small class="statuszoon" id="zs4_'.$zone_id.'"><i class="bi bi-play-fill orange-red"></i></small>';
-                			        }
+                                    if($overrun == 0) {
+                                             echo '<small class="statuszoon" id="zs3_'.$zone_id.'"><i class="bi ' . $rval['shactive'] . ' ' . $rval['shcolor'] . ' icon-fw"></i></small>';
+                                    } elseif ($overrun == 1) {
+                                        //Overrun Icon
+                                        echo '<small class="statuszoon" id="zs3_'.$zone_id.'"><i class="bi bi-play-fill orange-red"></i></small>';
+                                    }
 		                        	echo '</h3></button>';      //close out status and button
 						$zone_params[] = array('zone_id' =>$row['id'], 'zone_name' =>$row['name'], 'zone_category' =>$row['category']);
 					} // end of zones while loop
@@ -392,24 +393,26 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
                                         $sensor_params = [];
                                         $relay_params = [];
                 			// Standalone Sensors and Relays Pre System Controller
-					$query = "SELECT CONCAT('r', `relays`.`id`) AS `id`, `relays`.`name`,'relay' AS `device_type`,`relay_id` AS `device_id`,
-						`relay_child_id` AS `device_child_id`, NULL AS `device_type_id`,`index_id`,`pre_post`, `n`.`node_id`, `n`.`last_seen`, `n`.`notice_interval`
-						FROM `relays`
-						JOIN `nodes` `n` ON `relay_id` = `n`.`id`
-						WHERE `relays`.`id` NOT IN (SELECT `zone_relay_id` FROM `zone_relays`) AND  `relays`.`type` = 0 AND `show_it` = 1 AND `pre_post` = 1
-						AND (`relays`.`user_display` & {$user_display_mask}) = 0
-						UNION
-						SELECT CONCAT('s', `sensors`.`id`) AS `id`, `sensors`.`name`,'sensor' AS `device_type`,`sensor_id` AS `device_id`,
-						`sensor_child_id` AS `device_child_id`, `sensor_type_id` AS `device_type_id`,`index_id`,`pre_post`, `n`.`node_id`, `n`.`last_seen`,
-						`n`.`notice_interval`
-						FROM `sensors`
-						JOIN `nodes` `n` ON `sensor_id` = `n`.`id`
-						WHERE `sensors`.`id` NOT IN (SELECT `zone_sensor_id` FROM `zone_sensors`) AND `show_it` = 1 AND `pre_post` = 1
-						AND (`sensors`.`user_display` & {$user_display_mask}) = 0
-						ORDER BY pre_post, index_id;";
+                                        $query = "SELECT CONCAT('r', `relays`.`id`) AS `id`, `relays`.`name`,'relay' AS `device_type`,`relay_id` AS `device_id`,
+                                                `relay_child_id` AS `device_child_id`, NULL AS `device_type_id`,`index_id`,`pre_post`, `schedule`,
+                                                `n`.`node_id`, `n`.`last_seen`, `n`.`notice_interval`
+                                                FROM `relays`
+                                                JOIN `nodes` `n` ON `relay_id` = `n`.`id`
+                                                WHERE `relays`.`id` NOT IN (SELECT `zone_relay_id` FROM `zone_relays`) AND  (`relays`.`type` = 0 OR `relays`.`type` = 6) AND `show_it` = 1 AND `pre_post` = 1
+                                                AND (`relays`.`user_display` & {$user_display_mask}) = 0
+                                                UNION
+                                                SELECT CONCAT('s', `sensors`.`id`) AS `id`, `sensors`.`name`,'sensor' AS `device_type`,`sensor_id` AS `device_id`,
+                                                `sensor_child_id` AS `device_child_id`, `sensor_type_id` AS `device_type_id`,`index_id`,`pre_post`, NULL AS `schedule`,
+                                                `n`.`node_id`, `n`.`last_seen`, `n`.`notice_interval`
+                                                FROM `sensors`
+                                                JOIN `nodes` `n` ON `sensor_id` = `n`.`id`
+                                                WHERE `sensors`.`id` NOT IN (SELECT `zone_sensor_id` FROM `zone_sensors`) AND `show_it` = 1 AND `pre_post` = 1
+                                                AND (`sensors`.`user_display` & {$user_display_mask}) = 0
+                                                ORDER BY pre_post, index_id;";
 			                $results = $conn->query($query);
         	        		while ($row = mysqli_fetch_assoc($results)) {
-						if (strpos($row['device_type'], 'sensor') !== false) {
+	                                        $device_type = $row['device_type'];
+						if (strcmp($device_type, 'sensor') === 0) {
 				                        $sensor_id = substr($row['id'],1);
         	        			        $sensor_name = $row['name'];
 			                	        $sensor_child_id = $row['device_child_id'];
@@ -485,14 +488,14 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
 		                		        echo '</h3></button>';      //close out status and button
 							$sensor_params[] = array('sensor_id' =>$sensor_id, 'sensor_name' =>$sensor_name);
                                                 // process standalone relays
-                                                } elseif (strpos($row['device_type'], 'relay') !== false) {
+                                                } elseif (strcmp($device_type, 'relay') === 0) {
                                                         $relay_id = substr($row['id'],1);
                                                         $relay_name = $row['name'];
                                                         $relay_child_id = $row['device_child_id'];
                                                         $node_id = $row['node_id'];
                                                         $node_seen = $row['last_seen'];
                                                         $node_notice = $row['notice_interval'];
-                                                        $relay_type = $row['device_type'];
+                                                        $sch = $row['schedule'];
                                                         $shcolor = "green";
                                                         if($node_notice > 0){
                                                                 $now=strtotime(date('Y-m-d H:i:s'));
@@ -504,7 +507,7 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
                                                         $relay = mysqli_fetch_array($result);
                                                         $relay_state = $relay['payload'];
                                                         if ($relay_state == 1) {
-                                                                $mode = 140;
+                                                                if ($sch == 0) { $mode = 140; } else { $mode = 80; }
                                                                 $rcolor = "green";
                                                                 $r1color = "red";
                                                         } else {
@@ -512,15 +515,15 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
                                                                 $rcolor = $r1color = "black";
                                                         }
                                                         $rval=getIndicators($conn, $mode, 0);
-                                                        $link = 'toggle_relay_state('.$relay_id.')';
-                                                        echo '<button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-circle no-shadow '.$button_style.' mainbtn" onclick="'.$link.'">
-                                                        <h3 class="text-nowrap buttontop"><small>'.$relay_name.'</small></h3>
+                                                        // button on click action is set dynamically using javascript in 'ajax_fetch_data.php'
+                                                        echo '<button type="button" id="r_'.$relay_id.'" class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-circle no-shadow '.$button_style.' mainbtn animated fadeIn">';
+                                                        echo '<h3 class="text-nowrap buttontop"><small>'.$relay_name.'</small></h3>
                                                         <h3 class="degre" id="rd_'.$relay_id.'"><i class="bi bi-power '.$rcolor.'" style="font-size: 1.4rem;"></i></h3>
                                                         <h3 class="status">';
                                                         //Left small circular icon/color status
                                                         echo '<small class="statuscircle" id="rs1_'.$relay_id.'"><i class="bi bi-circle-fill '.$r1color.'" style="font-size: 0.55rem;"></i></small>';
-                                                	//Middle target temp
-                                                	echo '<small class="statusdegree" id="rs2_'.$relay_id.'">' . 'OFF' .'</small>';
+                                                        //Middle target temp
+                                                        echo '<small class="statusdegree" id="rs2_'.$relay_id.'">' . 'OFF' .'</small>';
                                                         //Right icon for what/why
                                                         echo '<small class="statuszoon" id="rs3_'.$relay_id.'"><i class="bi ' . $rval['shactive'] . ' ' . $rval['shcolor'] . ' icon-fw"></i></small>';
                                                         echo '</h3></button>';      //close out status and button
@@ -628,15 +631,16 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
 
 					// Standalone Sensors and Relays Post System Controller
                                         $query = "SELECT CONCAT('r', `relays`.`id`) AS `id`, `relays`.`name`,'relay' AS `device_type`,`relay_id` AS `device_id`,
-                                                `relay_child_id` AS `device_child_id`, NULL AS `device_type_id`,`index_id`,`pre_post`, `n`.`node_id`, `n`.`last_seen`, `n`.`notice_interval`
+                                                `relay_child_id` AS `device_child_id`, NULL AS `device_type_id`,`index_id`,`pre_post`, `schedule`,
+						`n`.`node_id`, `n`.`last_seen`, `n`.`notice_interval`
                                                 FROM `relays`
                                                 JOIN `nodes` `n` ON `relay_id` = `n`.`id`
-                                                WHERE `relays`.`id` NOT IN (SELECT `zone_relay_id` FROM `zone_relays`) AND  `relays`.`type` = 0 AND `show_it` = 1 AND `pre_post` = 0
+                                                WHERE `relays`.`id` NOT IN (SELECT `zone_relay_id` FROM `zone_relays`) AND (`relays`.`type` = 0 OR `relays`.`type` = 6) AND `show_it` = 1 AND `pre_post` = 0
                                                 AND (`relays`.`user_display` & {$user_display_mask}) = 0
                                                 UNION
                                                 SELECT CONCAT('s', `sensors`.`id`) AS `id`, `sensors`.`name`,'sensor' AS `device_type`,`sensor_id` AS `device_id`,
-                                                `sensor_child_id` AS `device_child_id`, `sensor_type_id` AS `device_type_id`,`index_id`,`pre_post`, `n`.`node_id`, `n`.`last_seen`,
-                                                `n`.`notice_interval`
+                                                `sensor_child_id` AS `device_child_id`, `sensor_type_id` AS `device_type_id`,`index_id`,`pre_post`, NULL AS `schedule`,
+						`n`.`node_id`, `n`.`last_seen`, `n`.`notice_interval`
                                                 FROM `sensors`
                                                 JOIN `nodes` `n` ON `sensor_id` = `n`.`id`
                                                 WHERE `sensors`.`id` NOT IN (SELECT `zone_sensor_id` FROM `zone_sensors`) AND `show_it` = 1 AND `pre_post` = 0
@@ -644,8 +648,9 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
                                                 ORDER BY pre_post, index_id;";
                                         $results = $conn->query($query);
                                         while ($row = mysqli_fetch_assoc($results)) {
+                                                $device_type = $row['device_type'];
 						// process standalone sensors
-                                                if (strpos($row['device_type'], 'sensor') !== false) {
+                                                if (strcmp($device_type, 'sensor') === 0) {
                                                         $sensor_id = substr($row['id'],1);
                                                         $sensor_name = $row['name'];
                                                         $sensor_child_id = $row['device_child_id'];
@@ -712,14 +717,14 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
 	                			        echo '</h3></button>';      //close out status and button
 							$sensor_params[] = array('sensor_id' =>$sensor_id, 'sensor_name' =>$sensor_name);
 						// process standalone relays
-	 					} elseif (strpos($row['device_type'], 'relay') !== false) {
+	 					} elseif (strcmp($device_type, 'relay') === 0) {
                                                         $relay_id = substr($row['id'],1);
                                                         $relay_name = $row['name'];
                                                         $relay_child_id = $row['device_child_id'];
                                                         $node_id = $row['node_id'];
                                                         $node_seen = $row['last_seen'];
                                                         $node_notice = $row['notice_interval'];
-                                                        $relay_type = $row['device_type'];
+							$sch = $row['schedule'];
                                                         $shcolor = "green";
                                                         if($node_notice > 0){
                                                                 $now=strtotime(date('Y-m-d H:i:s'));
@@ -731,7 +736,7 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
                                                         $relay = mysqli_fetch_array($result);
                                                         $relay_state = $relay['payload'];
 							if ($relay_state == 1) {
-								$mode = 140;
+								if ($sch == 0) { $mode = 140; } else { $mode = 80; }
                                                                 $rcolor = "green";
                                                                 $r1color = "red";
 							} else {
@@ -739,9 +744,9 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
                                                                 $rcolor = $r1color = "black";
 							}
 							$rval=getIndicators($conn, $mode, 0);
-                                                        $link = 'toggle_relay_state('.$relay_id.')';
-                                                        echo '<button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-circle no-shadow '.$button_style.' mainbtn" onclick="'.$link.'">
-                                                	<h3 class="text-nowrap buttontop"><small>'.$relay_name.'</small></h3>
+							// button on click action is set dynamically using javascript in 'ajax_fetch_data.php'
+                                        		echo '<button type="button" id="r_'.$relay_id.'" class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-circle no-shadow '.$button_style.' mainbtn animated fadeIn">';
+                                                	echo '<h3 class="text-nowrap buttontop"><small>'.$relay_name.'</small></h3>
 							<h3 class="degre" id="rd_'.$relay_id.'"><i class="bi bi-power '.$rcolor.'" style="font-size: 1.4rem;"></i></h3>
 							<h3 class="status">';
 							//Left small circular icon/color status
@@ -1005,7 +1010,7 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
 					$system_controller_time_total = $system_controller_time['total_minuts'];
 					$system_controller_time_on = $system_controller_time['on_minuts'];
 					$system_controller_time_save = $system_controller_time['save_minuts'];
-					if($system_controller_time_on >0){	echo ' <i class="bi bi-clock"></i>&nbsp'.secondsToWords(($system_controller_time_on)*60);}
+					if($system_controller_time_on >0){	echo ' <i class="bi bi-clock" style="font-size: 1.0rem;"></i>&nbsp<strong class="rfooter">'.secondsToWords(($system_controller_time_on)*60).'</strong>';}
 					?>
 				</div>
 			</div>
@@ -1024,6 +1029,10 @@ $(document).ready(function(){
   var delay = '<?php echo $page_refresh ?>';
   var live_temp_zone_id = document.getElementById("zone_id").value;
 
+$('#button1').on('click', function() {
+    $('#openModal').show();
+});
+
   (function loop() {
     var data = '<?php echo $js_zone_params ?>';
     if (data.length > 0) {
@@ -1035,8 +1044,7 @@ $(document).ready(function(){
               $('#zs1_' + obj[i].zone_id).load("ajax_fetch_data.php?id=" + obj[i].zone_id + "&type=2").fadeIn("slow");
               $('#zs2_' + obj[i].zone_id).load("ajax_fetch_data.php?id=" + obj[i].zone_id + "&type=3").fadeIn("slow");
               $('#zs3_' + obj[i].zone_id).load("ajax_fetch_data.php?id=" + obj[i].zone_id + "&type=4").fadeIn("slow");
-              $('#zs4_' + obj[i].zone_id).load("ajax_fetch_data.php?id=" + obj[i].zone_id + "&type=5").fadeIn("slow");
-              // console.log(obj[i].zone_id + ", " + obj[i].zone_category);
+               // console.log(obj[i].zone_id + ", " + obj[i].zone_category);
             }
     }
 
@@ -1075,6 +1083,7 @@ $(document).ready(function(){
     if (data3.length > 0) {
             var obj3 = JSON.parse(data3)
             for (var x = 0; x < obj3.length; x++) {
+//	      console.log(x,obj3[x].relay_id);
               $('#rd_' + obj3[x].relay_id).load("ajax_fetch_data.php?id=" + obj3[x].relay_id + "&type=41").fadeIn("slow");
               $('#rs1_' + obj3[x].relay_id).load("ajax_fetch_data.php?id=" + obj3[x].relay_id + "&type=42").fadeIn("slow");
               $('#rs2_' + obj3[x].relay_id).load("ajax_fetch_data.php?id=" + obj3[x].relay_id + "&type=43").fadeIn("slow");

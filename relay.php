@@ -70,14 +70,16 @@ if (isset($_POST['submit'])) {
 	$m_out_id = $_POST['m_out_id'];
 	$lag_time = $_POST['lag_time'];
         $fail_timeout = $_POST['fail_timeout'];
+	$group_id = $_POST['group_id'];
 	//Add or Edit relay record to relays Table
-	$query = "INSERT INTO `relays` (`id`, `sync`, `purge`, `relay_id`, `relay_child_id`, `name`, `type`, `index_id`, `pre_post`, `show_it`, `message_in`,`on_trigger`, `lag_time`,
-		`user_display`, `state`, `current_val_2`, `fail_timeout`)
-		VALUES ('{$id}', '{$sync}', '{$purge}', '{$selected_relay_id}', '{$relay_child_id}', '{$name}', '{$type}', '{$index_id}', 0, 1, 0, '{$on_trigger}',
-		'{$lag_time}', 0, 0, 0, '{$fail_timeout}')
-		ON DUPLICATE KEY UPDATE sync=VALUES(sync), `purge`=VALUES(`purge`), relay_id='{$selected_relay_id}', relay_child_id='{$relay_child_id}', name=VALUES(name),
-		type=VALUES(type), `index_id` = VALUES(index_id), `pre_post` = VALUES(pre_post), `show_it` = '{$show_it}', `message_in` = '{$message_in}', on_trigger=VALUES(on_trigger),
-		lag_time=VALUES(lag_time), fail_timeout=VALUES(fail_timeout);";
+        $query = "INSERT INTO `relays` (`id`, `sync`, `purge`, `relay_id`, `relay_child_id`, `name`, `type`, `index_id`, `pre_post`, `show_it`, `message_in`,`on_trigger`, `lag_time`,
+                `group_id`, `schedule_prev`,`schedule`, `sch_time_id`,`user_display`, `state`, `current_val_2`, `fail_timeout`)
+                VALUES ('{$id}', '{$sync}', '{$purge}', '{$selected_relay_id}', '{$relay_child_id}', '{$name}', '{$type}', '{$index_id}', 0, 1, 0, '{$on_trigger}',
+                '{$lag_time}',  '{$group_id}', 0, 0, 0, 0, 0, 0, '{$fail_timeout}')
+                ON DUPLICATE KEY UPDATE sync=VALUES(sync), `purge`=VALUES(`purge`), relay_id='{$selected_relay_id}', relay_child_id='{$relay_child_id}', name=VALUES(name),
+                type=VALUES(type), `index_id` = VALUES(index_id), `pre_post` = VALUES(pre_post), `show_it` = '{$show_it}', `message_in` = '{$message_in}', on_trigger=VALUES(on_trigger),
+                lag_time=VALUES(lag_time), group_id=VALUES(group_id), schedule_prev=VALUES(schedule_prev), schedule=VALUES(schedule), sch_time_id=(sch_time_id),
+                fail_timeout=VALUES(fail_timeout);";
 	$result = $conn->query($query);
         $temp_id = mysqli_insert_id($conn);
 	if ($result) {
@@ -126,7 +128,10 @@ if (isset($_POST['submit'])) {
 
 <!-- If the request is to EDIT, retrieve selected items from DB   -->
 <?php if ($id != 0) {
-        $query = "SELECT * FROM `relays` WHERE `id` = {$id} LIMIT 1;";
+        $query = "SELECT relays.*, IF(rg.id IS NULL, 0, rg.name) AS relay_group_id, IF(rg.id IS NULL, 'NONE', rg.name) AS relay_group_name
+                FROM relays
+                LEFT JOIN relay_group rg ON relays.group_id = rg.id
+                WHERE relays.id = {$id} LIMIT 1;";
 	$result = $conn->query($query);
 	$row = mysqli_fetch_assoc($result);
 
@@ -196,6 +201,9 @@ if (isset($_POST['submit'])) {
 							                        case 5:
 							                                echo '<option selected >Pump</option>';
 							                                break;
+                                                                                case 6:
+                                                                                        echo '<option selected >Stand Alone</option>';
+                                                                                        break;
 							    			case 2:
 							        			echo '<option selected >HVAC - Heat</option>';
 							        			break;
@@ -210,6 +218,7 @@ if (isset($_POST['submit'])) {
 							        <option value=0>Zone</option>
 							        <option value=1>Boiler</option>
 							        <option value=5>Pump</option>
+                                                                <option value=6>Stand Alone</option>
 							        <option value=2>HVAC - Heat</option>
 						        	<option value=3>HVAC - Chill</option>
 							        <option value=4>HVAC - Fan</option>
@@ -222,10 +231,15 @@ if (isset($_POST['submit'])) {
 							function RelayTypeID(value)
 								{
 							        var valuetext = value;
-							        var e = document.getElementById("type");
-							        var selected_type_id = e.options[e.selectedIndex].value;
 
-							        document.getElementById("type_id").value = selected_type_id;
+							        document.getElementById("type_id").value = valuetext;
+                                                                if (valuetext == 6) {
+                                                                        document.getElementById("group_id_label_1").style.display = 'block';
+                                                                        document.getElementById("group_id_label_2").style.visibility = 'visible';
+                                                                } else {
+                                                                        document.getElementById("group_id_label_1").style.display = 'none';
+                                                                        document.getElementById("group_id_label_2").style.visibility = 'hidden';
+                                                                }
 							}
 						</script>
 
@@ -361,6 +375,24 @@ if (isset($_POST['submit'])) {
                                                         <div class="help-block with-errors"></div>
                                                 </div>
 
+                                                <!-- Relay Group -->
+                                                        <div class="form-group" class="control-label" id="group_id_label_1" style="display:none"><label id="group_id_label_2"><?php echo$lang['group'];?></label> <small class="text-muted"><?php echo $lang['relay_group_info'];?></small>
+                                                        <select id="group_id" name="group_id" class="form-control select2" autocomplete="off">
+                                                                <?php if(isset($row['relay_group_name'])) { echo '<option selected >'.$row['relay_group_name'].'</option>'; } ?>
+                                                                <?php  $query = "SELECT `id`, `name` FROM `relay_group` ORDER BY `id` ASC;";
+                                                                $results = $conn->query($query);
+                                                                echo "<option></option>";
+								if ($id == 0 || $results->num_rows == 0) {
+									echo "<option selected value=0>NONE</option>";
+								} else {
+                                                                        echo "<option value=0>NONE</option>";
+								}
+                                                                while ($datarg=mysqli_fetch_array($results)) {
+                                                                        echo "<option value=".$datarg['id'].">".$datarg['name']."</option>";
+                                                                } ?>
+                                                        </select>
+                                                        <div class="help-block with-errors"></div>
+                                                </div>
                                                 <br>
 						<!-- Buttons -->
 						<input type="submit" name="submit" value="<?php echo $lang['submit']; ?>" class="btn btn-bm-<?php echo theme($conn, $theme, 'color'); ?> btn-sm">
@@ -372,6 +404,12 @@ if (isset($_POST['submit'])) {
 				<div class="card-footer card-footer-<?php echo theme($conn, $theme, 'color'); ?>">
 					<div class="text-start">
 						<?php
+                                                if ($id != 0) {
+                                                        echo '<script type="text/javascript">',
+                                                        'RelayTypeID('.$row['type'].');',
+                                                        '</script>'
+                                                        ;
+                                                }
 						ShowWeather($conn);
 						?>
                             		</div>
@@ -387,4 +425,3 @@ if (isset($_POST['submit'])) {
 <!-- /#container -->
 <?php }  ?>
 <?php include("footer.php");  ?>
-
