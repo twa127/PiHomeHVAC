@@ -1,6 +1,6 @@
 # MaxAir - Smart Thermostat
 
-### Note: Now at Version 3.20
+### Note: Now at Version 3.21
 
 The previous version, PiHome, was centered around the creation of zones, this version is more centered around devices.
 
@@ -87,6 +87,8 @@ Version 3.18 New Feature, a local language file can be created to hold variation
 Version 3.19 New Feature, Smart Off - Zone state will not re‑activate within a set number of minutes of a schedule end time.
 
 Version 3.20 New Feature, Relay Messages - Enable custom messages to be displayed in the lower right hand corner of Stand Alone Relay tiles.
+
+Version 3.21 New Features and Bug Fixes, Relay Schedules - Enable the creation of schedules for Stand Alone relays which operate in the same way as Zone schedules, Relay Groups - Enable the grouping of relays so that conditions applied to any relay in the group are applied to all relays in the same group, MQTT Relay Support - enhancements to the handling of MQTT relays so that returned state messages can be used with Relay Messages to create an indication of the MQTT relay's actual state (rather than what state MaxAir has tried to set the relay to), Home Screen layout - removal of the copywrite and title text from the Home screen and creation of a top left 'MaxAir' logo, which can be used as a Home button, EMail Setup Password - bug fix so that an unencrypted password is loaded when the Email popup screen opens plus the ability to display the password in plain text, Page Footer Text - weather and schedule text shown in larger bold text.
 
 ## Setup:
 
