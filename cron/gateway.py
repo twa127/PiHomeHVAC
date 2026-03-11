@@ -2539,7 +2539,7 @@ def on_message(client, userdata, message):
                 # process  relays state message
                 if (mqtt_brand == 0 and "POWER" in message_str_json and mqtt_payload is not None and "POWER" in str_attribute) or \
                     ((mqtt_brand == 1 or mqtt_brand == 2) and ("state" in message_str_json or "state_l1" in message_str_json or "state_l2" in message_str_json) and \
-                    mqtt_payload is not None and ("state" in str_attribute or "state_l2" in str_attribute or "state_l2" in str_attribute)):
+                    mqtt_payload is not None and ("state" in str_attribute or "state_l1" in str_attribute or "state_l2" in str_attribute)):
                     cur_mqtt.execute(
                         'SELECT `id`, `current_val_2` FROM `relays` where relay_id = %s AND relay_child_id = %s LIMIT 1;',
                         [nodes_id, mqtt_child_device_id],
