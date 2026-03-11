@@ -55,30 +55,60 @@ function GetModal_Sensor_Graph($conn)
 
         $pieces = explode(',', $_GET['Ajax']);
 	// check if this a zone average temperature graph
-	if (str_starts_with($pieces[1], 'zavg_')) {
-		$z_id = substr($pieces[1],5);
-		$query = "SELECT `sensor_type_id`, z.name 
-			FROM `sensors`
-			JOIN zone z ON zone_id = z.id
-			WHERE z.id = {$z_id}
-			LIMIT 1;";
-                $result = $conn->query($query);
-                $row = mysqli_fetch_assoc($result);
-                $name = $row['name']." Average";
-                $nodes_id = $pieces[1];
-                $child_id = 0;
-                $type_id = $row['sensor_type_id'];
+	//Check php version before doing anything else
+	$version = explode('.', PHP_VERSION);
+	if ($version[0] >= 8){
+		if (str_starts_with($pieces[1], 'zavg_')) {
+			$z_id = substr($pieces[1],5);
+			$query = "SELECT `sensor_type_id`, z.name 
+				FROM `sensors`
+				JOIN zone z ON zone_id = z.id
+				WHERE z.id = {$z_id}
+				LIMIT 1;";
+	                $result = $conn->query($query);
+        	        $row = mysqli_fetch_assoc($result);
+                	$name = $row['name']." Average";
+	                $nodes_id = $pieces[1];
+        	        $child_id = 0;
+                	$type_id = $row['sensor_type_id'];
+		} else {
+		        $query="SELECT * FROM sensors WHERE id = {$pieces[1]} LIMIT 1;";
+        		$result = $conn->query($query);
+		        $row = mysqli_fetch_assoc($result);
+			$name = $row['name'];
+                	$query="SELECT node_id FROM nodes WHERE id = {$row['sensor_id']} LIMIT 1;";
+	                $nresult = $conn->query($query);
+        	        $nrow = mysqli_fetch_assoc($nresult);
+                	$nodes_id = $nrow['node_id'];
+			$child_id = $row['sensor_child_id'];
+			$type_id = $row['sensor_type_id'];
+		}
 	} else {
-	        $query="SELECT * FROM sensors WHERE id = {$pieces[1]} LIMIT 1;";
-        	$result = $conn->query($query);
-	        $row = mysqli_fetch_assoc($result);
-		$name = $row['name'];
-                $query="SELECT node_id FROM nodes WHERE id = {$row['sensor_id']} LIMIT 1;";
-                $nresult = $conn->query($query);
-                $nrow = mysqli_fetch_assoc($nresult);
-                $nodes_id = $nrow['node_id'];
-		$child_id = $row['sensor_child_id'];
-		$type_id = $row['sensor_type_id'];
+                if (strpos($pieces[1], "zavg_") !== false) {
+                        $z_id = substr($pieces[1],5);
+                        $query = "SELECT `sensor_type_id`, z.name
+                                FROM `sensors`
+                                JOIN zone z ON zone_id = z.id
+                                WHERE z.id = {$z_id}
+                                LIMIT 1;";
+                        $result = $conn->query($query);
+                        $row = mysqli_fetch_assoc($result);
+                        $name = $row['name']." Average";
+                        $nodes_id = $pieces[1];
+                        $child_id = 0;
+                        $type_id = $row['sensor_type_id'];
+                } else {
+                        $query="SELECT * FROM sensors WHERE id = {$pieces[1]} LIMIT 1;";
+                        $result = $conn->query($query);
+                        $row = mysqli_fetch_assoc($result);
+                        $name = $row['name'];
+                        $query="SELECT node_id FROM nodes WHERE id = {$row['sensor_id']} LIMIT 1;";
+                        $nresult = $conn->query($query);
+                        $nrow = mysqli_fetch_assoc($nresult);
+                        $nodes_id = $nrow['node_id'];
+                        $child_id = $row['sensor_child_id'];
+                        $type_id = $row['sensor_type_id'];
+                }
 	}
 	if ($type_id == 1) {
                 $title = $lang['temperature'];
