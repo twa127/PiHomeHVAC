@@ -4916,7 +4916,7 @@ echo '
                                                 <i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
                                         </a>
                                         <ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
-						<li><a class="dropdown-item" href="pdf_download.php?file=zone_types.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['zone_types'].'</a></li>
+						<li><a class="dropdown-item" href="pdf_download.php?file=setup_stand_alone_relays.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_stand_alone_relays'].'</a></li>
                                         </ul>
                                 </div>
                         </div>
