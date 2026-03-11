@@ -543,7 +543,12 @@ def resync_mqtt():
                    FROM `relays`
                    JOIN `zone_relays` `zr` ON `relays`.`id` = `zr`.`zone_relay_id`
                    JOIN `mqtt_devices` `md` ON `relays`.`relay_id` = `md`.`nodes_id` AND `relays`.`relay_child_id` = `md`.`child_id`
-                   WHERE `md`.`attribute` LIKE "state%" AND `relays`.`current_val_2` != `zr`.`current_state`;"""
+                   WHERE `md`.`attribute` LIKE "state%" AND `relays`.`current_val_2` != `zr`.`current_state` AND `relays`.`type` < 5
+                   UNION
+                   SELECT `relays`.`id`, `relays`.`name`, `relays`.`current_val_2`, `relays`.`state` AS `current_state`
+                   FROM `relays`
+                   JOIN `mqtt_devices` `md` ON `relays`.`relay_id` = `md`.`nodes_id` AND `relays`.`relay_child_id` = `md`.`child_id`
+                   WHERE `md`.`attribute` LIKE "state%" AND `relays`.`current_val_2` != `relays`.`state`AND `relays`.`type` = 5;"""
                 )
     if cur.rowcount > 0:
         relays = cur.fetchall()
