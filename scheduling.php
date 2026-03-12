@@ -491,7 +491,7 @@ if(!isset($_GET['nid'])) {
                         		<?php if(!isset($_GET['nid'])) {
                         		echo '<div class="form-group" class="control-label">
                                 		<label><'.$lang['sch_name'].'></label>
-                                		<input class="form-control" type="text" id="sch_name" name="sch_name" value="'.$time_row["sch_name"].'" placeholder="Schedule Name">
+                                		<input class="form-control" type="text" id="sch_name" name="sch_name" value="'.$time_row["sch_name"].'" placeholder="Schedule Name" required>
                                 		<div class="help-block with-errors"></div>
                         		</div>'; } ?>
 
