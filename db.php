@@ -642,6 +642,19 @@ if($what=="relay"){
                         $delete_error = 1;
                 }
 
+                // check if any Stand Alone relays are part of a schedule
+                $query = "SELECT  * FROM schedule_daily_time_relays WHERE relay_id =  '".$wid."';";
+                $results = $conn->query($query);
+                $rowcount = mysqli_num_rows($results);
+                if($rowcount > 0) {
+                        $query = "DELETE FROM schedule_daily_time_relays WHERE relay_id =  '".$wid."';";
+                        if($conn->query($query)){
+                                $delete_error = 0;
+                        }else{
+                                $delete_error = 1;
+                        }
+                }
+
 		//delete the relay record
                 $query = "DELETE FROM relays WHERE id = '".$wid."';";
                 if($conn->query($query)){
