@@ -266,7 +266,10 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
 						}
 
 						//query to get zone current state
-						$query = "SELECT * FROM zone_current_state WHERE zone_id = '{$zone_id}' LIMIT 1;";
+                        $query = "SELECT zone_current_state.*, MAX(sdtz.disabled) AS disabled
+                                FROM zone_current_state
+                                JOIN schedule_daily_time_zone sdtz ON sdtz.zone_id = zone_current_state.zone_id
+                                WHERE zone_current_state.zone_id = '{$zone_id}' LIMIT 1;";
 						$result = $conn->query($query);
 						$zone_current_state = mysqli_fetch_array($result);
 						$zone_mode = $zone_current_state['mode'];
@@ -281,10 +284,11 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
 						$temp_reading_time = $zone_current_state['sensor_reading_time'];
 						$overrun = $zone_current_state['overrun'];
 						$schedule = $zone_current_state['schedule'];
+						$disabled = $zone_current_state['disabled'];
 
-		                	        //get the current zone schedule status
-			                        $sch_status = $schedule & 0b1;
-        	        		        $away_sch = ($schedule >> 1) & 0b1;
+		                //get the current zone schedule status
+			            $sch_status = $schedule & 0b1;
+        	        	$away_sch = ($schedule >> 1) & 0b1;
 						if ($sch_status == 1) { $active_schedule = 1; }
 
 						//get the sensor id
@@ -379,12 +383,16 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
 		        	                //Middle target temp
                 			        if ($sensor_type_id != 3) { echo '<small class="statusdegree" id="zs2_'.$zone_id.'">' . $rval['target'] .'</small>'; }
 		                        	//Right icon for what/why
-                                    if($overrun == 0) {
+                                    if($disabled == 1) {
+                                    	echo '<small class="statuszoon" id="zs3_'.$zone_id.'"><i class="bi bi-x-circle-fill  colorize-blue" style="font-size: 0.6rem;"></i></small>';
+									} else {
+										if($overrun == 0) {
                                              echo '<small class="statuszoon" id="zs3_'.$zone_id.'"><i class="bi ' . $rval['shactive'] . ' ' . $rval['shcolor'] . ' icon-fw"></i></small>';
-                                    } elseif ($overrun == 1) {
-                                        //Overrun Icon
-                                        echo '<small class="statuszoon" id="zs3_'.$zone_id.'"><i class="bi bi-play-fill orange-red"></i></small>';
-                                    }
+                                    	} elseif ($overrun == 1) {
+                                        	//Overrun Icon
+                                        	echo '<small class="statuszoon" id="zs3_'.$zone_id.'"><i class="bi bi-play-fill orange-red"></i></small>';
+                                    	}
+									}
 		                        	echo '</h3></button>';      //close out status and button
 						$zone_params[] = array('zone_id' =>$row['id'], 'zone_name' =>$row['name'], 'zone_category' =>$row['category']);
 					} // end of zones while loop
@@ -1100,5 +1108,6 @@ $('#button1').on('click', function() {
   })();
 });
 </script>
+
 
 
