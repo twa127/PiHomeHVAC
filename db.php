@@ -646,8 +646,23 @@ if($what=="relay"){
                 $query = "SELECT  * FROM schedule_daily_time_relays WHERE relay_id =  '".$wid."';";
                 $results = $conn->query($query);
                 $rowcount = mysqli_num_rows($results);
+		$row = mysqli_fetch_assoc($results);
+		$schedule_daily_time_id = $row['schedule_daily_time_id'];
                 if($rowcount > 0) {
                         $query = "DELETE FROM schedule_daily_time_relays WHERE relay_id =  '".$wid."';";
+                        if($conn->query($query)){
+                                $delete_error = 0;
+                        }else{
+                                $delete_error = 1;
+                        }
+                }
+
+		//if all relays have been deleted for this schedule, then delete the scedule
+                $query = "SELECT  * FROM schedule_daily_time_relays WHERE schedule_daily_time_id = '".$schedule_daily_time_id."';";
+                $results = $conn->query($query);
+                $rowcount = mysqli_num_rows($results);
+                if($rowcount == 0) {
+                        $query = "DELETE FROM schedule_daily_time WHERE id = '".$schedule_daily_time_id."' AND type = 2;";
                         if($conn->query($query)){
                                 $delete_error = 0;
                         }else{
