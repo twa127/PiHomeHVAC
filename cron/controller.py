@@ -139,11 +139,24 @@ def process_none_zone_relays(
                     else:
                         relay_status = relay_off
                     print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - " + label + ": GIOP Relay Status:  " + bc.red + relay_status + bc.ENDC + " ("  + relay_on + "=On, " + relay_off + "=off)")
-                    cur.execute(
-                        "UPDATE `messages_out` set sent = 0, payload = %s  WHERE node_id = %s AND child_id = %s;",
-                        [str(command), relay_node_id, relay_child_id],
-                    )
-                    con.commit()  # commit above
+                    try:
+                        cur.execute(
+                            "UPDATE `messages_out` set sent = 0, payload = %s  WHERE node_id = %s AND child_id = %s;",
+                            [str(command), relay_node_id, relay_child_id],
+                        )
+                        con.commit()  # commit above
+                    except mdb.Error as e:
+                        # skip deadlock error (caused by something adding new data to the table)
+                        if e.args[0] == 2014 or e.args[0] == 1020:
+                            pass
+                        else:
+                            print("DB Error %d: %s" % (e.args[0], e.args[1]))
+                            print(traceback.format_exc())
+                            logging.error(e)
+                            logging.info(traceback.format_exc())
+                            con.close()
+                            print(infomsg)
+                            sys.exit(1)
 
                 #************************************************************************************
                 # Pump Wired over I2C Interface Make sure you have i2c Interface enabled
@@ -157,11 +170,24 @@ def process_none_zone_relays(
                 #*************************************************************************************
                 if 'MySensor'  in relay_node_type or 'MQTT' in relay_node_type:
                     #update messages_out table with sent status to 0 and payload to as zone status.
-                    cur.execute(
-                        "UPDATE `messages_out` set sent = 0, payload = %s  WHERE node_id = %s AND child_id = %s;",
-                        [str(command), relay_node_id, relay_child_id],
-                    )
-                    con.commit()  # commit above
+                    try:
+                        cur.execute(
+                            "UPDATE `messages_out` set sent = 0, payload = %s  WHERE node_id = %s AND child_id = %s;",
+                            [str(command), relay_node_id, relay_child_id],
+                        )
+                        con.commit()  # commit above
+                    except mdb.Error as e:
+                        # skip deadlock error (caused by something adding new data to the table)
+                        if e.args[0] == 2014 or e.args[0] == 1020:
+                            pass
+                        else:
+                            print("DB Error %d: %s" % (e.args[0], e.args[1]))
+                            print(traceback.format_exc())
+                            logging.error(e)
+                            logging.info(traceback.format_exc())
+                            con.close()
+                            print(infomsg)
+                            sys.exit(1)
 
                 #************************************************************************************
                 # Sonoff Switch Section: Tasmota WiFi Relay module for your Zone control.
@@ -175,11 +201,24 @@ def process_none_zone_relays(
                         http = cur.fetchone()
                         http_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
                         add_on_msg =  http[http_to_index["command"]] + " " + http[http_to_index["parameter"]]
-                        cur.execute(
-                            "UPDATE `messages_out` set sent = 0, payload = %s  WHERE node_id = %s AND child_id = %s;",
-                            [add_on_msg, relay_node_id, relay_child_id],
-                        )
-                        con.commit()  # commit above
+                        try:
+                            cur.execute(
+                                "UPDATE `messages_out` set sent = 0, payload = %s  WHERE node_id = %s AND child_id = %s;",
+                                [add_on_msg, relay_node_id, relay_child_id],
+                            )
+                            con.commit()  # commit above
+                        except mdb.Error as e:
+                            # skip deadlock error (caused by something adding new data to the table)
+                            if e.args[0] == 2014 or e.args[0] == 1020:
+                                pass
+                            else:
+                                print("DB Error %d: %s" % (e.args[0], e.args[1]))
+                                print(traceback.format_exc())
+                                logging.error(e)
+                                logging.info(traceback.format_exc())
+                                con.close()
+                                print(infomsg)
+                                sys.exit(1)
 
 #return relay schedule status
 def get_relay_schedule_status(
