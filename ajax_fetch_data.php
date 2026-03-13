@@ -86,7 +86,10 @@ if ($type <= 4 || $type == 38) {
 	//process  zones
 	//---------------
 	$active_schedule = 0;
-	$query = "SELECT `zone`.`id`, `zone_type`.`category` FROM `zone`, `zone_type` WHERE `zone`.`id` = {$id} AND `zone`.`type_id` = `zone_type`.`id`;";
+    $query = "SELECT zone_current_state.*, MAX(sdtz.disabled) AS disabled
+                FROM zone_current_state
+                JOIN schedule_daily_time_zone sdtz ON sdtz.zone_id = zone_current_state.zone_id
+                WHERE zone_current_state.zone_id = '{$id}' LIMIT 1;";
 	$result = $conn->query($query);
 	$row = mysqli_fetch_assoc($result);
 	$zone_id=$row['id'];
@@ -107,11 +110,12 @@ if ($type <= 4 || $type == 38) {
 	$sensor_seen = $zone_current_state['sensor_seen_time'];
 	$temp_reading_time= $zone_current_state['sensor_reading_time'];
 	$overrun= $zone_current_state['overrun'];
-        $schedule = $zone_current_state['schedule'];
+    $schedule = $zone_current_state['schedule'];
+	$disabled = $zone_current_state['disabled'];
 
-        //get the current zone schedule status
-        $sch_status = $schedule & 0b1;
-        $away_sch = ($schedule >> 1) & 0b1;
+    //get the current zone schedule status
+    $sch_status = $schedule & 0b1;
+    $away_sch = ($schedule >> 1) & 0b1;
 
 	if ($zone_category == 1 || $zone_category == 2  || $zone_category == 5) {
         	if ($zone_mode == 0) { $add_on_active = 0; } else { $add_on_active = 1; }
@@ -194,21 +198,21 @@ if ($type <= 4 || $type == 38) {
 	//process return strings by type
 	//-------------------------------
 	switch ($type) {
-                case 1:
-                        if ($zone_category != 2) {
-				if ($sensor_type_id != 3) {
-					if ($sensor_count > 1) { // add symbol to indicate that this is an average reading
-						echo number_format(DispSensor($conn,$zone_c,$sensor_type_id),1).$unit.$lang['mean'];
-					} else {
-                               		 	echo number_format(DispSensor($conn,$zone_c,$sensor_type_id),1).$unit;
+            case 1:
+                if ($zone_category != 2) {
+					if ($sensor_type_id != 3) {
+						if ($sensor_count > 1) { // add symbol to indicate that this is an average reading
+							echo number_format(DispSensor($conn,$zone_c,$sensor_type_id),1).$unit.$lang['mean'];
+						} else {
+                			echo number_format(DispSensor($conn,$zone_c,$sensor_type_id),1).$unit;
+						}
+            		} else {
+                		if ($add_on_active == 0) { echo 'OFF'; } else { echo 'ON'; }
 					}
-                        	} else {
-                                	if ($add_on_active == 0) { echo 'OFF'; } else { echo 'ON'; }
-				}
-                        } else {
-                                echo '<i class="bi bi-power '.$add_on_colour.'" style="font-size: 1.4rem;">';
-                        }
-                        break;
+                } else {
+                    echo '<i class="bi bi-power '.$add_on_colour.'" style="font-size: 1.4rem;">';
+                }
+                break;
 	        case 2:
         		echo '<i class="bi bi-circle-fill '.$rval['status'].'" style="font-size: 0.55rem;">';
                 	break;
@@ -216,16 +220,20 @@ if ($type <= 4 || $type == 38) {
         	       	if ($sensor_type_id != 3) { echo $rval['target']; }
                 	break;
 	        case 4:
-                        if($overrun == 0) {
-                                echo '<i class="bi ' . $rval['shactive'] . ' ' . $rval['shcolor'] . ' bi-fw">';
-                        } elseif ($overrun == 1) {
-                                echo '<i class="bi bi-play-fill orange-red" style="font-size: 0.8rem;">';
-                        }
-                	break;
-		// livetemp
-		case 38:
-			echo number_format(DispSensor($conn,$zone_c,$sensor_type_id),1).$unit;
-			break;
+            	if($disabled == 1) {
+    				echo '<i class="bi bi-x-circle-fill  colorize-blue" style="font-size: 0.6rem;">';
+                } else {
+                    if($overrun == 0) {
+                        echo '<i class="bi ' . $rval['shactive'] . ' ' . $rval['shcolor'] . ' bi-fw">';
+                    } elseif ($overrun == 1) {
+                        echo '<i class="bi bi-play-fill orange-red" style="font-size: 0.8rem;">';
+                    }
+                }
+                break;
+			// livetemp
+			case 38:
+				echo number_format(DispSensor($conn,$zone_c,$sensor_type_id),1).$unit;
+				break;
 	        default:
 	}
 } elseif ($type == 6 || $type == 7 || $type == 8)  {
