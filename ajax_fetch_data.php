@@ -86,17 +86,17 @@ if ($type <= 4 || $type == 38) {
 	//process  zones
 	//---------------
 	$active_schedule = 0;
-    $query = "SELECT zone_current_state.*, MAX(sdtz.disabled) AS disabled
-                FROM zone_current_state
-                JOIN schedule_daily_time_zone sdtz ON sdtz.zone_id = zone_current_state.zone_id
-                WHERE zone_current_state.zone_id = '{$id}' LIMIT 1;";
+    $query = "SELECT `zone`.`id`, `zone_type`.`category` FROM `zone`, `zone_type` WHERE `zone`.`id` = {$id} AND `zone`.`type_id` = `zone_type`.`id`;";
 	$result = $conn->query($query);
 	$row = mysqli_fetch_assoc($result);
 	$zone_id=$row['id'];
 	$zone_category=$row['category'];
 
 	//query to get zone current state
-	$query = "SELECT * FROM zone_current_state WHERE zone_id = '{$id}' LIMIT 1;";
+    $query = "SELECT zone_current_state.*, MAX(sdtz.disabled) AS disabled
+                FROM zone_current_state
+                JOIN schedule_daily_time_zone sdtz ON sdtz.zone_id = zone_current_state.zone_id
+                WHERE zone_current_state.zone_id = '{$id}' LIMIT 1;";
 	$result = $conn->query($query);
 	$zone_current_state = mysqli_fetch_array($result);
 	$zone_mode = $zone_current_state['mode'];
