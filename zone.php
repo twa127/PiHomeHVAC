@@ -784,13 +784,13 @@ $count_num_sensors =count($sensorArray);
 						                document.getElementById("sensor_id_label_1").style.visibility = 'visible';
 								document.getElementById("sensor_id_label_1").innerHTML = str_1;
 						                document.getElementById("sensor_id_label_2").style.visibility = 'visible';
-						                document.getElementById("zone_sensor_id").style.display = 'block';
-						                document.getElementById("zone_sensor_id").required = true;
+						                document.getElementById("sens_id0").style.display = 'block';
+						                document.getElementById("sens_id0").required = true;
 						        } else {
-						                document.getElementById("zone_sensor_id").style.display = 'none';
+						                document.getElementById("sens_id0").style.display = 'none';
 						                document.getElementById("sensor_id_label_1").style.visibility = 'hidden';
 						                document.getElementById("sensor_id_label_2").style.visibility = 'hidden';
-						                document.getElementById("zone_sensor_id").required = false;
+						                document.getElementById("sens_id0").required = false;
 						        }
 						        if (map_bin & 0b1000000) {
 						                document.getElementById("controler_id_label").style.visibility = 'visible';
@@ -841,12 +841,12 @@ $count_num_sensors =count($sensorArray);
                                                         }
 
 							// re-build the sensor list based on the zone type (1 = temperature, 2 = humidity)
-						 	var opt = document.getElementById("zone_sensor_id").getElementsByTagName("option");
+						 	var opt = document.getElementById("sens_id0").getElementsByTagName("option");
 							var jArray = <?php echo json_encode($sensorArray); ?>;
 
 						 	for(j=opt.length-1;j>=0;j--)
 						 	{
-						        	document.getElementById("zone_sensor_id").options.remove(j);
+						        	document.getElementById("sens_id0").options.remove(j);
 						 	}
 
 						        for(j=0;j<jArray.length;j++)
@@ -856,7 +856,7 @@ $count_num_sensors =count($sensorArray);
 						                optn.text = jArray[j]['name'];
 						                optn.value = jArray[j]['id'];
 								if(stype == sensor_type || zone_cat === "2") {
-						                	document.getElementById("zone_sensor_id").options.add(optn);
+						                	document.getElementById("sens_id0").options.add(optn);
 								}
 						        }
 
