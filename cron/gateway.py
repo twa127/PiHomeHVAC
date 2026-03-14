@@ -3676,7 +3676,7 @@ try:
                 con.commit()
             except mdb.Error as e:
                 # skip deadlock error (caused by something adding new data to the table)
-                if e.args[0] == 1020:
+                if e.args[0] == 1020 or e.args[0] == 2014:
                     pass
                 else:
                     print("DB Error %d: %s" % (e.args[0], e.args[1]))
