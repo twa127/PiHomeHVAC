@@ -3885,7 +3885,8 @@ try:
             print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Controller Scan Ended")
             print(bc.grn + "*" * line_len + bc.ENDC)
             # remove the running flag file
-            os.remove("/tmp/sc_running")
+            if os.path.exists("/tmp/sc_running"):
+                os.remove("/tmp/sc_running")
             if dbgLevel >= 1:
                 time.sleep(10)
             else:
