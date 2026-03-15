@@ -2243,7 +2243,7 @@ def on_publish(client, userdata, mid, reason_code, properties):
 
 # To be run when an MQTT message is received to write the sensor value into messages_in for both paho-mqtt Version 1 and Version 2
 def on_message(client, userdata, message):
-    if not os.path.isfile("/tmp/db_cleanup_running") or not os.path.isfile("/tmp/sc_running"):
+    if not os.path.isfile("/tmp/db_cleanup_running") and not os.path.isfile("/tmp/sc_running"):
         global mqtt_msgcount
         global clear_hour_timer
         mqtt_log_txt = ""
@@ -3294,7 +3294,7 @@ try:
             relay_controller_heartbeat_dict[node_id] = time.time()
 
     while 1:
-        if not os.path.isfile("/tmp/db_cleanup_running") or not os.path.isfile("/tmp/sc_running"):
+        if not os.path.isfile("/tmp/db_cleanup_running") and not os.path.isfile("/tmp/sc_running"):
             # get todays date and time
             today = datetime.today()
             runHour = today.strftime('%H')
