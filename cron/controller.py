@@ -641,6 +641,10 @@ timer_flag = 0
 old_flags_dict = {}
 try:
     while 1:
+        # Creates a running flag file
+        with open('/tmp/sc_running', 'w') as fp:
+            pass
+
         NULL = "NULL"
 
         #set to indicate controller condition
@@ -3880,6 +3884,8 @@ try:
                 print("-" * line_len)
             print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Controller Scan Ended")
             print(bc.grn + "*" * line_len + bc.ENDC)
+            # remove the running flag file
+            os.remove("/tmp/sc_running")
             if dbgLevel >= 1:
                 time.sleep(10)
             else:
