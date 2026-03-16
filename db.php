@@ -140,7 +140,7 @@ if($what=="schedule"){
                 if($da=="1"){ $set="0"; $dis="1"; }else{ $set="1"; $dis="0"; }
                 $query  = "UPDATE schedule_daily_time SET sync = '0', status='".$set."' WHERE id = '".$wid."'";
                 $conn->query($query);
-                $query  = "UPDATE schedule_daily_time_zone SET sync = '0', status='".$set."', disabled = '".$dis."' WHERE schedule_daily_time_id = '".$wid."'";
+                $query  = "UPDATE schedule_daily_time_zone SET sync = '0', disabled = '".$dis."' WHERE schedule_daily_time_id = '".$wid."'";
                 $conn->query($query);
         } elseif ($opp=="delete") {
                 if($sch_type <> 2) {
