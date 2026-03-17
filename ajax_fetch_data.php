@@ -220,7 +220,7 @@ if ($type <= 4 || $type == 38) {
         	       	if ($sensor_type_id != 3) { echo $rval['target']; }
                 	break;
 	        case 4:
-            	if($disabled == 1) {
+            	if($disabled == 2) {
     				echo '<i class="bi bi-x-circle-fill  colorize-blue" style="font-size: 0.6rem;">';
                 } else {
                     if($overrun == 0) {
