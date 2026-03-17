@@ -383,7 +383,7 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
 		        	                //Middle target temp
                 			        if ($sensor_type_id != 3) { echo '<small class="statusdegree" id="zs2_'.$zone_id.'">' . $rval['target'] .'</small>'; }
 		                        	//Right icon for what/why
-                                    if($disabled == 1) {
+                                    if($disabled == 2) {
                                     	echo '<small class="statuszoon" id="zs3_'.$zone_id.'"><i class="bi bi-x-circle-fill  colorize-blue" style="font-size: 0.6rem;"></i></small>';
 									} else {
 										if($overrun == 0) {
