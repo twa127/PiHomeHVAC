@@ -3047,8 +3047,7 @@ try:
                     else:
                         zone_command = 0
 
-					combined_zone_state = combined_zone_state | zone_command
-
+                    combined_zone_state = combined_zone_state | zone_command
                     #***************************************************************************************
                     # update zone_current_state table
                     #***************************************************************************************
