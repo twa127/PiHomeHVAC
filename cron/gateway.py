@@ -103,6 +103,7 @@ minute_timer = time.time()
 hour_timer = time.time()
 clear_minute_timer = False
 clear_hour_timer = False
+mqtt_lock = False
 
 # Logging exceptions to log file
 logfile = "/var/www/logs/main.log"
@@ -2124,7 +2125,7 @@ def set_relays(
                 con.commit()
             except mdb.Error as e:
                 # skip deadlock error (caused by something adding new data to the table)
-                if e.args[0] == 1020:
+                if e.args[0] == 1020 or e.args[0] == 2014:
                     pass
                 else:
                     print("DB Error %d: %s" % (e.args[0], e.args[1]))
@@ -2243,7 +2244,8 @@ def on_publish(client, userdata, mid, reason_code, properties):
 
 # To be run when an MQTT message is received to write the sensor value into messages_in for both paho-mqtt Version 1 and Version 2
 def on_message(client, userdata, message):
-    if not os.path.isfile("/tmp/db_cleanup_running") and not os.path.isfile("/tmp/sc_running"):
+    global mqtt_lock
+    if not os.path.isfile("/tmp/db_cleanup_running") and not os.path.isfile("/tmp/sc_running") and not mqtt_lock:
         global mqtt_msgcount
         global clear_hour_timer
         mqtt_log_txt = ""
@@ -2342,10 +2344,10 @@ def on_message(client, userdata, message):
                                         new_payload = "0"
                                     # Get previous data for this controller
                                     cur_mqtt.execute(
-                                        """SELECT relays.id, relays.relay_id, relays.state, zr.zone_id
+                                        """SELECT relays.id, relays.relay_id, relays.type, relays.state, zr.zone_id
                                            FROM relays
                                            LEFT JOIN zone_relays zr ON zr.zone_relay_id = relays.relay_id
-                                           WHERE relays.relay_id = %s AND relays.relay_child_id = %s LIMIT 1;""",
+                                           WHERE relays.id = %s AND relays.relay_child_id = %s LIMIT 1;""",
                                         [nodes_id, mqtt_child_device_id],
                                     )
                                     result = cur_mqtt.fetchone()
@@ -2356,7 +2358,8 @@ def on_message(client, userdata, message):
                                         mqtt_r_id = result[mqtt_relay_to_index["id"]]
                                         mqtt_state = result[mqtt_relay_to_index["state"]]
                                         mqtt_zone_id = result[mqtt_relay_to_index["zone_id"]]
-                                        if mqtt_zone_id is not None:
+                                        mqtt_r_type = result[mqtt_relay_to_index["type"]]
+                                        if mqtt_zone_id is not None and mqtt_r_type < 5:
                                             cur_mqtt.execute(
                                                 'SELECT id, mode, status FROM zone_current_state WHERE zone_id = %s LIMIT 1;',
                                                 [mqtt_zone_id],
@@ -2409,7 +2412,7 @@ def on_message(client, userdata, message):
                                                 )
                                                 con.commit()
                                         # Process Stand Alone relays
-                                        else:
+                                        elif mqtt_r_type == 6:
                                             # Update the messages_out table
                                             try:
                                                 cur_mqtt.execute(
@@ -2895,6 +2898,7 @@ def on_message(client, userdata, message):
                         )
         if len(mqtt_log_txt) > 0 and write_mqtt_log:
             write_mqtt_log(mqtt_log_txt)
+        mqtt_lock = False
 
 class ProgramKilled(Exception):
     pass
@@ -3295,6 +3299,7 @@ try:
 
     while 1:
         if not os.path.isfile("/tmp/db_cleanup_running") and not os.path.isfile("/tmp/sc_running"):
+            mqtt_lock = True
             # get todays date and time
             today = datetime.today()
             runHour = today.strftime('%H')
@@ -3712,7 +3717,7 @@ try:
                 con.commit()
             except mdb.Error as e:
                 # skip deadlock error (being caused when mysqldunp runs
-                if e.args[0] == 1213:
+                if e.args[0] == 1213 or e.args[0] == 2014:
                     pass
                 else:
                     print("DB Error %d: %s" % (e.args[0], e.args[1]))
@@ -3731,6 +3736,7 @@ try:
             if clear_hour_timer :
                 hour_timer = time.time()
 
+            mqtt_lock = False
             time.sleep(0.1)
 
 except GatewayException as e:
