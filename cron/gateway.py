@@ -1843,6 +1843,7 @@ def set_relays(
     enable_outgoing,
 ):
     global mqtt_sent
+    global mqtt_lock
     global mysensor_sent
     global gpio_sent
     global minute_timer
@@ -1975,6 +1976,9 @@ def set_relays(
             print("\nSending the following MQTT Message:")
             print("Topic: %s" % mqtt_topic)
             print("Message: %s" % payload_str)
+            # remove lock to allow message to be processed
+            if mqtt_lock:
+                mqtt_lock = False
             if paho_version.find("1.5.0") != -1:
                 mqttClient.publish(
                     topic=mqtt_topic,
@@ -2020,6 +2024,52 @@ def set_relays(
                 [timestamp, n_id],
             )
             con.commit()
+        # does this sensor return its state
+        cur.execute(
+            'SELECT `mqtt_topic`, `attribute` FROM `mqtt_devices` WHERE `type` = "0" AND `nodes_id` = (%s) AND `child_id` = (%s) LIMIT 1',
+            [n_id, out_child_id],
+        )
+        if cur.rowcount > 0:
+            results_mqtt_r = cur.fetchone()
+            description_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+            mqtt_topic = results_mqtt_r[description_to_index["mqtt_topic"]] + "/get"
+            attribute_str=results_mqtt_r[description_to_index["attribute"]]
+            attribute_json = json.dumps({attribute_str: ""})
+            # check if returns state matches set state
+            cur.execute(
+                'SELECT `current_val_2` FROM `relays` WHERE `relay_id` = (%s) AND `relay_child_id` = (%s) LIMIT 1',
+                [n_id, out_child_id],
+            )
+            # if states do not natch then send request to get state from relay
+            if cur.rowcount > 0:
+                result_mqtt_r = cur.fetchone()
+                description_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+                current_val_2 = result_mqtt_r[description_to_index["current_val_2"]]
+                if current_val_2 != int(out_payload):
+                    print("\nSending the following MQTT State Request Message:")
+                    print("Topic: %s" % mqtt_topic)
+                    print("Message: %s" % attribute_json)
+                    # remove lock to allow message to be processed
+                    if mqtt_lock:
+                        mqtt_lock = False
+                    if paho_version.find("1.5.0") != -1:
+                        mqttClient.publish(
+                            topic=mqtt_topic,
+                            payload=attribute_json,
+                            qos=1,
+                            retain=False,
+                        )
+                    else:
+                        msg_info = mqttClient.publish(mqtt_topic, attribute_json, qos=1)
+                        unacked_publish.add(msg_info.mid)
+
+                        # Wait for all message to be published
+                        while len(unacked_publish):
+                            time.sleep(0.1)
+
+                        # Due to race-condition described above, the following way to wait for all publish is safer
+                        msg_info.wait_for_publish()
+
     elif node_type.find("Dummy") != -1 :  # process Dummy mode
         cur.execute(
             "UPDATE `messages_out` SET `sent` = 1 WHERE `id` = %s", [out_id]
@@ -2311,7 +2361,7 @@ def on_message(client, userdata, message):
                     sys.exit(1)
 
             # Process incomming STATE change messages for switches toggled by an external agent
-            if fnmatch.fnmatch(message.topic, '*/STATE*') or mqtt_brand == 1 or mqtt_brand == 2:
+            if fnmatch.fnmatch(message.topic, '*/STATE*') or ((mqtt_brand == 1 or mqtt_brand == 2) and fnmatch.fnmatch(message.topic, '*/set')):
                 mqtt_payload = json.loads(message.payload.decode())
                 for e in mqtt_payload: # iterator over a dictionary
                     if (mqtt_brand == 0 and fnmatch.fnmatch(e, 'POWER*')) or ((mqtt_brand == 1 or mqtt_brand == 2) and fnmatch.fnmatch(e, 'state*')):
@@ -2346,8 +2396,8 @@ def on_message(client, userdata, message):
                                     cur_mqtt.execute(
                                         """SELECT relays.id, relays.relay_id, relays.type, relays.state, zr.zone_id
                                            FROM relays
-                                           LEFT JOIN zone_relays zr ON zr.zone_relay_id = relays.relay_id
-                                           WHERE relays.id = %s AND relays.relay_child_id = %s LIMIT 1;""",
+                                           LEFT JOIN zone_relays zr ON zr.zone_relay_id = relays.id
+                                           WHERE relays.relay_id = %s AND relays.relay_child_id = %s LIMIT 1;""",
                                         [nodes_id, mqtt_child_device_id],
                                     )
                                     result = cur_mqtt.fetchone()
@@ -2443,7 +2493,7 @@ def on_message(client, userdata, message):
                                                 try:
                                                     # Update the relays table
                                                     cur_mqtt.execute(
-                                                        "UPDATE relays SET state = %s WHERE id = %s;",
+                                                        "UPDATE `relays` SET `state` = %s WHERE `id` = %s;",
                                                         (state, mqtt_r_id,),
                                                     )
                                                     con.commit()

@@ -578,36 +578,25 @@ def resync():
 # check if any MQTT relays which report back a state value in column 'current_val_2'
 def resync_mqtt():
     # check zone_relays against 'zone_relays' table column 'current_state'
-    cur.execute("""SELECT `relays`.`id`, `relays`.`name`, `relays`.`current_val_2`, `zr`.`current_state`
-                   FROM `relays`
-                   JOIN `zone_relays` `zr` ON `relays`.`id` = `zr`.`zone_relay_id`
-                   JOIN `mqtt_devices` `md` ON `relays`.`relay_id` = `md`.`nodes_id` AND `relays`.`relay_child_id` = `md`.`child_id`
-                   WHERE `md`.`attribute` LIKE "state%" AND `relays`.`current_val_2` != `zr`.`current_state` AND `relays`.`type` < 5
+    cur.execute("""SELECT DISTINCT r.id, r.name, zr.state
+                   FROM messages_out
+                   JOIN relays r ON r.relay_id = messages_out.n_id AND r.relay_child_id = messages_out.child_id
+                   JOIN nodes n ON n.id = messages_out.n_id
+                   JOIN zone_relays zr ON zr.zone_relay_id = r.id
+                   WHERE (CAST(zr.state as char(255)) != messages_out.payload OR CAST(r.state as char(255)) != messages_out.payload) AND n.type = 'MQTT' AND `r`.`type` < 6
                    UNION
-                   SELECT `relays`.`id`, `relays`.`name`, `relays`.`current_val_2`, `relays`.`state` AS `current_state`
-                   FROM `relays`
-                   JOIN `mqtt_devices` `md` ON `relays`.`relay_id` = `md`.`nodes_id` AND `relays`.`relay_child_id` = `md`.`child_id`
-                   WHERE `md`.`attribute` LIKE "state%" AND `relays`.`current_val_2` != `relays`.`state`AND `relays`.`type` = 5;"""
+                   SELECT r.id, r.name, sc.active_status AS state
+                   FROM messages_out
+                   JOIN relays r ON r.relay_id = messages_out.n_id AND r.relay_child_id = messages_out.child_id
+                   JOIN nodes n ON n.id = messages_out.n_id
+                   JOIN system_controller sc ON sc.heat_relay_id = r.id
+                   WHERE CAST(r.state as char(255)) != messages_out.payload  AND n.type = 'MQTT';"""
                 )
     if cur.rowcount > 0:
         relays = cur.fetchall()
         relays_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
         for r in relays:
-            state = r[relays_to_index["current_state"]]
-            process_none_zone_relays(r[relays_to_index["id"]], state, state ^ 1, "MQTT Sync")
-
-    # check system controller relay  against 'system_controller' table column 'active_status'
-    cur.execute("""SELECT `relays`.`id`, `relays`.`name`, `relays`.`current_val_2`, `sc`.`active_status`
-                   FROM `relays`
-                   JOIN `system_controller` `sc` ON `relays`.`id` = `sc`.`heat_relay_id`
-                   JOIN `mqtt_devices` `md` ON `relays`.`relay_id` = `md`.`nodes_id` AND `relays`.`relay_child_id` = `md`.`child_id`
-                   WHERE `md`.`attribute` LIKE "state%" AND `relays`.`current_val_2` != `sc`.`active_status`;"""
-                )
-    if cur.rowcount > 0:
-        relays = cur.fetchall()
-        relays_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
-        for r in relays:
-            state = r[relays_to_index["active_status"]]
+            state = r[relays_to_index["state"]]
             process_none_zone_relays(r[relays_to_index["id"]], state, state ^ 1, "MQTT Sync")
 
 def check_frost_control (zone_id):
@@ -2995,7 +2984,7 @@ try:
                     zone_sensor_fault = zone_commands_dict[zc]["zone_sensor_fault"]
                     sensor_seen_time = zone_commands_dict[zc]["sensor_seen_time"]
                     temp_reading_time = zone_commands_dict[zc]["temp_reading_time"]
-#                    combined_zone_state = combined_zone_state | zone_status
+                    combined_zone_state = combined_zone_state | zone_status
                     combined_zone_state_prev = combined_zone_state_prev | zone_status_prev
 
                     #Zone category 0 and system controller is not requested calculate if overrun needed
@@ -3047,7 +3036,6 @@ try:
                     else:
                         zone_command = 0
 
-                    combined_zone_state = combined_zone_state | zone_command
                     #***************************************************************************************
                     # update zone_current_state table
                     #***************************************************************************************
@@ -3210,6 +3198,11 @@ try:
                 if pump_relays_dict:
                     #array_walk($pump_relays, "process_pump_relays");
                     for key in pump_relays_dict:
+                        cur.execute(
+                            "UPDATE zone_relays SET state = %s, current_state = %s WHERE zone_relay_id = %s;",
+                            [pump_relays_dict[key]["zone_command"], pump_relays_dict[key]["zone_command"], key],
+                        )
+                        con.commit()  # commit above
                         process_none_zone_relays(key, pump_relays_dict[key]["zone_command"], pump_relays_dict[key]["zone_status_prev"],"Pump")
 
                 #For debug info only
