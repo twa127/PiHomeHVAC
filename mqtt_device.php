@@ -351,7 +351,8 @@ if (isset($_POST['submit'])) {
                 						<?php echo '<option ' . ($row['brand'] == 0 ? 'selected' : '') . ' value = 0>Tasmota</option>';?>
                                                                 <?php echo '<option ' . ($row['brand'] == 1 ? 'selected' : '') . ' value = 1>Shelly</option>';?>
                                                                 <?php echo '<option ' . ($row['brand'] == 2 ? 'selected' : '') . ' value = 2>Sonoff</option>';?>
-                                                                <?php echo '<option ' . ($row['brand'] == 3 ? 'selected' : '') . ' value = 3>Other</option>';?>
+                                                            	<?php echo '<option ' . ($row['brand'] == 3 ? 'selected' : '') . ' value = 3>Tuya</option>';?>
+                                                                <?php echo '<option ' . ($row['brand'] == 4 ? 'selected' : '') . ' value = 4>Other</option>';?>
                                                         </select>
                                                         <div class="help-block with-errors"></div>
                                                 </div>
