@@ -26,7 +26,7 @@ print("* MySensors Wifi/Ethernet/Serial Gateway Communication *")
 print("* Script to communicate with MySensors Nodes, for more *")
 print("* info please check MySensors API.                     *")
 print("*      Build Date: 18/09/2017                          *")
-print("*      Version 0.36 - Last Modified 03/03/2026         *")
+print("*      Version 0.37 - Last Modified 20/03/2026         *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -116,7 +116,7 @@ logging.basicConfig(
 
 run_22 = 0
 new_log = 0
-write_mqtt_log = False
+write_mqtt_log = True
 
 def write_mqtt_log(message):
     global new_log
@@ -2026,15 +2026,20 @@ def set_relays(
             con.commit()
         # does this sensor return its state
         cur.execute(
-            'SELECT `mqtt_topic`, `attribute` FROM `mqtt_devices` WHERE `type` = "0" AND `nodes_id` = (%s) AND `child_id` = (%s) LIMIT 1',
+            'SELECT `mqtt_topic`, `attribute`, `brand` FROM `mqtt_devices` WHERE `type` = "0" AND `nodes_id` = (%s) AND `child_id` = (%s) LIMIT 1',
             [n_id, out_child_id],
         )
         if cur.rowcount > 0:
             results_mqtt_r = cur.fetchone()
             description_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
-            mqtt_topic = results_mqtt_r[description_to_index["mqtt_topic"]] + "/get"
-            attribute_str=results_mqtt_r[description_to_index["attribute"]]
-            attribute_json = json.dumps({attribute_str: ""})
+            mqtt_brand = results_mqtt_r[description_to_index["brand"]]
+            if mqtt_brand == 0:
+                mqtt_topic = "cmnd/" + results_mqtt_r[description_to_index["mqtt_topic"]].split('/')[1].strip() + "/POWER"
+                attribute_json = ""
+            else:
+                mqtt_topic = results_mqtt_r[description_to_index["mqtt_topic"]]
+                attribute_str=results_mqtt_r[description_to_index["attribute"]]
+                attribute_json = json.dumps({attribute_str: ""})
             # check if returns state matches set state
             cur.execute(
                 'SELECT `current_val_2` FROM `relays` WHERE `relay_id` = (%s) AND `relay_child_id` = (%s) LIMIT 1',
@@ -2200,8 +2205,14 @@ def on_connect_1(client, userdata, flags, rc):
             'SELECT DISTINCT `mqtt_topic` FROM `mqtt_devices` WHERE `type` = "0"'
         )
         if cur_mqtt.rowcount > 0:
-            for node in cur_mqtt.fetchall():
-                subscribe_topics.append((f"{node[0]}", 0))
+            topic_to_index = dict(
+                (d[0], i) for i, d in enumerate(cur_mqtt.description)
+            )
+            for topic in cur_mqtt.fetchall():
+                mqtt_topic = topic[topic_to_index["mqtt_topic"]]
+                if fnmatch.fnmatch(mqtt_topic, '*/get'):
+                    mqtt_topic = mqtt_topic.rsplit('/',1)[0]
+                subscribe_topics.append((f"{mqtt_topic}", 0))
             client.subscribe(subscribe_topics)
             print("Subscribed to the followint MQTT topics:")
             for topic in subscribe_topics:
@@ -2244,8 +2255,14 @@ def on_connect_2(client, userdata, flags, reason_code, properties):
             'SELECT DISTINCT `mqtt_topic` FROM `mqtt_devices` WHERE `type` = "0"'
         )
         if cur_mqtt.rowcount > 0:
-            for node in cur_mqtt.fetchall():
-                subscribe_topics.append((f"{node[0]}", 0))
+            topic_to_index = dict(
+                (d[0], i) for i, d in enumerate(cur_mqtt.description)
+            )
+            for topic in cur_mqtt.fetchall():
+                mqtt_topic = topic[topic_to_index["mqtt_topic"]]
+                if fnmatch.fnmatch(mqtt_topic, '*/get'):
+                    mqtt_topic = mqtt_topic.rsplit('/',1)[0]
+                subscribe_topics.append((f"{mqtt_topic}", 0))
             client.subscribe(subscribe_topics)
             print("Subscribed to the followint MQTT topics:")
             for topic in subscribe_topics:
@@ -2316,7 +2333,8 @@ def on_message(client, userdata, message):
         cur_mqtt.execute(
             """SELECT `nodes`.id, `nodes`.node_id, `mqtt_devices`.id AS mqtt_id, `mqtt_devices`.child_id, `mqtt_devices`.brand, `mqtt_devices`.attribute, `mqtt_devices`.min_value
                FROM `mqtt_devices`, `nodes`
-               WHERE `mqtt_devices`.nodes_id = `nodes`.id AND `mqtt_devices`.type = 0 AND `mqtt_devices`.mqtt_topic = (%s)""",
+               WHERE `mqtt_devices`.nodes_id = `nodes`.id AND `mqtt_devices`.type = 0
+               AND if(LOCATE("/get", `mqtt_devices`.`mqtt_topic`), SUBSTRING(`mqtt_devices`.`mqtt_topic`, 1, LOCATE("/get", `mqtt_devices`.`mqtt_topic`) - 1),`mqtt_devices`.`mqtt_topic`) = (%s)""",
             [message.topic],
         )
         mqtt_log_txt = mqtt_log_txt + "Number of MQTT Devices found: " + str(cur_mqtt.rowcount) + "\n"
