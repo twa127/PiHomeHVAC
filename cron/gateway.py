@@ -2361,10 +2361,10 @@ def on_message(client, userdata, message):
                     sys.exit(1)
 
             # Process incomming STATE change messages for switches toggled by an external agent
-            if fnmatch.fnmatch(message.topic, '*/STATE*') or ((mqtt_brand == 1 or mqtt_brand == 2) and fnmatch.fnmatch(message.topic, '*/set')):
+            if fnmatch.fnmatch(message.topic, '*/STATE*') or ((mqtt_brand == 1 or mqtt_brand == 2 or mqtt_brand == 3) and fnmatch.fnmatch(message.topic, '*/set')):
                 mqtt_payload = json.loads(message.payload.decode())
                 for e in mqtt_payload: # iterator over a dictionary
-                    if (mqtt_brand == 0 and fnmatch.fnmatch(e, 'POWER*')) or ((mqtt_brand == 1 or mqtt_brand == 2) and fnmatch.fnmatch(e, 'state*')):
+                    if (mqtt_brand == 0 and fnmatch.fnmatch(e, 'POWER*')) or ((mqtt_brand == 1 or mqtt_brand == 2 or mqtt_brand == 3) and fnmatch.fnmatch(e, 'state*')):
                         if child[on_msg_description_to_index["attribute"]] == e:
                             mqtt_payload = mqtt_payload.get(e)
                             cur_mqtt.execute(
@@ -2591,7 +2591,7 @@ def on_message(client, userdata, message):
 
                 # process  relays state message
                 if (mqtt_brand == 0 and "POWER" in message_str_json and mqtt_payload is not None and "POWER" in str_attribute) or \
-                    ((mqtt_brand == 1 or mqtt_brand == 2) and ("state" in message_str_json or "state_l1" in message_str_json or "state_l2" in message_str_json) and \
+                    ((mqtt_brand == 1 or mqtt_brand == 2 or mqtt_brand == 3) and ("state" in message_str_json or "state_l1" in message_str_json or "state_l2" in message_str_json) and \
                     mqtt_payload is not None and ("state" in str_attribute or "state_l1" in str_attribute or "state_l2" in str_attribute)):
                     cur_mqtt.execute(
                         'SELECT `id`, `current_val_2` FROM `relays` where relay_id = %s AND relay_child_id = %s LIMIT 1;',
