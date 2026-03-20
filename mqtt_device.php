@@ -92,7 +92,7 @@ if (isset($_POST['submit'])) {
                         	$mqtt_attribute = "empty";
 			} else {
 //				$mqtt_topic = substr($mqtt_topic, 0, strpos($mqtt_topic, "/",  strpos($mqtt_topic, "/") + 1));
-                $mqtt_attribute = substr($mqtt_topic, strrpos($mqtt_topic, '/') + 1);
+				$mqtt_attribute = substr($mqtt_topic, strrpos($mqtt_topic, '/') + 1);
 				$mqtt_topic = preg_replace('/set.*/', 'get', $mqtt_topic);
 			}
 	                if ($id == 0) {
