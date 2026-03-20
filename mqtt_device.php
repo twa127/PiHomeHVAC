@@ -86,12 +86,14 @@ if (isset($_POST['submit'])) {
         // if a controller device the Add/Edit the correstonding STATE entry
         if ($mqtt_type_id == 1 || $mqtt_type_id == "1") {
 		if ($state_message == "1") {
-                        $mqtt_attribute = substr($mqtt_topic, strrpos($mqtt_topic, '/') + 1);
-                        if ($brand_id == 0 || $brand_id == 3) {
-        	        	$mqtt_topic = str_replace("cmnd","tele",$mqtt_topic);
-				$mqtt_topic = preg_replace('/POWER.*/', 'STATE', $mqtt_topic);
+                        if ($brand_id == 0 || $brand_id == 4) {
+        	        	$mqtt_topic = str_replace("cmnd","stat",$mqtt_topic);
+				$mqtt_topic = preg_replace('/POWER.*/', 'RESULT', $mqtt_topic);
+                        	$mqtt_attribute = "empty";
 			} else {
-				$mqtt_topic = substr($mqtt_topic, 0, strpos($mqtt_topic, "/",  strpos($mqtt_topic, "/") + 1));
+//				$mqtt_topic = substr($mqtt_topic, 0, strpos($mqtt_topic, "/",  strpos($mqtt_topic, "/") + 1));
+				$mqtt_topic = preg_replace('/set.*/', 'get', $mqtt_topic);
+                        	$mqtt_attribute = substr($mqtt_topic, strrpos($mqtt_topic, '/') + 1);
 			}
 	                if ($id == 0) {
 		                $query = "INSERT INTO `mqtt_devices`(`child_id`, `nodes_id`, `type`, `purge`, `brand`, `name`, `mqtt_topic`, `on_payload`, `off_payload`, `attribute`,
@@ -351,7 +353,7 @@ if (isset($_POST['submit'])) {
                 						<?php echo '<option ' . ($row['brand'] == 0 ? 'selected' : '') . ' value = 0>Tasmota</option>';?>
                                                                 <?php echo '<option ' . ($row['brand'] == 1 ? 'selected' : '') . ' value = 1>Shelly</option>';?>
                                                                 <?php echo '<option ' . ($row['brand'] == 2 ? 'selected' : '') . ' value = 2>Sonoff</option>';?>
-                                                            	<?php echo '<option ' . ($row['brand'] == 3 ? 'selected' : '') . ' value = 3>Tuya</option>';?>
+                                                                <?php echo '<option ' . ($row['brand'] == 3 ? 'selected' : '') . ' value = 3>Tuya</option>';?>
                                                                 <?php echo '<option ' . ($row['brand'] == 4 ? 'selected' : '') . ' value = 4>Other</option>';?>
                                                         </select>
                                                         <div class="help-block with-errors"></div>
