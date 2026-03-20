@@ -1960,6 +1960,7 @@ def set_relays(
             'SELECT `mqtt_topic`, `on_payload`, `off_payload`  FROM `mqtt_devices` WHERE `type` = "1" AND `nodes_id` = (%s) AND `child_id` = (%s) LIMIT 1',
             [n_id, out_child_id],
         )
+        # are there any relay/controller type devices (type = 1)
         if cur.rowcount > 0:
             if time.time() - hour_timer <= 60*60 and not clear_hour_timer:
                 mqtt_sent += 1
@@ -2024,56 +2025,58 @@ def set_relays(
                 [timestamp, n_id],
             )
             con.commit()
-        # does this sensor return its state
-        cur.execute(
-            'SELECT `mqtt_topic`, `attribute`, `brand` FROM `mqtt_devices` WHERE `type` = "0" AND `nodes_id` = (%s) AND `child_id` = (%s) LIMIT 1',
-            [n_id, out_child_id],
-        )
-        if cur.rowcount > 0:
-            results_mqtt_r = cur.fetchone()
-            description_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
-            mqtt_brand = results_mqtt_r[description_to_index["brand"]]
-            if mqtt_brand == 0:
-                mqtt_topic = "cmnd/" + results_mqtt_r[description_to_index["mqtt_topic"]].split('/')[1].strip() + "/POWER"
-                attribute_json = ""
-            else:
-                mqtt_topic = results_mqtt_r[description_to_index["mqtt_topic"]]
-                attribute_str=results_mqtt_r[description_to_index["attribute"]]
-                attribute_json = json.dumps({attribute_str: ""})
-            # check if returns state matches set state
+            # does this relay return its state (type = 0)
             cur.execute(
-                'SELECT `current_val_2` FROM `relays` WHERE `relay_id` = (%s) AND `relay_child_id` = (%s) LIMIT 1',
+                'SELECT `mqtt_topic`, `attribute`, `brand` FROM `mqtt_devices` WHERE `type` = "0" AND `nodes_id` = (%s) AND `child_id` = (%s) LIMIT 1',
                 [n_id, out_child_id],
             )
-            # if states do not natch then send request to get state from relay
             if cur.rowcount > 0:
-                result_mqtt_r = cur.fetchone()
+                results_mqtt_r = cur.fetchone()
                 description_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
-                current_val_2 = result_mqtt_r[description_to_index["current_val_2"]]
-                if current_val_2 != int(out_payload):
-                    print("\nSending the following MQTT State Request Message:")
-                    print("Topic: %s" % mqtt_topic)
-                    print("Message: %s" % attribute_json)
-                    # remove lock to allow message to be processed
-                    if mqtt_lock:
-                        mqtt_lock = False
-                    if paho_version.find("1.5.0") != -1:
-                        mqttClient.publish(
-                            topic=mqtt_topic,
-                            payload=attribute_json,
-                            qos=1,
-                            retain=False,
-                        )
-                    else:
-                        msg_info = mqttClient.publish(mqtt_topic, attribute_json, qos=1)
-                        unacked_publish.add(msg_info.mid)
+                mqtt_brand = results_mqtt_r[description_to_index["brand"]]
+                if mqtt_brand == 0:
+                    # handle Tasmota type device
+                    mqtt_topic = "cmnd/" + results_mqtt_r[description_to_index["mqtt_topic"]].split('/')[1].strip() + "/POWER"
+                    attribute_json = ""
+                else:
+                    # handle all other type devices
+                    mqtt_topic = results_mqtt_r[description_to_index["mqtt_topic"]]
+                    attribute_str=results_mqtt_r[description_to_index["attribute"]]
+                    attribute_json = json.dumps({attribute_str: ""})
+                # check if returns state matches set state
+                cur.execute(
+                    'SELECT `current_val_2` FROM `relays` WHERE `relay_id` = (%s) AND `relay_child_id` = (%s) LIMIT 1',
+                    [n_id, out_child_id],
+                )
+                # if states do not natch then send request to get state from relay
+                if cur.rowcount > 0:
+                    result_mqtt_r = cur.fetchone()
+                    description_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+                    current_val_2 = result_mqtt_r[description_to_index["current_val_2"]]
+                    if current_val_2 != int(out_payload):
+                        print("\nSending the following MQTT State Request Message:")
+                        print("Topic: %s" % mqtt_topic)
+                        print("Message: %s" % attribute_json)
+                        # remove lock to allow message to be processed
+                        if mqtt_lock:
+                            mqtt_lock = False
+                        if paho_version.find("1.5.0") != -1:
+                            mqttClient.publish(
+                                topic=mqtt_topic,
+                                payload=attribute_json,
+                                qos=1,
+                                retain=False,
+                            )
+                        else:
+                            msg_info = mqttClient.publish(mqtt_topic, attribute_json, qos=1)
+                            unacked_publish.add(msg_info.mid)
 
-                        # Wait for all message to be published
-                        while len(unacked_publish):
-                            time.sleep(0.1)
+                            # Wait for all message to be published
+                            while len(unacked_publish):
+                                time.sleep(0.1)
 
-                        # Due to race-condition described above, the following way to wait for all publish is safer
-                        msg_info.wait_for_publish()
+                            # Due to race-condition described above, the following way to wait for all publish is safer
+                            msg_info.wait_for_publish()
 
     elif node_type.find("Dummy") != -1 :  # process Dummy mode
         cur.execute(
