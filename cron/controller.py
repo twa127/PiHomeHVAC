@@ -2984,7 +2984,7 @@ try:
                     zone_sensor_fault = zone_commands_dict[zc]["zone_sensor_fault"]
                     sensor_seen_time = zone_commands_dict[zc]["sensor_seen_time"]
                     temp_reading_time = zone_commands_dict[zc]["temp_reading_time"]
-                    combined_zone_state = combined_zone_state | zone_status
+#                    combined_zone_state = combined_zone_state | zone_status
                     combined_zone_state_prev = combined_zone_state_prev | zone_status_prev
 
                     #Zone category 0 and system controller is not requested calculate if overrun needed
@@ -3035,6 +3035,7 @@ try:
                         zone_command = 1
                     else:
                         zone_command = 0
+                    combined_zone_state = combined_zone_state | zone_status
 
                     #***************************************************************************************
                     # update zone_current_state table
