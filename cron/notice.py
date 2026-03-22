@@ -570,7 +570,7 @@ try:
                 cursorupdate.close()
                 con.commit()
             else:  # node has now reported so delete any 'notice' records
-                query = "DELETE FROM notice WHERE message LIKE '" + name + " " + str(id) + "%'"
+                query = "DELETE FROM notice WHERE message LIKE '%" + name + " " + str(id) + "%'"
                 cursordelete = con.cursor()
                 cursordelete.execute(query)
                 cursordelete.close()
