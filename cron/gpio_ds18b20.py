@@ -333,7 +333,7 @@ while True:
                     # calculate the sum of all the bytes, to catch error when all data = 0x00
                     sum = 0
                     for x in range(0, 27, 3):
-                        sum = (int(lines[0][x:x+3], 16))
+                        sum = sum + (int(lines[0][x:x+3], 16))
                     if lines[0].find("YES") != -1 and sum > 0:
                         pok = lines[1].find('=')
                         if not ewma_flag:
