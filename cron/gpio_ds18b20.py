@@ -29,7 +29,7 @@ print("***********************************************************")
 print("*   PiHome DS18B20 Temperature Sensors Data to MySQL DB   *")
 print("* Use this script if you have DS18B20 Temperature sensors *")
 print("* Connected directly on Raspberry Pi GPIO.                *")
-print("*                                  Build Date: 14/02/2026 *")
+print("*                                  Build Date: 24/03/2026 *")
 print("*                                    Have Fun - PiHome.eu *")
 print("***********************************************************")
 print(" " + bc.ENDC)
@@ -330,7 +330,11 @@ while True:
                 #print lines
                 # If we got data then proceed
                 if len(lines) > 0:
-                    if lines[0].find("YES") != -1 and lines[0][-7:-5].find("00") == -1:
+                    # calculate the sum of all the bytes, to catch error when all data = 0x00
+                    sum = 0
+                    for x in range(0, 27, 3):
+                        sum = (int(lines[0][x:x+3], 16))
+                    if lines[0].find("YES") != -1 and sum > 0:
                         pok = lines[1].find('=')
                         if not ewma_flag:
                             temperature.append(float(lines[1][pok+1:pok+6])/1000)
