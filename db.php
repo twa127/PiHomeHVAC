@@ -2752,5 +2752,50 @@ if($what=="schedule_relay"){
                 }
         }
 }
+
+//Setup Hot Water Compensation
+if($what=="setup_hw_comp"){
+        $enabled = $_GET['enabled'];
+        $hw_comp_zone = $_GET['hw_comp_zone'];
+        $hw_sensor_id = $_GET['hw_sensor_id'];
+        $hw_coefficient = $_GET['hw_coefficient'];
+        $hw_threshold = $_GET['hw_threshold'];
+        $default_c = $_GET['default_c'];
+        if ($enable=='true'){$enable = '1';} else {$enable = '0';}
+
+        //search for exiting record
+        $update_error = 0;
+        $query = "SELECT * FROM hw_compensation LIMIT 1;";
+        $result = $conn->query($query);
+        if (mysqli_num_rows($result)==0){
+                //Inset New Record
+                $query = "INSERT INTO hw_compensation (`sync`, `purge`, enabled, zone_id, sensor_id, hw_coefficient, hw_threshold)
+                        VALUES (0, 0, '".$enabled."', '".$hw_comp_zone."', '".$hw_sensor_id."', '".$hw_coefficient."', '".$hw_threshold."');";
+        } else {
+                //Update Exiting Record
+                $query = "UPDATE hw_compensation SET enabled = ".$enabled.", zone_id = ".$hw_comp_zone.", sensor_id = ".$hw_sensor_id.", hw_coefficient = ".$hw_coefficient.",
+                        hw_threshold = ".$hw_threshold.";";
+        }
+        if(!$conn->query($query)){
+                $update_error=1;
+        }
+        if($update_error==0){
+                $query = "UPDATE zone_sensors SET default_c = ".$default_c." WHERE zone_id = ".$hw_comp_zone.";";
+                if(!$conn->query($query)){
+                        $update_error=1;
+                }
+        }
+
+        if($update_error==0){
+                header('Content-type: application/json');
+                echo json_encode(array('Success'=>'Success','Query'=>$query));
+                return;
+        }else{
+                header('Content-type: application/json');
+                echo json_encode(array('Message'=>'Database query failed.\r\nQuery=' . $query));
+                return;
+        }
+
+}
 ?>
 <?php if(isset($conn)) { $conn->close();} ?>

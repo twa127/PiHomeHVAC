@@ -266,7 +266,7 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
 						}
 
 						//query to get zone current state
-                        $query = "SELECT zone_current_state.*, MAX(sdtz.disabled) AS disabled
+                        $query = "SELECT zone_current_state.*
                                 FROM zone_current_state
                                 JOIN schedule_daily_time_zone sdtz ON sdtz.zone_id = zone_current_state.zone_id
                                 WHERE zone_current_state.zone_id = '{$zone_id}' LIMIT 1;";
@@ -284,7 +284,6 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
 						$temp_reading_time = $zone_current_state['sensor_reading_time'];
 						$overrun = $zone_current_state['overrun'];
 						$schedule = $zone_current_state['schedule'];
-						$disabled = $zone_current_state['disabled'];
 
 		                //get the current zone schedule status
 			            $sch_status = $schedule & 0b1;
@@ -381,9 +380,15 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
 			                        //Left small circular icon/color status
 						echo '<small class="statuscircle" id="zs1_'.$zone_id.'"><i class="bi bi-circle-fill '.$rval['status'].'" style="font-size: 0.55rem;"></i></small>';
 		        	                //Middle target temp
-                			        if ($sensor_type_id != 3) { echo '<small class="statusdegree" id="zs2_'.$zone_id.'">' . $rval['target'] .'</small>'; }
+                                                if ($sensor_type_id != 3) {
+                                                        if ($zone_weather_comp == 0) {
+                                                                echo '<small class="statusdegree" id="zs2_'.$zone_id.'">' . $rval['target'] .'</small>';
+                                                        } elseif (strlen($rval['target']) != 0) {
+                                                                echo '<small class="statusdegree" id="zs2_'.$zone_id.'">[' . $rval['target'] .']</small>';
+                                                        }
+                                                }
 		                        	//Right icon for what/why
-                                    if($disabled == 2) {
+                                    if($schedule == 2) {
                                     	echo '<small class="statuszoon" id="zs3_'.$zone_id.'"><i class="bi bi-x-circle-fill  colorize-blue" style="font-size: 0.6rem;"></i></small>';
 									} else {
 										if($overrun == 0) {

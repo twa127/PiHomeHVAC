@@ -1835,3 +1835,27 @@ var idata="w=relay_group&o=delete&wid="+wid;
     .always(function() {
     });
 }
+
+//update hot water compensation
+function setup_hw_comp(){
+var idata="w=setup_hw_comp&o=update&enabled="+document.getElementById("checkbox2").checked;
+    idata+="&hw_comp_zone="+document.getElementById("hw_comp_zone").value;
+        idata+="&hw_coefficient="+document.getElementById("hw_coefficient").value;
+        idata+="&hw_threshold="+document.getElementById("hw_threshold").value;
+        idata+="&default_c="+document.getElementById("default_temp").value;
+        idata+="&hw_sensor_id="+document.getElementById("weather_sensor_id").value;
+    idata+="&wid=0";
+    $.get('db.php',idata)
+    .done(function(odata){
+        if(odata.Success)
+            window.location="settings.php?s_id=3"
+        else
+            console.log(odata.Message);
+    })
+    .fail(function( jqXHR, textStatus, errorThrown ){
+        if(jqXHR==401 || jqXHR==403) return;
+        console.log("setup_hw_comp: Error.\r\n\r\njqXHR: "+jqXHR+"\r\n\r\ntextStatus: "+textStatus+"\r\n\r\nerrorThrown:"+errorThrown);
+    })
+    .always(function() {
+    });
+}

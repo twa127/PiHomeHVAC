@@ -86,36 +86,38 @@ if ($type <= 4 || $type == 38) {
 	//process  zones
 	//---------------
 	$active_schedule = 0;
-    $query = "SELECT `zone`.`id`, `zone_type`.`category` FROM `zone`, `zone_type` WHERE `zone`.`id` = {$id} AND `zone`.`type_id` = `zone_type`.`id`;";
-	$result = $conn->query($query);
-	$row = mysqli_fetch_assoc($result);
-	$zone_id=$row['id'];
-	$zone_category=$row['category'];
+        $query = "SELECT `zone`.`id`, `zt`.`category`, `hw`.`enabled`
+                FROM `zone`
+                JOIN `zone_type` `zt` ON `zt`.`id` = `zone`.`type_id`
+                LEFT JOIN `hw_compensation` `hw` ON `hw`.`zone_id` = `zone`.`id`
+                WHERE `zone`.`id` = {$id};";
+        $result = $conn->query($query);
+        $row = mysqli_fetch_assoc($result);
+        $zone_category=$row['category'];
+        $zone_weather_comp = $row['enabled'];
 
-	//query to get zone current state
-    $query = "SELECT zone_current_state.*, MAX(sdtz.disabled) AS disabled
+        //query to get zone current state
+        $query = "SELECT zone_current_state.*
                 FROM zone_current_state
-                JOIN schedule_daily_time_zone sdtz ON sdtz.zone_id = zone_current_state.zone_id
                 WHERE zone_current_state.zone_id = '{$id}' LIMIT 1;";
-	$result = $conn->query($query);
-	$zone_current_state = mysqli_fetch_array($result);
-	$zone_mode = $zone_current_state['mode'];
-	$zone_temp_reading = $zone_current_state['temp_reading'];
+        $result = $conn->query($query);
+        $zone_current_state = mysqli_fetch_array($result);
+        $zone_mode = $zone_current_state['mode'];
+        $zone_temp_reading = $zone_current_state['temp_reading'];
         if ($zone_category == 2) { $zone_temp_target = ""; } else { $zone_temp_target = $zone_current_state['temp_target']; }
-	$zone_temp_cut_in = $zone_current_state['temp_cut_in'];
-	$zone_temp_cut_out = $zone_current_state['temp_cut_out'];
-	$zone_ctr_fault = $zone_current_state['controler_fault'];
-	$controler_seen = $zone_current_state['controler_seen_time'];
-	$zone_sensor_fault = $zone_current_state['sensor_fault'];
-	$sensor_seen = $zone_current_state['sensor_seen_time'];
-	$temp_reading_time= $zone_current_state['sensor_reading_time'];
-	$overrun= $zone_current_state['overrun'];
-    $schedule = $zone_current_state['schedule'];
-	$disabled = $zone_current_state['disabled'];
+        $zone_temp_cut_in = $zone_current_state['temp_cut_in'];
+        $zone_temp_cut_out = $zone_current_state['temp_cut_out'];
+        $zone_ctr_fault = $zone_current_state['controler_fault'];
+        $controler_seen = $zone_current_state['controler_seen_time'];
+        $zone_sensor_fault = $zone_current_state['sensor_fault'];
+        $sensor_seen = $zone_current_state['sensor_seen_time'];
+        $temp_reading_time= $zone_current_state['sensor_reading_time'];
+        $overrun= $zone_current_state['overrun'];
+        $schedule = $zone_current_state['schedule'];
 
-    //get the current zone schedule status
-    $sch_status = $schedule & 0b1;
-    $away_sch = ($schedule >> 1) & 0b1;
+	//get the current zone schedule status
+	$sch_status = $schedule & 0b1;
+	$away_sch = ($schedule >> 1) & 0b1;
 
 	if ($zone_category == 1 || $zone_category == 2  || $zone_category == 5) {
         	if ($zone_mode == 0) { $add_on_active = 0; } else { $add_on_active = 1; }
@@ -217,23 +219,29 @@ if ($type <= 4 || $type == 38) {
         		echo '<i class="bi bi-circle-fill '.$rval['status'].'" style="font-size: 0.55rem;">';
                 	break;
 	        case 3:
-        	       	if ($sensor_type_id != 3) { echo $rval['target']; }
-                	break;
+                        if ($sensor_type_id != 3) {
+                                if ($zone_weather_comp == 0) {
+                                        echo $rval['target'];
+                                } else {
+                                        echo "[".$rval['target']."]";
+                                }
+                        }
+                        break;
 	        case 4:
-            	if($disabled == 2) {
-    				echo '<i class="bi bi-x-circle-fill  colorize-blue" style="font-size: 0.6rem;">';
-                } else {
-                    if($overrun == 0) {
-                        echo '<i class="bi ' . $rval['shactive'] . ' ' . $rval['shcolor'] . ' bi-fw">';
-                    } elseif ($overrun == 1) {
-                        echo '<i class="bi bi-play-fill orange-red" style="font-size: 0.8rem;">';
-                    }
-                }
-                break;
+                        if($schedule == 2) {
+                                echo '<i class="bi bi-x-circle-fill  colorize-blue" style="font-size: 0.6rem;">';
+                        } else {
+                                if($overrun == 0) {
+                                        echo '<i class="bi ' . $rval['shactive'] . ' ' . $rval['shcolor'] . ' bi-fw">';
+                                } elseif ($overrun == 1) {
+                                        echo '<i class="bi bi-play-fill orange-red" style="font-size: 0.8rem;">';
+                                }
+                        }
+                        break;
 			// livetemp
-			case 38:
-				echo number_format(DispSensor($conn,$zone_c,$sensor_type_id),1).$unit;
-				break;
+		case 38:
+			echo number_format(DispSensor($conn,$zone_c,$sensor_type_id),1).$unit;
+			break;
 	        default:
 	}
 } elseif ($type == 6 || $type == 7 || $type == 8)  {

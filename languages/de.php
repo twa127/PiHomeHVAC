@@ -1110,6 +1110,14 @@ $lang['setup_stand_alone_relays'] = "Setup Guide Stand-Alone Relays";
 $lang['brand'] = "Brand";
 $lang['brand_info'] = "Select Device Manufacturer or Default";
 $lang['about_maxair'] = "About MaxAir";
+$lang['hw_comp'] = "Hot Water Comp";
+$lang['hot_water_comp'] = "Hot Water Compensation";
+$lang['hw_comp_info_text'] = "Enable Hot Water Weather Compensation, using a coefficient and a threshold temperature.";
+$lang['select_hw_zone_info'] = "Select Hot Water Zone";
+$lang['setup_guide_hot_water_compensation'] = "Setup Guide Hot Water Compensation";
+$lang['coefficient'] = "Coefficient";
+$lang['threshold'] = "Threshold";
+$lang['no_hot_water_zone'] = "No Hot Water Zone Found";
 
 if (file_exists(__DIR__.'/lo.php')) { require_once(__DIR__.'/lo.php'); }
 ?>

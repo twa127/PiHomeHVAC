@@ -3406,6 +3406,117 @@ echo '<div class="modal fade" id="zone_current_state_logs" tabindex="-1" role="d
     </div>
 </div>';
 
+//Hot Water Compensation settings
+echo '
+<div class="modal fade" id="hw_compensation" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['hot_water_comp'].'</h5>
+                                <div class="dropdown float-right">
+                                        <a class="" data-bs-toggle="dropdown" href="#">
+                                                <i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
+                                        </a>
+                                        <ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
+                                        <li><a class="dropdown-item" href="pdf_download.php?file=setup_guide_hot_water_compensation.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_guide_hot_water_compensation'].'</a></li>
+                                        </ul>
+                                </div>
+                        </div>
+                        <div class="modal-body">';
+                                $query = "SELECT hw_compensation.zone_id, hw_compensation.sensor_id, hw_compensation.hw_coefficient, hw_compensation.hw_threshold,
+                                        hw_compensation.enabled, zone_sensors.default_c
+                                        FROM hw_compensation, zone_sensors
+                                        WHERE zone_sensors.zone_id = hw_compensation.zone_id LIMIT 1;";
+                                $result = $conn->query($query);
+                                if (mysqli_num_rows($result) > 0){
+                                        $hw_zone = 1;
+                                        $row = mysqli_fetch_array($result);
+                                        echo '<p class="text-muted">'.$lang['hw_comp_info_text'].'</p>
+                                        <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
+                                        <div class="form-group" class="control-label">
+                                                <div class="form-check">';
+                                                        if ($row['enabled'] == '1'){
+                                                                echo '<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" value="1" id="checkbox2" name="enabled" checked>';
+                                                        } else {
+                                                                echo '<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" value="1" id="checkbox2" name="enabled">';
+                                                        }
+                                                        echo '<label class="form-check-label" for="checkbox2">'.$lang['enable'].'</label>
+                                                </div>
+                                        </div>
+
+                                        <!-- /.form-group -->
+                                        <input type="hidden" id="default_c" name="default_c" value="'.$row["default_c"].'">
+                                        <div class="form-group" class="control-label"><label>'.$lang['zone'].'</label> <small class="text-muted">'.$lang['select_hw_zone_info'].'</small>
+                                                <select class="form-select" type="text" id="hw_comp_zone" name="hw_comp_zone" >';
+                                                //get list of heat relays to display
+                                                $query = "SELECT zone.id, zone.name, zone_sensors.default_c FROM zone, zone_sensors WHERE (zone_sensors.zone_id) = zone.id AND type_id =3;";
+                                                $result = $conn->query($query);
+                                                if ($result){
+                                                        while ($zrow=mysqli_fetch_array($result)) {
+                                                                echo '<option value="'.$zrow['id'].'" ' . ($zrow['id']==$row['zone_id'] ? 'selected' : '') . '>'.$zrow['name'].'</option>';
+                                                        }
+                                                }
+                                                echo '</select>
+                                                <div class="help-block with-errors"></div>
+                                        </div>
+
+                                        <!-- /.form-group -->
+                                        <div class="form-group" class="control-label"><label>'.$lang['coefficient'].' </label>
+                                                <input class="form-control" type="text" id="hw_coefficient" name="hw_coefficient" value="'.$row['hw_coefficient'].'" placeholder="Coefficient">
+                                                <div class="help-block with-errors"></div>
+                                        </div>
+
+                                        <!-- /.form-group -->
+                                        <div class="form-group" class="control-label"><label>'.$lang['threshold'].' </label>
+                                                <input class="form-control" type="text" id="hw_threshold" name="hw_threshold" value="'.$row['hw_threshold'].'" placeholder="Threshold">
+                                                <div class="help-block with-errors"></div>
+                                        </div>
+
+                                        <!-- /.form-group -->
+                                        <div class="form-group" class="control-label"><label>'.$lang['default_temperature'].' </label>
+                                                <input class="form-control" type="text" id="default_temp" name="default_temp" value="'.$row['default_c'].'" placeholder="Zone Default Temp">
+                                                <div class="help-block with-errors"></div>
+                                        </div>
+
+                                        <!-- /.form-group -->
+                                        <div class="form-group" class="control-label"><label>'.$lang['weather_sensor'].'</label> <small class="text-muted">'.$lang['weather_sensor_info'].'</small>
+                                                <select class="form-select" type="text" id="weather_sensor_id" name="weather_sensor_id" >
+                                                        <option value="0" ' . ($brow['weather_sensor_id'] == 0 || $brow['weather_sensor_id'] == '0' ? 'selected' : '') . '>'.$lang['openweather'].'</option>';
+                                                        //get list of sensors to display
+                                                        $query = "SELECT id, name FROM sensors WHERE sensor_type_id = 1;";
+                                                        $result = $conn->query($query);
+                                                        if ($result){
+                                                                while ($srow=mysqli_fetch_array($result)) {
+                                                                        echo '<option value="'.$srow['id'].'" ' . ($srow['id']==$row['sensor_id'] ? 'selected' : '') . '>'.$srow['name'].'</option>';
+                                                                }
+                                                        }
+                                                echo '</select>
+                                                <div class="help-block with-errors"></div>
+                                        </div>
+                                        <!-- /.form-group -->
+                                        ';
+                                } else {
+                                        $hw_zone = 0;
+                                        echo '<p class="text-muted">'.$lang['no_hot_water_zone'].'</p>';
+                                }
+                        echo '</div>
+
+                        <!-- /.modal-body -->
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>';
+				if ($hw_zone == 1) {
+                                	echo '<input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="setup_hw_comp()">';
+				}
+                        echo '</div>
+                        <!-- /.modal-footer -->
+                </div>
+                <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+</div>
+<!-- /.modal fade -->
+';
 }
 
 if ($model_num == 4) {
