@@ -347,6 +347,8 @@ def get_zone_schedule_status(
 ):
 
     end_time = int_time_stamp
+    smart_off_flag = False
+    smart_off_time = 0
 
     #get raw data
     qry_str = """SELECT schedule_daily_time.id AS time_id, schedule_daily_time.start, schedule_daily_time.start_sr, schedule_daily_time.start_ss, schedule_daily_time.start_offset,
