@@ -93,6 +93,8 @@ if (isset($_POST['submit'])) {
 	$start_time = $_POST['start_time'];
 	$end_time = $_POST['end_time'];
 
+        $show_dis_sch = isset($_POST['show_dis_sch']) ? $_POST['show_dis_sch'] : "0";
+
         if(isset($_GET['nid'])) {
 //                $sc_en = isset($_POST['sc_en']) ? $_POST['sc_en'] : "0";
                 $query = "SELECT * FROM schedule_night_climate_time;";
@@ -203,9 +205,9 @@ if (isset($_POST['submit'])) {
                 $sdt_count = $result->num_rows;
                	if ($sdt_count == 0) {
 	                $query = "INSERT INTO `schedule_daily_time`(`id`, `sync`, `purge`, `status`, `start`, `start_sr`, `start_ss`, `start_offset`, `end`, `end_sr`, `end_ss`,
-				`end_offset`, `WeekDays`, `run_time`, `sch_name`, `type`, `smart_off`)
+				`end_offset`, `WeekDays`, `run_time`, `sch_name`, `type`, `smart_off`, `show_disabled`)
 				VALUES ('{$time_id}','0', '0', '{$sc_en}', '{$start_time}', '{$start_sr}', '{$start_ss}', '{$start_offset}','{$end_time}', '{$end_sr}', '{$end_ss}',
-				'{$end_offset}','{$mask}', 0, '{$sch_name}', '{$aw_en}',  '{$smart_off}');";
+				'{$end_offset}','{$mask}', 0, '{$sch_name}', '{$aw_en}', '{$smart_off}', '{$show_dis_sch}');";
 		} else {
 			$query = "UPDATE schedule_daily_time SET sync = '0', status = '{$sc_en}', start = '{$start_time}', start_sr = '{$start_sr}', start_ss = '{$start_ss}',
 				start_offset = '{$start_offset}', end = '{$end_time}', end_sr = '{$end_sr}', end_ss = '{$end_ss}', end_offset = '{$end_offset}', WeekDays = '{$mask}',
@@ -213,7 +215,7 @@ if (isset($_POST['submit'])) {
 			if ($schedule_type == 2) {
                                 $query = $query . " WHERE id = '{$time_id}';";
 			} else {
-				$query = $query . ", smart_off = '{$smart_off}' WHERE id = '{$time_id}';";
+				$query = $query . ", smart_off = '{$smart_off}', show_disabled = '{$show_dis_sch}' WHERE id = '{$time_id}';";
 			}
 		}
 		$result = $conn->query($query);
@@ -314,6 +316,7 @@ if (isset($_POST['submit'])) {
         $query = "SELECT * FROM schedule_daily_time WHERE id = {$time_id}";
         $results = $conn->query($query);
         $time_row = mysqli_fetch_assoc($results);
+        $show_disabled = $time_row["show_disabled"];
 
 	if($schedule_type == 2 ) {
                 $query = "SELECT DISTINCT sdt.id as time_id, relays.id AS zone_id, sdtr.id AS tzr_id, relays.name AS zone_name, sdtr.status AS tzr_status, 0 AS type,
@@ -338,6 +341,8 @@ if (isset($_POST['submit'])) {
 	}
         $zr_results = $conn->query($query);
 } else {
+        $show_disabled = 1;
+
         if($schedule_type == 2 ) {
                 $query = "SELECT DISTINCT relays.id AS tzr_id, relays.name AS zone_name, 0 AS tzr_status, 0 AS type, 2 AS category, 0 AS min_c, 0 AS max_c,
 			0 AS sensor_type_id, 0 AS stype
@@ -412,7 +417,7 @@ if(!isset($_GET['nid'])) {
 
                                         <div class="row">
 	                                        <!-- Enable Schedule -->
-                                                <div class="col-5">
+                                                <div class="col-2">
 							<div class="form-check"">
 								<input class="form-check-input form-check-input-<?php echo theme($conn, settings($conn, 'theme'), 'color'); ?>" style="accent-color: #ff8839;" type="checkbox" value="1" id="checkbox0" name="sc_en" <?php $check = ($time_row['status'] == 1) ? 'checked' : ''; echo $check; ?>>
 								<label class="form-check-label" for="checkbox0"> <?php echo $lang['schedule_enable']; ?></label>
@@ -420,12 +425,23 @@ if(!isset($_GET['nid'])) {
 						</div>
 
 	                                        <!-- Enable Away Schedule -->
-                                                <div class="col-7">
+                                                <div class="col-2">
 		                                        <div class="form-check">
 								<input class="form-check-input form-check-input-<?php echo theme($conn, settings($conn, 'theme'), 'color'); ?>" type="checkbox" value="1" id="checkbox1" name="aw_en" <?php $check = ($time_row['type'] == 1) ? 'checked' : ''; echo $check. " ".$away_disabled ; ?>>
                                 		                <label class="form-check-label" for="checkbox1"> <?php echo $lang['away_enable']; ?></label>
                                         		</div>
 						</div>
+
+                                                <!-- Show/Hide Disabled Zone Schedules -->
+						<?php if ($schedule_type != 2) { ?>
+                                                	<div class="col-2">
+                                                        	<div class="form-check">
+                                                                	<input class="form-check-input form-check-input-<?php echo theme($conn, settings($conn, 'theme'), 'color'); ?>" type="checkbox" value="1" id="checkbox9" name="show_dis_sch" <?php $check = ($show_disabled == 1) ? 'checked' : ''; echo $check; ?>>
+                                                                	<label class="form-check-label" for="checkbox1"> <?php echo $lang['show_disabled_schedule']; ?></label>
+                                                        	</div>
+                                                	</div>
+						<?php } ?>
+						<br><br>
 					</div>
 					<!-- /.row -->
 

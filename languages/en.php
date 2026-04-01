@@ -1153,6 +1153,7 @@ $lang['setup_guide_hot_water_compensation'] = "Setup Guide Hot Water Compensatio
 $lang['coefficient'] = "Coefficient";
 $lang['threshold'] = "Threshold";
 $lang['no_hot_water_zone'] = "No Hot Water Zone Found";
+$lang['show_disabled_schedule'] = "Show Disabled Schedule Icon";
 
 if (file_exists(__DIR__.'/lo.php')) { require_once(__DIR__.'/lo.php'); }
 ?>

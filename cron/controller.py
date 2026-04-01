@@ -350,7 +350,7 @@ def get_zone_schedule_status(
     #get raw data
     qry_str = """SELECT schedule_daily_time.id AS time_id, schedule_daily_time.start, schedule_daily_time.start_sr, schedule_daily_time.start_ss, schedule_daily_time.start_offset,
         schedule_daily_time.end, schedule_daily_time.end_sr, schedule_daily_time.end_ss, schedule_daily_time.end_offset, schedule_daily_time.WeekDays,
-        schedule_daily_time.status AS time_status, schedule_daily_time.sch_name, schedule_daily_time.type AS sch_type, schedule_daily_time.smart_off,
+        schedule_daily_time.status AS time_status, schedule_daily_time.sch_name, schedule_daily_time.type AS sch_type, schedule_daily_time.smart_off, schedule_daily_time.show_disabled,
         schedule_daily_time_zone.disabled, schedule_daily_time_zone.status AS zone_sch_status
         FROM `schedule_daily_time`, `schedule_daily_time_zone`
         WHERE (schedule_daily_time.id = schedule_daily_time_zone.schedule_daily_time_id) AND zone_id = %s"""
@@ -407,6 +407,7 @@ def get_zone_schedule_status(
             sch_name = s[sch_to_index["sch_name"]]
             smart_off = s[sch_to_index["smart_off"]]
             zone_disabled =  s[sch_to_index["disabled"]]
+            zone_show_disabled =  s[sch_to_index["show_disabled"]]
             zone_sch_status =  s[sch_to_index["zone_sch_status"]]
             #use sunrise/sunset if any flags set
             if start_sr == 1 or start_ss == 1 or end_sr == 1 or end_ss == 1:
@@ -499,7 +500,7 @@ def get_zone_schedule_status(
                         smart_off_flag = False
                         smart_off_time = 0
                     break #exit the loop if an active schedule found
-                elif zone_sch_status == 1 and zone_disabled == 1:
+                elif zone_sch_status == 1 and zone_disabled == 1 and zone_show_disabled == 1:
                     sch_status = 2
                     smart_off_flag = False
                     smart_off_time = 0
