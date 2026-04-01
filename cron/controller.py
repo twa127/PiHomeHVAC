@@ -347,9 +347,6 @@ def get_zone_schedule_status(
 ):
 
     end_time = int_time_stamp
-    smart_off_flag = False
-    smart_off_time = 0
-
     #get raw data
     qry_str = """SELECT schedule_daily_time.id AS time_id, schedule_daily_time.start, schedule_daily_time.start_sr, schedule_daily_time.start_ss, schedule_daily_time.start_offset,
         schedule_daily_time.end, schedule_daily_time.end_sr, schedule_daily_time.end_ss, schedule_daily_time.end_offset, schedule_daily_time.WeekDays,
@@ -504,6 +501,10 @@ def get_zone_schedule_status(
                     break #exit the loop if an active schedule found
                 elif zone_sch_status == 1 and zone_disabled == 1:
                     sch_status = 2
+                    smart_off_flag = False
+                    smart_off_time = 0
+                else:
+                    sch_status = 0
                     smart_off_flag = False
                     smart_off_time = 0
             else:
