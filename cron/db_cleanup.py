@@ -62,7 +62,7 @@ if cur.rowcount > 0:
     qry_tuple = ('DELETE FROM messages_in WHERE datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_1),
                  'DELETE FROM nodes_battery WHERE `update` < DATE_SUB(CURDATE(), INTERVAL {});'.format(interval_2),
                  'DELETE FROM nodes_battery WHERE node_id NOT IN (SELECT nodes.node_id  FROM nodes UNION SELECT CONCAT(nodes.node_id,"-",mqtt_devices.child_id) AS node_id FROM mqtt_devices, nodes WHERE mqtt_devices.nodes_id = nodes.id);',
-                 'DELETE FROM `gateway_logs` WHERE pid_datetime < DATE_SUB(CURDATE(), INTERVAL {})  AND id != (SELECT id FROM (SELECT id FROM `gateway_logs` ORDER BY id DESC LIMIT 1) mysel>
+                 'DELETE FROM `gateway_logs` WHERE pid_datetime < DATE_SUB(CURDATE(), INTERVAL {})  AND id != (SELECT id FROM (SELECT id FROM `gateway_logs` ORDER BY id DESC LIMIT 1) myselect);'.format(interval_3),
                  'DELETE FROM relay_logs WHERE datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_4))
     for q in qry_tuple:
         try:
