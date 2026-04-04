@@ -24,7 +24,7 @@ print(bc.WARN + " ")
 print("********************************************************")
 print("*              Database Cleanup Script                 *")
 print("*      Build Date: 18/09/2017                          *")
-print("*      Version 0.01 - Last Modified 21/03/2026         *")
+print("*      Version 0.01 - Last Modified 04/04/2026         *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -37,7 +37,7 @@ print(bc.blu + (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + bc.wht 
 print("-" * line_len)
 
 # set running flag
-with open('/tmp/sc_running', 'w') as fp:
+with open('/tmp/db_cleanup_running', 'w') as fp:
     pass
 
 # Initialise the database access varables
@@ -72,8 +72,8 @@ if cur.rowcount > 0:
         except:
             print(bc.dtm + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Query '" + q + " 'Failed.")
 
-if os.path.exists("/tmp/sc_running"):
-    os.remove("/tmp/sc_running")
+if os.path.exists("/tmp/db_cleanup_running"):
+    os.remove("/tmp/db_cleanup_running")
 
 if con:
     con.close()
