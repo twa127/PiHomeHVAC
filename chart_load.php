@@ -50,7 +50,15 @@ $grow = mysqli_fetch_assoc($result);
 
 if ($grow['mask'] & 0b1) {
 	// create datasets based on all available sensors
-	$querya ="SELECT * FROM sensors WHERE graph_num > 0 AND sensor_type_id = 1 ORDER BY id ASC;";
+//	$querya ="SELECT * FROM sensors WHERE graph_num > 0 AND sensor_type_id = 1 ORDER BY id ASC;";
+	$querya ="SELECT id, sensor_id, sensor_child_id, name, graph_num
+		FROM sensors
+        WHERE sensor_type_id = 1 AND graph_num > 0
+        UNION
+        SELECT zone_id AS id, sensor_id, 0 AS sensor_child_id, CONCAT(name, '-Avg') AS name, graph_num
+        FROM sensor_average, zone
+        WHERE sensor_average.zone_id = zone.id AND graph_num > 0
+        ORDER BY id ASC;";
 	$resulta = $conn->query($querya);
 	$graph1 = '';
 	$graph2 = '';
