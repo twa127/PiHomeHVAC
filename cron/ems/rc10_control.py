@@ -26,7 +26,7 @@ print("********************************************************")
 print("*             EMS Set RC10 Emulator Script             *")
 print("*                                                      *")
 print("*               Build Date: 05/12/2025                 *")
-print("*       Version 0.10 - Last Modified 05/03/2026        *")
+print("*       Version 0.11 - Last Modified 29/04/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -518,6 +518,7 @@ if cur.rowcount > 0 :
     )
     rc10_id = int(result[sensor_to_index["id"]])
     rc10_sensor_id = int(result[sensor_to_index["sensor_id"]])
+    rc10_correction_factor = float(result[sensor_to_index["correction_factor"]])
     if int(result[sensor_to_index["message_in"]]) == 1 :
         rc10_msg_in = True
     else :
@@ -572,9 +573,6 @@ f.close()
 for x in range(0,len(errordata)):
     error_bytes.append(ord(errordata[x]))
 
-# node and child id for the Weather Channel node
-node_id = 1
-child_id = 0
 outside_temp_prev = -99
 
 HW_prev = 0
@@ -801,6 +799,30 @@ while 1:
                                 error_code = error_code | 0b0010
                     if not heatcurve_update_error:
                         # get current outside temperature
+                        #use the same control temperature sensor as for smart_hw (usually the weather channel sensor node_id = 1, child_id = 0
+                        cur.execute(
+                            "SELECT `sensor_id` FROM `hw_compensation` LIMIT 1;"
+                        )
+                        row = cur.fetchone()
+                        row_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+                        control_sensor_id = row[row_to_index["sensor_id"]]
+                        if control_sensor_id == 0:
+                            # node and child id for the Weather Channel node
+                            node_id = 1
+                            child_id = 0
+                        else:
+                            cur.execute(
+                                "SELECT nodes.node_id, sensors.sensor_child_id FROM `nodes`, `sensors` WHERE (`nodes`.`id` = `sensors`.`sensor_id`) AND `sensors`.`id` = %s;",
+                                (control_sensor_id,),
+                            )
+                            if cur.rowcount > 0:
+                                nodes = cur.fetchone()
+                                nodes_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+                                node_id = nodes[nodes_to_index["node_id"]]
+                                child_id = nodes[nodes_to_index["sensor_child_id"]]
+                            else:
+                                node_id = 1
+                                child_id =0
                         cur.execute(
                             "SELECT `payload` FROM `messages_in` WHERE `node_id` = %s AND `child_id` = %s ORDER BY `id` DESC LIMIT 1;",
                             (node_id, child_id),
@@ -929,7 +951,16 @@ while 1:
     if "No RTC Module" not in response:
         split = response.split(' ')
         if "Error" not in split[0]:
-            roomtemp = float(split[1].rstrip())
+            cur.execute(
+                "SELECT `correction_factor` FROM `sensors` WHERE `id` = %s LIMIT 1;",
+                (rc10_id,),
+            )
+            result = cur.fetchone()
+            sensor_to_index = dict(
+                (d[0], i) for i, d in enumerate(cur.description)
+            )
+            rc10_correction_factor = float(result[sensor_to_index["correction_factor"]])
+            roomtemp = float(split[1].rstrip()) + rc10_correction_factor
             room_temp_error = False
         else :
             room_temp_error = True
