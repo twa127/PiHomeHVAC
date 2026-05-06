@@ -27,7 +27,7 @@ print("********************************************************")
 print("*              System Controller Script                *")
 print("*                                                      *")
 print("*               Build Date: 10/02/2023                 *")
-print("*       Version 0.11 - Last Modified 30/03/2026        *")
+print("*       Version 0.12 - Last Modified 05/05/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -344,14 +344,16 @@ def get_zone_schedule_status(
     zone_id,
     holidays_status,
     away_status,
+    summer_status,
 ):
 
     end_time = int_time_stamp
+
     #get raw data
     qry_str = """SELECT schedule_daily_time.id AS time_id, schedule_daily_time.start, schedule_daily_time.start_sr, schedule_daily_time.start_ss, schedule_daily_time.start_offset,
         schedule_daily_time.end, schedule_daily_time.end_sr, schedule_daily_time.end_ss, schedule_daily_time.end_offset, schedule_daily_time.WeekDays,
-        schedule_daily_time.status AS time_status, schedule_daily_time.sch_name, schedule_daily_time.type AS sch_type, schedule_daily_time.smart_off, schedule_daily_time.show_disabled,
-        schedule_daily_time_zone.disabled, schedule_daily_time_zone.status AS zone_sch_status
+        schedule_daily_time.status AS time_status, schedule_daily_time.sch_name, schedule_daily_time.type AS sch_type, schedule_daily_time.smart_off,
+        schedule_daily_time.show_disabled, schedule_daily_time.disable_in_summer, schedule_daily_time_zone.disabled, schedule_daily_time_zone.status AS zone_sch_status
         FROM `schedule_daily_time`, `schedule_daily_time_zone`
         WHERE (schedule_daily_time.id = schedule_daily_time_zone.schedule_daily_time_id) AND zone_id = %s"""
     if away_status == 1:
@@ -409,6 +411,7 @@ def get_zone_schedule_status(
             zone_disabled =  s[sch_to_index["disabled"]]
             zone_show_disabled =  s[sch_to_index["show_disabled"]]
             zone_sch_status =  s[sch_to_index["zone_sch_status"]]
+            zone_disable_in_summer =  s[sch_to_index["disable_in_summer"]]
             #use sunrise/sunset if any flags set
             if start_sr == 1 or start_ss == 1 or end_sr == 1 or end_ss == 1:
                 #get the sunrise and sunset times
@@ -486,7 +489,7 @@ def get_zone_schedule_status(
             )
             con.commit()  # commit above
             if time_now > start_time and time_now < end_time and WeekDays  > 0:
-                if time_status == 1 and zone_sch_status == 1 and zone_disabled == 0:
+                if time_status == 1 and zone_sch_status == 1 and zone_disabled == 0 and (summertime == False or summer_status == 1):
                     sch_status = 1
                     #set the smart_off flag
                     if smart_off != 0:
@@ -502,6 +505,10 @@ def get_zone_schedule_status(
                     break #exit the loop if an active schedule found
                 elif zone_sch_status == 1 and zone_disabled == 1 and zone_show_disabled == 1:
                     sch_status = 2
+                    smart_off_flag = False
+                    smart_off_time = 0
+                elif zone_sch_status == 1 and zone_disable_in_summer == 1 and summertime and summer_status == 0 and zone_show_disabled == 1:
+                    sch_status = 3
                     smart_off_flag = False
                     smart_off_time = 0
                 else:
@@ -805,6 +812,33 @@ try:
         temp_reading_time = None
         expected_end_date_time = None
 
+        #determine if in 'Summer' period
+        #ensure start and end year is set to the current year, for new years day change
+        current_year = datetime.datetime.today().year
+        cur.execute("SELECT * FROM `summer` LIMIT 1;")
+        summer = cur.fetchone()
+        summer_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+        start_year = summer[summer_to_index["start_date"]].year
+        end_year = summer[summer_to_index["end_date"]].year
+        if start_year != current_year or end_year != current_year:
+            qry_str = "UPDATE summer SET start_date = DATE_FORMAT(start_date,'" + str(current_year) + "-%m-%d'), end_date = DATE_FORMAT(end_date,'" + str(current_year) + "-%m-%d');"
+            cur.execute(qry_str)
+            con.commit()  # commit above
+        if summer[summer_to_index["start_date"]] <= datetime.date.today() <= summer[summer_to_index["end_date"]]:
+            summertime = True
+            s_w = 0
+        else:
+            summertime = False
+            s_w = 1
+
+        #update summer_winter on change
+        cur.execute(
+            'UPDATE summer SET summer_winter = %s WHERE summer_winter <> %s',
+            [s_w, s_w],
+        )
+        con.commit()  # commit above
+
+        #check if in test mode
         if settings_dict["test_mode"] == 0 or settings_dict["test_mode"] == 3:
             print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Controller Scan Started")
             #only for de-bugging
@@ -1043,6 +1077,12 @@ try:
                 holidays_status = row[holidays_to_index["status"]]
             else:
                 holidays_status = 0
+
+            #query to check summer status
+            cur.execute("SELECT status FROM summer LIMIT 1")
+            row = cur.fetchone()
+            summer_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+            summer_status = row[summer_to_index["status"]]
 
             #query to get last system controller statues change time
             cur.execute(
@@ -1519,6 +1559,7 @@ try:
                         zone_id,
                         holidays_status,
                         away_status,
+                        summer_status,
                     )
                     sch_status = rval['sch_status']
                     sch_name = rval['sch_name']
@@ -1870,7 +1911,7 @@ try:
                             #night climate time to add 10 minuts for record purpose
                             nc_end_time_rc = time_stamp+ datetime.timedelta(minutes = 10)
                             nc_end_time_rc_str = nc_end_time_rc.strftime('%Y-%m-%d %H:%M:%S')
-                            if (sch_status == 0 or sch_status == 2) and isNowInTimePeriod((datetime.datetime.min + nc_start_time).time(), (datetime.datetime.min + nc_end_time).time(), time_stamp.time()) and nc_time_status == 1 and nc_zone_status == 1 and nc_weekday > 0:
+                            if sch_status != 1 and isNowInTimePeriod((datetime.datetime.min + nc_start_time).time(), (datetime.datetime.min + nc_end_time).time(), time_stamp.time()) and nc_time_status == 1 and nc_zone_status == 1 and nc_weekday > 0:
                                 if dbgLevel >= 2:
                                     print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Night Climate Enabled for This Zone")
                                 night_climate_status = 1
@@ -1937,7 +1978,7 @@ try:
                             target_c = nc_min_c
                         elif zone_override_status == 1:
                             target_c = override_c
-                        elif ((sch_status == 0 or sch_status == 2) or sch_status == 2):
+                        elif (sch_status != 1 or sch_status == 2):
                             target_c = default_c
                         else:
                             if zone_type.find("Water") != -1 and zone_weather_comp == 1:
@@ -2087,12 +2128,12 @@ try:
                                                             zone_mode = 80
                                                             stop_cause = "Schedule Target C Achieved (" + str(zone_c) + ")"
                                                             zone_state = 0
-                                                        if (sch_status == 0 or sch_status == 2) and sch_holidays == 1:
+                                                        if sch_status != 1 and sch_holidays == 1:
                                                             zone_status = 0
                                                             zone_mode = 40
                                                             stop_cause = "Holidays - No Schedule"
                                                             zone_state = 0
-                                                        if (sch_status == 0 or sch_status == 2) and sch_holidays == 0:
+                                                        if sch_status != 1 and sch_holidays == 0:
                                                             zone_status = 0
                                                             zone_mode = 0
                                                             # set the stop_cause dependant on the running mode
@@ -2143,7 +2184,7 @@ try:
                                                 zone_mode = 40
                                                 stop_cause = "Holiday Active"
                                                 zone_state = 0
-                                        elif away_status == 1 and (sch_status == 0 or sch_status == 2):
+                                        elif away_status == 1 and sch_status != 1:
                                             zone_status = 0
                                             zone_mode = 90
                                             stop_cause = "Away Active"
@@ -2355,7 +2396,7 @@ try:
                                             stop_cause = "Holiday Active"
                                             zone_state = 0
         		                # end holidays
-                                    elif away_status == 1 and (sch_status == 0 or sch_status == 2): # end away = 0
+                                    elif away_status == 1 and sch_status != 1: # end away = 0
                                         zone_status = 0
                                         zone_mode = 90
                                         stop_cause = "Away Active"
@@ -2419,12 +2460,12 @@ try:
                                                 add_on_start_cause = "Schedule Started"
                                                 expected_end_date_time = sch_end_time_str
                                                 zone_state = sensor_state
-                                            if (sch_status == 0 or sch_status == 2) and sch_holidays == 1:
+                                            if sch_status != 1 and sch_holidays == 1:
                                                 zone_status = 0
                                                 zone_mode = 40
                                                 add_on_stop_cause = "Holidays - No Schedule"
                                                 zone_state = 0
-                                            if (sch_status == 0 or sch_status == 2) and sch_holidays == 0:
+                                            if sch_status != 1 and sch_holidays == 0:
                                                 zone_status = 0
                                                 zone_mode = 0
                                                 add_on_stop_cause = "No Schedule"
@@ -2434,7 +2475,7 @@ try:
                                         zone_mode = 40
                                         add_on_stop_cause = "Holiday Active"
                                         zone_state = 0
-                                elif away_status == 1 and (sch_status == 0 or sch_status == 2):
+                                elif away_status == 1 and sch_status != 1:
                                     zone_status = 0
                                     zone_mode = 90
                                     add_on_stop_cause = "Away Active"
@@ -2448,7 +2489,7 @@ try:
         		#process Zone Category 2 Switch type zone
                         elif zone_category == 2:
                             if sc_mode != 0:
-                                if away_status == 1 and (sch_status == 0 or sch_status == 2):
+                                if away_status == 1 and sch_status != 1:
                                     zone_status = 0
                                     zone_mode = 90
                                     zone_state = 0
@@ -2468,7 +2509,7 @@ try:
                                     zone_mode = 115
                                     zone_state = 0
                                     add_on_stop_cause = "Manual Stop"
-                                elif (sch_status == 0 or sch_status == 2) and zone_state_current == 0 and boost_status == 0:
+                                elif sch_status != 1 and zone_state_current == 0 and boost_status == 0:
                                     zone_status = 0
                                     zone_mode = 0
                                     zone_state = 0
@@ -2539,7 +2580,7 @@ try:
                                 elif frost_active == 0 and zone_c < zone_max_c:
                                     if away_status == 0 or (away_status == 1 and sch_status == 1):
                                         if holidays_status == 0 or sch_holidays == 1:
-                                            if zone_maintain_default == 1 and (sch_status == 0 or sch_status == 2):
+                                            if zone_maintain_default == 1 and sch_status != 1:
                                                 if zone_c < temp_cut_out_rising:
                                                     zone_status = 1
                                                     zone_mode = 141
@@ -2600,12 +2641,12 @@ try:
                                                         zone_mode = 80
                                                         add_on_stop_cause = "Schedule Target C Achieved"
                                                         zone_state = 0
-                                                    if (sch_status == 0 or sch_status == 2) and sch_holidays== 1:
+                                                    if sch_status != 1 and sch_holidays== 1:
                                                         zone_status = 0
                                                         zone_mode = 40
                                                         add_on_stop_cause = "Holidays - No Schedule"
                                                         zone_state = 0
-                                                    if (sch_status == 0 or sch_status == 2) and sch_holidays == 0:
+                                                    if sch_status != 1 and sch_holidays == 0:
                                                         zone_status = 0
                                                         zone_mode = 0
                                                         add_on_stop_cause = "No Schedule"
@@ -2651,7 +2692,7 @@ try:
                                             zone_mode = 40
                                             add_on_stop_cause = "Holiday Active"
                                             zone_state = 0
-                                    elif away_status == 1 and (sch_status == 0 or sch_status == 2):
+                                    elif away_status == 1 and sch_status != 1:
                                         zone_status = 0
                                         zone_mode = 90
                                         add_on_stop_cause = "Away Active"
@@ -2673,7 +2714,7 @@ try:
                             if sc_mode != 0:
                                 if away_status == 0 or (away_status == 1 and sch_status == 1):
                                     if holidays_status == 0 or sch_holidays == 1:
-                                        if zone_maintain_default == 1 and (sch_status == 0 or sch_status == 2):
+                                        if zone_maintain_default == 1 and sch_status != 1:
                                             if zone_c > temp_cut_out_falling:
                                                 zone_status= 1
                                                 zone_mode = 141
@@ -2731,12 +2772,12 @@ try:
                                                     zone_mode = 110
                                                     add_on_stop_cause = "Schedule Target C Achieved"
                                                     zone_state = 0
-                                                if (sch_status == 0 or sch_status == 2) and sch_holidays == 1:
+                                                if sch_status != 1 and sch_holidays == 1:
                                                     zone_status = 0
                                                     zone_mode = 40
                                                     add_on_stop_cause = "Holidays - No Schedule"
                                                     zone_state = 0
-                                                if (sch_status == 0 or sch_status == 2) and sch_holidays == 0:
+                                                if sch_status != 1 and sch_holidays == 0:
                                                     zone_status = 0
                                                     zone_mode = 0
                                                     add_on_stop_cause = "No Schedule"
@@ -2782,7 +2823,7 @@ try:
                                         zone_mode = 40
                                         add_on_stop_cause = "Holiday Active"
                                         zone_state = 0
-                                elif away_status == 1 and (sch_status == 0 or sch_status == 2):
+                                elif away_status == 1 and sch_status != 1:
                                     zone_status = 0
                                     zone_mode = 90
                                     add_on_stop_cause = "Away Active"
@@ -3884,7 +3925,7 @@ try:
                         )
                         sch_status = rval['sch_status'];
                         sch_time_id = rval['time_id'];
-                        if (sch_status == 0 or sch_status == 2):
+                        if sch_status != 1:
                             relay_state = 0
                         else:
                             relay_state = 1

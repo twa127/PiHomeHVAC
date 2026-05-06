@@ -2062,7 +2062,8 @@ if($what=="set_max_cpu_temp"){
 //set page refresh rate
 if($what=="page_refresh_rate"){
         $page_refresh =  $_GET['new_refresh'];
-        $query = "UPDATE system SET page_refresh = ".$page_refresh.";";
+        $page_timeout =  $_GET['new_timeout'];
+        $query = "UPDATE system SET page_refresh = ".$page_refresh.", page_timeout = ".$page_timeout.";";
         $update_error=0;
         if(!$conn->query($query)){
                 $update_error=1;
@@ -2796,6 +2797,44 @@ if($what=="setup_hw_comp"){
                 return;
         }
 
+}
+
+//Summer
+if($what=="summer"){
+        if($opp=="active"){
+                $query = "SELECT * FROM summer";
+                $results = $conn->query($query);
+                $row = mysqli_fetch_assoc($results);
+                $da= $row['status'];
+                if($da=="1"){ $set="0"; }else{ $set="1"; }
+                $query = "UPDATE summer SET status = '{$set}', sync = '0' LIMIT 1";
+                if($conn->query($query)){
+                        header('Content-type: application/json');
+                        echo json_encode(array('Success'=>'Success','Query'=>$query));
+                        return;
+                }else{
+                        header('Content-type: application/json');
+                        echo json_encode(array('Message'=>'Database query failed.\r\nQuery=' . $query));
+                        return;
+                }
+        }
+}
+
+//set the summer period start and end dates
+if($what=="set_summer_dates"){
+        $start_date =  $_GET['start_date'];
+        $end_date =  $_GET['end_date'];
+        $query = "UPDATE summer SET start_date = '".$start_date."', end_date = '".$end_date."';";
+        $update_error=0;
+        if($conn->query($query)){
+                header('Content-type: application/json');
+                echo json_encode(array('Success'=>'Success','Query'=>$query));
+                return;
+        }else{
+                header('Content-type: application/json');
+                echo json_encode(array('Message'=>'Database query failed.\r\nQuery=' . $query));
+                return;
+        }
 }
 ?>
 <?php if(isset($conn)) { $conn->close();} ?>

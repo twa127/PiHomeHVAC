@@ -24,7 +24,7 @@ print(bc.WARN + " ")
 print("********************************************************")
 print("*              Database Cleanup Script                 *")
 print("*      Build Date: 18/09/2017                          *")
-print("*      Version 0.01 - Last Modified 04/04/2026         *")
+print("*      Version 0.01 - Last Modified 21/03/2026         *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -33,8 +33,6 @@ import MySQLdb as mdb, os, datetime
 import configparser
 
 line_len = 189
-print(bc.blu + (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + bc.wht + " - DB Cleanup Script Started")
-print("-" * line_len)
 
 # set running flag
 with open('/tmp/db_cleanup_running', 'w') as fp:
@@ -49,6 +47,13 @@ dbpass = config.get('db', 'dbpassword')
 dbname = config.get('db', 'dbname')
 con = mdb.connect(dbhost, dbuser, dbpass, dbname)
 cur = con.cursor()
+
+while os.path.isfile("/tmp/on_message_running") or os.path.isfile("/tmp/sc_running") or os.path.isfile("/tmp/gpio_ds18b20_running"):
+    print(bc.blu + (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + bc.wht + " - Waiting for gateway.py")
+    print("-" * line_len)
+
+print(bc.blu + (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + bc.wht + " - DB Cleanup Script Started")
+print("-" * line_len)
 
 cur.execute("SELECT * FROM db_cleanup LIMIT 1;")
 if cur.rowcount > 0:

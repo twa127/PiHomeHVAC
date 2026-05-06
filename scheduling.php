@@ -57,6 +57,7 @@ if ($w_count > 0) {
 //Form submit
 if (isset($_POST['submit'])) {
 	$sc_en = isset($_POST['sc_en']) ? $_POST['sc_en'] : "0";
+        $dis_summer = isset($_POST['dis_summer']) ? $_POST['dis_summer'] : "0";
         if (isset($_GET['type'])) {
 		$aw_en = isset($_POST['aw_en']) ? $_POST['aw_en'] : $_GET['type'];
 	} else {
@@ -203,21 +204,21 @@ if (isset($_POST['submit'])) {
                 $query = "SELECT * FROM `schedule_daily_time` WHERE id = {$time_id};";
                 $result = $conn->query($query);
                 $sdt_count = $result->num_rows;
-               	if ($sdt_count == 0) {
-	                $query = "INSERT INTO `schedule_daily_time`(`id`, `sync`, `purge`, `status`, `start`, `start_sr`, `start_ss`, `start_offset`, `end`, `end_sr`, `end_ss`,
-				`end_offset`, `WeekDays`, `run_time`, `sch_name`, `type`, `smart_off`, `show_disabled`)
-				VALUES ('{$time_id}','0', '0', '{$sc_en}', '{$start_time}', '{$start_sr}', '{$start_ss}', '{$start_offset}','{$end_time}', '{$end_sr}', '{$end_ss}',
-				'{$end_offset}','{$mask}', 0, '{$sch_name}', '{$aw_en}', '{$smart_off}', '{$show_dis_sch}');";
-		} else {
-			$query = "UPDATE schedule_daily_time SET sync = '0', status = '{$sc_en}', start = '{$start_time}', start_sr = '{$start_sr}', start_ss = '{$start_ss}',
-				start_offset = '{$start_offset}', end = '{$end_time}', end_sr = '{$end_sr}', end_ss = '{$end_ss}', end_offset = '{$end_offset}', WeekDays = '{$mask}',
-				run_time = 0, sch_name = '{$sch_name}', type = '{$aw_en}'";
-			if ($schedule_type == 2) {
+                if ($sdt_count == 0) {
+                        $query = "INSERT INTO `schedule_daily_time`(`id`, `sync`, `purge`, `status`, `start`, `start_sr`, `start_ss`, `start_offset`, `end`, `end_sr`, `end_ss`,
+                                `end_offset`, `WeekDays`, `run_time`, `sch_name`, `type`, `smart_off`, `show_disabled`, `disable_in_summer`)
+                                VALUES ('{$time_id}','0', '0', '{$sc_en}', '{$start_time}', '{$start_sr}', '{$start_ss}', '{$start_offset}','{$end_time}', '{$end_sr}', '{$end_ss}',
+                                '{$end_offset}','{$mask}', 0, '{$sch_name}', '{$aw_en}', '{$smart_off}', '{$show_dis_sch}', '{$dis_summer}');";
+                } else {
+                        $query = "UPDATE schedule_daily_time SET sync = '0', status = '{$sc_en}', start = '{$start_time}', start_sr = '{$start_sr}', start_ss = '{$start_ss}',
+                                start_offset = '{$start_offset}', end = '{$end_time}', end_sr = '{$end_sr}', end_ss = '{$end_ss}', end_offset = '{$end_offset}', WeekDays = '{$mask}',
+                                run_time = 0, sch_name = '{$sch_name}', type = '{$aw_en}', disable_in_summer = '{$dis_summer}'";
+                        if ($schedule_type == 2) {
                                 $query = $query . " WHERE id = '{$time_id}';";
-			} else {
-				$query = $query . ", smart_off = '{$smart_off}', show_disabled = '{$show_dis_sch}' WHERE id = '{$time_id}';";
-			}
-		}
+                        } else {
+                                $query = $query . ", smart_off = '{$smart_off}', show_disabled = '{$show_dis_sch}' WHERE id = '{$time_id}';";
+                        }
+                }
 		$result = $conn->query($query);
 		$schedule_daily_time_id = mysqli_insert_id($conn);
 
@@ -423,6 +424,14 @@ if(!isset($_GET['nid'])) {
 								<label class="form-check-label" for="checkbox0"> <?php echo $lang['schedule_enable']; ?></label>
 							</div>
 						</div>
+
+                                                <!-- Disable Schedule in Summer-->
+                                                <div class="col-2">
+                                                        <div class="form-check"">
+                                                                <input class="form-check-input form-check-input-<?php echo theme($conn, settings($conn, 'theme'), 'color'); ?>"style="accent-color: #ff8839;" type="checkbox" value="1" id="checkbox10" name="dis_summer" <?php $check = ($time_row['disable_in_summer'] == 1) ? 'checked' : ''; echo $check; ?>>
+                                                                <label class="form-check-label" for="checkbox10"> <?php echo $lang['disable_schedule_in_summer']; ?></label>
+                                                        </div>
+                                                </div>
 
 	                                        <!-- Enable Away Schedule -->
                                                 <div class="col-2">

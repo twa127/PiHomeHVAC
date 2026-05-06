@@ -467,7 +467,7 @@ if ($type <= 4 || $type == 38) {
 	} else {
 		if ($type == 9) { echo '<i class="bi bi-fire" style="font-size: 1.4rem;">'; } else { echo''; }
 	}
-} elseif ($type == 11 || $type == 12) {
+} elseif ($type == 11 || $type == 12 || $type == 49) {
 	//-------------------------------------------
 	//process homelist and onetouch page buttons
 	//-------------------------------------------
@@ -587,6 +587,44 @@ if ($type <= 4 || $type == 38) {
 		        	if ($holidays_status=='1'){$holidaystatus="red";}elseif ($holidays_status=='0'){$holidaystatus="blueinfo";}
 			}
         		echo '<i class="bi bi-circle-fill '.$holidaystatus.'" style="font-size: 0.55rem;">';
+                        break;
+                case 7:
+                        $query = "SELECT * FROM system_controller LIMIT 1";
+                        $result = $conn->query($query);
+                        $row = mysqli_fetch_array($result);
+                        $sc_mode = $row['sc_mode'];
+
+                        $query = "SELECT status, summer_winter FROM summer LIMIT 1;";
+                        $result = $conn->query($query);
+                        $summer = mysqli_fetch_array($result);
+                        if ($summer['summer_winter'] == '0') {
+                                $summer_winter = $lang["summer"];
+                        } else {
+                                $summer_winter = $lang["winter"];
+                        }
+                        if ($summer['status']=='1') {
+                                if ($summer['summer_winter'] == '0') {
+                                        $summerstatus="blueinfo";
+                                } else {
+                                        $summerstatus="";
+                                }
+                                $summer_state= "OFF";
+                        } elseif ($summer['status']=='0' || $sc_mode == 0) {
+                                if ($summer['summer_winter'] == '0') {
+                                        $summerstatus="red";
+                                } else {
+                                        $summerstatus="";
+                                }
+                                $summer_state= "ON";
+                        }
+//                      if ($sc_mode != 0 ) { echo '<a style="font-style: normal;" href="javascript:active_away();">'; }
+                        if ($type == 11) {
+                                echo '<i class="bi bi-circle-fill '.$summerstatus.'" style="font-size: 0.55rem;"></i>';
+                        } elseif ($type == 49) {
+                                echo $summer_state;
+                        } elseif ($type == 12) {
+                                echo $summer_winter;
+                        }
                         break;
 	}
 } elseif ($type == 13) {
@@ -1641,5 +1679,50 @@ if ($type <= 4 || $type == 38) {
                 	echo '<div class="circle_list bluesch_disable"> <p class="schdegree">D</p></div>';
         	}
 	}
+} elseif ($type == 47) {
+        //---------------------------------
+        //update the temp_delta table head
+        //---------------------------------
+
+        if ($id == 0) {
+                echo $lang['zone'].'&nbsp'.$lang['name'];
+        } else {
+                echo $lang['sensor'].'&nbsp'.$lang['name'];
+        }
+
+} elseif ($type == 48) {
+        //---------------------------------
+        //update the temp_delta table body
+        //---------------------------------
+
+        if ($id == 0 || $id == 1) { $interval = 1; } else { $interval = 24; }
+ 
+        if ($id == 0 || $id == 2) {
+                $query = "SELECT z.id, CONCAT(z.name, ' (', s.name, ')') AS `name`, ROUND(MIN(`payload`), 2) AS `Min`, ROUND(MAX(`payload`), 2) AS `Max`,
+                        ROUND(MAX(`payload`) - MIN(`payload`), 2) AS `Diff`
+                        FROM `zone_sensors`
+                        JOIN zone z ON z.id = zone_sensors.zone_id
+                        JOIN sensors s ON s.id = zone_sensors.zone_sensor_id
+                        JOIN nodes n ON n.id = s.sensor_id
+                        JOIN messages_in m ON m.node_id = n.node_id AND m.child_id = s.sensor_child_id
+                        WHERE datetime >= DATE_SUB(NOW(),INTERVAL {$interval} HOUR) AND s.sensor_type_id = 1
+                        GROUP BY m.node_id, m.child_id;";
+        } else {
+                $query = "SELECT s.id, s.name, ROUND(MIN(`payload`), 2) AS `Min`, ROUND(MAX(`payload`), 2) AS `Max`, ROUND(MAX(`payload`) - MIN(`payload`), 2) AS `Diff`
+                        FROM messages_in
+                        JOIN nodes n ON n.node_id = messages_in.node_id
+                        JOIN sensors s ON s.sensor_id = n.id AND s.sensor_child_id = messages_in.child_id
+                        WHERE datetime >= DATE_SUB(NOW(),INTERVAL {$interval} HOUR) AND s.sensor_type_id = 1
+                        GROUP BY messages_in.node_id, messages_in.child_id;";
+        }
+        $results = $conn->query($query);
+        while ($row = mysqli_fetch_assoc($results)) {
+                echo '<tr>
+                        <td>'.$row["name"].'</td>
+                        <td style="text-align:center; vertical-align:middle;">'.$row["Min"].'</td>
+                        <td style="text-align:center; vertical-align:middle;">'.$row["Max"].'</td>
+                        <td style="text-align:center; vertical-align:middle;">'.$row["Diff"].'</td>
+                </tr>';
+        }
 }
 ?>

@@ -1136,6 +1136,25 @@ $lang['coefficient'] = "Coefficient";
 $lang['threshold'] = "Threshold";
 $lang['no_hot_water_zone'] = "No Hot Water Zone Found";
 $lang['show_disabled_schedule'] = "Show Disabled Schedule Icon";
+$lang['page_refresh_seconds'] = "Page Refresh Rate in Seconds";
+$lang['page_timeout_seconds'] = "Page Timeout in Seconds";
+$lang['change_timeout_text'] = "Set the Timeout in Seconds before inactivity on the Settings or Schedule menu screens will cause the system to return to the Home page.<br>Setting to 0 will disable timeout.";
+$lang['delta'] = "Delta";
+$lang['temp_delta'] = "Temp Delta";
+$lang['temperature_delta'] = "Temperature Delta";
+$lang['temperature_delta_text'] = "Display the Min, Max and Delta Temperatures for the last 60 minutes, for either individual Zones or Sensors.";
+$lang['24_hours'] = "24 Hours";
+$lang['1_hour'] = "1 Hour";
+$lang['disable_schedule_in_summer'] = "Disable Schedule in Summer";
+$lang['disable_summer'] = "Summer Mode";
+$lang['set_summer'] = "Set Summer";
+$lang['set_summer_period'] = "Set SummerPeriod by Date";
+$lang['set_summer_period_text'] = "Set Start and End dates used to disable selected schedules during the summer months.";
+$lang['start_date'] = "Start Date";
+$lang['end_date'] = "End Date";
+$lang['disable_schedule_in_summer'] = "Setup Guide Disable Schedule in Summer";
+$lang['summer'] = "Summer";
+$lang['winter'] = "Winter";
 
 if (file_exists(__DIR__.'/lo.php')) { require_once(__DIR__.'/lo.php'); }
 ?>

@@ -79,6 +79,10 @@ print("-" * 72)
 def insertDB(IDs, temperature):
     global hour_timer
     global gpio_recv
+    # Creates a running flag file
+    with open('/tmp/gpio_ds18b20_running', 'w') as fp:
+        pass
+
     try:
         con = mdb.connect(dbhost, dbuser, dbpass, dbname)
         cur = con.cursor()
@@ -285,6 +289,9 @@ def insertDB(IDs, temperature):
     except mdb.Error as e:
         logger.error(e)
         print(bc.dtm + time.ctime() + bc.ENDC + " - DB Connection Closed: %s" % e)
+
+    if os.path.exists("/tmp/gpio_ds18b20_running"):
+        os.remove("/tmp/gpio_ds18b20_running")
 
 # Display detected bus masters on startup
 bus_masters = []

@@ -1200,6 +1200,7 @@ var idata="w=set_max_cpu_temp&o=update";
 function update_refresh(){
 var idata="w=page_refresh_rate&o=update";
     idata+="&new_refresh="+document.getElementById("new_refresh").value;
+    idata+="&new_timeout="+document.getElementById("new_timeout").value;
     idata+="&wid=0";
     $.get('db.php',idata)
     .done(function(odata){
@@ -1859,3 +1860,33 @@ var idata="w=setup_hw_comp&o=update&enabled="+document.getElementById("checkbox2
     .always(function() {
     });
 }
+
+//activate and deactivate summer
+function active_summer(){
+        var quest = "?w=summer&o=active" + "&frost_temp=0" + "&wid=0";
+        request('db.php', 'GET', quest, function(){ $('#homelist').load('homelist.php'); } );
+}
+
+//set summer period start and end date
+function set_summer_start_end(){
+    let start_date = document.getElementById("start_date").value;
+    let end_date = document.getElementById("end_date").value;
+    var idata="w=set_summer_dates";
+        idata+="&start_date="+start_date;
+        idata+="&end_date="+end_date;
+    idata+="&wid=0";
+    $.get('db.php',idata)
+    .done(function(odata){
+        if(odata.Success)
+            window.location="settings.php?s_id=3"
+        else
+            console.log(odata.Message);
+    })
+    .fail(function( jqXHR, textStatus, errorThrown ){
+        if(jqXHR==401 || jqXHR==403) return;
+        console.log("set_summer_dates: Error.\r\n\r\njqXHR: "+jqXHR+"\r\n\r\ntextStatus: "+textStatus+"\r\n\r\nerrorThrown:"+errorThrown);
+    })
+    .always(function() {
+    });
+}
+

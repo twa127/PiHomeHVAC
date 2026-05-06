@@ -631,6 +631,69 @@ $("#button_history_hide").on("click", function(){
 </script>
 <?php
 
+//Temperature Delta Model
+echo '<div class="modal fade" id="temp_delta" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['temperature_delta'].'</h5>
+                        </div>
+                        <div class="modal-body">
+                                <p class="text-muted">'.$lang['temperature_delta_text'].'</p>
+                                <input type="hidden" id="zone_sensor" name="zone_sensor" value="0">
+                                <input type="hidden" id="1h_24h" name="1h_24h" value="1">
+                                <table class="table table-bordered">
+                                        <thead>
+                                                <tr>
+                                                        <th class="col-md-3" id = "temp_delta_table_h1"><small>'.$lang['zone'].'&nbsp'.$lang['name'].'</small></th>
+                                                        <th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['min'].'</small></th>
+                                                        <th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['max'].'</small></th>
+                                                        <th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['delta'].'</small></th>
+                                                </tr>
+                                        </thead>
+                                        <tbody id= "temp_delta_table"></tbody>
+                                </table>
+                        </div>
+                        <div class="modal-footer">';
+                                echo '<button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" id="button_1h_24h">'.$lang['24_hours'].'</button>';
+                                echo '<button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" id="button_zone_sensor">By '.$lang['sensor'].'</button>';
+                                echo '<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        </div>
+                </div>
+        </div>
+</div>
+<!-- /.modal -->';
+?>
+<script language="javascript" type="text/javascript">
+$("#button_zone_sensor").on("click", function(){
+        var sensor_txt = 'By ' + '<?php echo $lang["sensor"] ?>';
+        var zone_txt = 'By ' + '<?php echo $lang["zone"] ?>';
+
+        if(document.getElementById("zone_sensor").value == 1) {
+                document.getElementById("zone_sensor").value = 0;
+                $(this).text(sensor_txt);
+        } else {
+                document.getElementById("zone_sensor").value = 1;
+                $(this).text(zone_txt);
+        }
+});
+
+$("#button_1h_24h").on("click", function(){
+        var h1_txt = '<?php echo $lang["1_hour"] ?>';
+        var h24_txt = '<?php echo $lang["24_hours"] ?>';
+
+        if(document.getElementById("1h_24h").value == 1) {
+                document.getElementById("1h_24h").value = 24;
+                $(this).text(h1_txt);
+        } else {
+                document.getElementById("1h_24h").value = 1;
+                $(this).text(h24_txt);
+        }
+});
+</script>
+<?php
+
 // zone state model
 echo '<div class="modal" id="zones_states" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -1491,13 +1554,22 @@ echo '<div class="modal fade" id="change_refresh" tabindex="-1" role="dialog" ar
             </div>
             <div class="modal-body">
                 <p class="text-muted">'.$lang['change_refresh_text'].'</p>';
-                $query = "SELECT page_refresh FROM system LIMIT 1;";
+                $query = "SELECT page_refresh, page_timeout FROM system LIMIT 1;";
                 $result = $conn->query($query);
                 $row = mysqli_fetch_array($result);
-                echo '<div class="form-group" class="control-label"><label>'.$lang['seconds'].'</label> <small class="text-muted"> </small>
+                echo '<div class="form-group" class="control-label"><label>'.$lang['page_refresh_seconds'].'</label> <small class="text-muted"> </small>
                 <select class="form-select" type="text" id="new_refresh" name="new_refresh" >';
                 for ($x = 1; $x <=  15; $x++) {
                         echo '<option value="'.$x.'" ' . ($x==$row['page_refresh'] ? 'selected' : '') . '>'.$x.'</option>';
+                }
+                echo '</select>
+                        <div class="help-block with-errors"></div>
+                </div>
+                <br><p class="text-muted">'.$lang['change_timeout_text'].'</p>
+                <div class="form-group" class="control-label"><label>'.$lang['page_timeout_seconds'].'</label> <small class="text-muted"> </small>
+                <select class="form-select" type="text" id="new_timeout" name="new_timeout" >';
+                for ($x = 0; $x <=  600; $x = $x + 60) {
+                        echo '<option value="'.$x.'" ' . ($x==$row['page_timeout'] ? 'selected' : '') . '>'.$x.'</option>';
                 }
                 echo '</select>
                         <div class="help-block with-errors"></div>
@@ -1921,7 +1993,9 @@ echo '<div class="modal fade" id="zone_graph" tabindex="-1" role="dialog" aria-l
 					FROM sensors
 					WHERE sensor_type_id = 1
                                         UNION
-                                        SELECT sensor_average.id, sensor_average.sensor_id, zone.name, sensor_average.graph_num, sensor_average.min_max_graph, zone.name AS sname FROM sensor_average, zone WHERE sensor_average.zone_id = zone.id
+                                        SELECT sensor_average.id, sensor_average.sensor_id, zone.name, sensor_average.graph_num, sensor_average.min_max_graph, zone.name AS sname
+                                        FROM sensor_average, zone
+                                        WHERE sensor_average.zone_id = zone.id
 					UNION
 					SELECT 0 AS id, '' AS sensor_id, 'Outside Temp' AS name, -1 AS graph_num, enable_archive AS min_max_graph, 'zzz' AS sname
 					FROM weather
@@ -2522,6 +2596,46 @@ echo '</table></div>
                 <button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" data-bs-href="#" data-bs-toggle="modal" data-bs-target="#add_job">'.$lang['add_job'].'</button>
                 <input type="button" name="submit" value="'.$lang['apply'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="schedule_jobs()">
                 <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+            </div>
+        </div>
+    </div>
+</div>';
+
+//Set Summer Period by Dat
+echo '<div class="modal fade" id="set_summer" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                <h5 class="modal-title">'.$lang['set_summer_period'].'</h5>
+                <div class="dropdown float-right">
+                        <a class="" data-bs-toggle="dropdown" href="#">
+                                <i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
+                                <li><a class="dropdown-item" href="pdf_download.php?file=disable_schedule_in_summer.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['disable_schedule_in_summer'].'</a></li>
+                         </ul>
+                </div>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">'.$lang['set_summer_period_text'].'</p>
+                <table class="table table-bordered">
+                        <tr>
+                                <th class="col-lg-2 text-center"><small>'.$lang['start_date'].'</small></th>
+                                <th class="col-lg-2 text-center"><small>'.$lang['end_date'].'</small></th>
+                        </tr>';
+                        $query = "SELECT `start_date`, `end_date` FROM `summer`;";
+                        $result = $conn->query($query);
+                        $row = mysqli_fetch_assoc($result);
+                        echo '<tr>
+                                <td><input class="form-control" type="date" id="start_date" name="start_date" value="'.$row['start_date'].'" placeholder="Start Date" required></td>
+                                <td><input class="form-control" type="date" id="end_date" name="end_date" value="'.$row['end_date'].'" placeholder="End Date" required></td>
+                       </tr>
+                </table>
+            </div>
+                <div class="modal-footer">
+                        <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        <input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="set_summer_start_end()">
             </div>
         </div>
     </div>
