@@ -230,6 +230,8 @@ if ($type <= 4 || $type == 38) {
 	        case 4:
                         if($schedule == 2) {
                                 echo '<i class="bi bi-x-circle-fill  colorize-blue" style="font-size: 0.6rem;">';
+                        } elseif($schedule == 3) {
+                                echo '<i class="bi bi-x-circle-fill  colorize-blue" style="font-size: 0.6rem;"><i class="bi bi-sun-fill orange" style="font-size: 0.6rem;">';
                         } else {
                                 if($overrun == 0) {
                                         echo '<i class="bi ' . $rval['shactive'] . ' ' . $rval['shcolor'] . ' bi-fw">';
