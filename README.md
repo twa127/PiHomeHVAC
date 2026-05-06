@@ -1,6 +1,6 @@
 # MaxAir - Smart Thermostat
 
-### Note: Now at Version 3.22
+### Note: Now at Version 3.23
 
 The previous version, PiHome, was centered around the creation of zones, this version is more centered around devices.
 
@@ -91,6 +91,10 @@ Version 3.20 New Feature, Relay Messages - Enable custom messages to be displaye
 Version 3.21 New Features and Bug Fixes, Relay Schedules - Enable the creation of schedules for Stand Alone relays which operate in the same way as Zone schedules, Relay Groups - Enable the grouping of relays so that conditions applied to any relay in the group are applied to all relays in the same group, MQTT Relay Support - enhancements to the handling of MQTT relays so that returned state messages can be used with Relay Messages to create an indication of the MQTT relay's actual state (rather than what state MaxAir has tried to set the relay to), Home Screen layout - removal of the copywrite and title text from the Home screen and creation of a top left 'MaxAir' logo, which can be used as a Home button, EMail Setup Password - bug fix so that an unencrypted password is loaded when the Email popup screen opens plus the ability to display the password in plain text, Page Footer Text - weather and schedule text shown in larger bold text.
 
 Version 3.22 New Features, Hot Water Weather Compensation - Override the schedule temperature for the Hot Water zone with a value derived from an algorithm using a control temperature (eg. the Weather Channel outside temperature) and a set of coefficients. Disabled Active Schedule Icon - display an icon in the lower right hand corner of a zone tile to indicate that a schedule which should be active at that time has been disabled.
+
+Version 3.23 New Features, 'Return to Home Page' – if the system is left displaying any Settings menu screen, the Schedule list screen or the One Touch screen for longer than a configurable timeout period, then the display will return to the Home Screen. The timeout can be configured from the 'Settings/system Maintenance/Page Refresh' menu option, selecting a value of '0' will disable the timeout. The default is 60 second timeout. 'Temperature Delta' – new menu option 'Settings/System Status/Temp Delta', to display the Max, Min and Delta values by either Zone or Sensor over the preceding one or twenty four hour time interval and 'Disable schedules during summer months' – disable selected schedules during a set period of time, popup to define the period and a 'OneTouch' button to enable/disable the feature.
+Additional APIs - see documentaion.
+Update – Improve database update synchronisation.
 
 ## Setup:
 
