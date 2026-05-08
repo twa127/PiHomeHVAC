@@ -949,28 +949,31 @@ while 1:
     result = subprocess.run(['emsctl', 'roomtemp', 'r'], stdout=subprocess.PIPE)
     response = result.stdout.decode("utf-8")
     if "No RTC Module" not in response:
-        split = response.split(' ')
-        if "Error" not in split[0]:
-            cur.execute(
-                "SELECT `correction_factor` FROM `sensors` WHERE `id` = %s LIMIT 1;",
-                (rc10_id,),
-            )
-            result = cur.fetchone()
-            sensor_to_index = dict(
-                (d[0], i) for i, d in enumerate(cur.description)
-            )
-            rc10_correction_factor = float(result[sensor_to_index["correction_factor"]])
-            roomtemp = float(split[1].rstrip()) + rc10_correction_factor
-            room_temp_error = False
-        else :
-            room_temp_error = True
-        if rc10_sensor :
-            update_maxair_sensors(con, rc10_node_id, rc10_id, roomtemp, 0, rc10_msg_in, roomtemp)
-            print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - RC10 Temp                - " + str(roomtemp))
-        if room_temp_error :
-            log_txt = log_txt  + 'RC10 TEMP 0C*\n'
-        else :
-            log_txt = log_txt  + 'RC10 TEMP ' + str(roomtemp) + 'C\n'
+        if rc10_sensor:
+            split = response.split(' ')
+            if "Error" not in split[0]:
+                cur.execute(
+                    "SELECT `correction_factor` FROM `sensors` WHERE `id` = %s LIMIT 1;",
+                    (rc10_id,),
+                )
+                result = cur.fetchone()
+                sensor_to_index = dict(
+                    (d[0], i) for i, d in enumerate(cur.description)
+                )
+                rc10_correction_factor = float(result[sensor_to_index["correction_factor"]])
+                roomtemp = float(split[1].rstrip()) + rc10_correction_factor
+                room_temp_error = False
+            else :
+                room_temp_error = True
+            if rc10_sensor :
+                update_maxair_sensors(con, rc10_node_id, rc10_id, roomtemp, 0, rc10_msg_in, roomtemp)
+                print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - RC10 Temp                - " + str(roomtemp))
+            if room_temp_error :
+                log_txt = log_txt  + 'RC10 TEMP 0C*\n'
+            else :
+                log_txt = log_txt  + 'RC10 TEMP ' + str(roomtemp) + 'C\n'
+        else:
+            log_txt = log_txt  + 'NO REAL TIME CLOCK Temp Sensor Defined\n'
     else:
         log_txt = log_txt  + 'NO REAL TIME CLOCK MODULE\n'
 
