@@ -915,7 +915,15 @@ if($what=="sc_mode"){
                                 $new_sc_mode = 0;
            	}
                 $query = "UPDATE system_controller SET sc_mode = {$new_sc_mode} LIMIT 1";
-                $conn->query($query);
+                if($conn->query($query)){
+                        header('Content-type: application/json');
+                        echo json_encode(array('Success'=>'Success','Query'=>$query));
+                        return;
+                }else{
+                        header('Content-type: application/json');
+                        echo json_encode(array('Message'=>'Database query failed.\r\nQuery=' . $query));
+                        return;
+                }
         }
 
         if($opp=="update"){
