@@ -84,14 +84,34 @@ function active_boost(wid){
 
 //activate and deactivate away 
 function active_away(){
-	var quest = "?w=away&o=active" + "&frost_temp=0" + "&wid=0";
-	request('db.php', 'GET', quest, function(){ $('#homelist').load('homelist.php'); } );
+    var idata="w=away&o=active";
+    $.get('db.php',idata)
+    .done(function(odata){
+        if(!odata.Success)
+            console.log(odata.Message);
+    })
+    .fail(function( jqXHR, textStatus, errorThrown ){
+        if(jqXHR==401 || jqXHR==403) return;
+        console.log("active_away: Error.\r\n\r\njqXHR: "+jqXHR+"\r\n\r\ntextStatus: "+textStatus+"\r\n\r\nerrorThrown:"+errorThrown);
+    })
+    .always(function() {
+    });
 }
 
 //toggle hvac mode
 function active_sc_mode(){
-        var quest = "?w=sc_mode&o=active" + "&frost_temp=0" + "&wid=0";
-        request('db.php', 'GET', quest, function(){ $('#homelist').load('homelist.php'); } );
+    var idata="w=sc_mode&o=active";
+    $.get('db.php',idata)
+    .done(function(odata){
+        if(!odata.Success)
+            console.log(odata.Message);
+    })
+    .fail(function( jqXHR, textStatus, errorThrown ){
+        if(jqXHR==401 || jqXHR==403) return;
+        console.log("active_sc_mode: Error.\r\n\r\njqXHR: "+jqXHR+"\r\n\r\ntextStatus: "+textStatus+"\r\n\r\nerrorThrown:"+errorThrown);
+    })
+    .always(function() {
+    });
 }
 
 //set system controller mode
@@ -1863,8 +1883,18 @@ var idata="w=setup_hw_comp&o=update&enabled="+document.getElementById("checkbox2
 
 //activate and deactivate summer
 function active_summer(){
-        var quest = "?w=summer&o=active" + "&frost_temp=0" + "&wid=0";
-        request('db.php', 'GET', quest, function(){ $('#homelist').load('homelist.php'); } );
+    var idata="w=summer&o=active";
+    $.get('db.php',idata)
+    .done(function(odata){
+        if(!odata.Success)
+            console.log(odata.Message);
+    })
+    .fail(function( jqXHR, textStatus, errorThrown ){
+        if(jqXHR==401 || jqXHR==403) return;
+        console.log("active_summer: Error.\r\n\r\njqXHR: "+jqXHR+"\r\n\r\ntextStatus: "+textStatus+"\r\n\r\nerrorThrown:"+errorThrown);
+    })
+    .always(function() {
+    });
 }
 
 //set summer period start and end date
