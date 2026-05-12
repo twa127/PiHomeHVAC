@@ -97,7 +97,7 @@ if(isset($_GET['zonename'])) {
         $zonename = mysqli_real_escape_string($conn, $_GET['zonename']);
 
         // Current averaged temperature
-        $query = "SELECT z.id, z.name, z.zone_state, zcs.temp_target,
+        $query = "SELECT z.id, z.name, IF(zcs.mode = 0, 0, 1) AS mode, zcs.temp_target,
                          ROUND(AVG(m.payload), 2) AS temp_actual,
                          MAX(m.datetime) AS datetime
                   FROM zone z
@@ -135,7 +135,7 @@ if(isset($_GET['zonename'])) {
                                 "success"     => True,
                                 "id"          => $row['id'],
                                 "name"        => $row['name'],
-                                "state"       => $row['zone_state'],
+                                "mode"        => $row['mode'],
                                 "temp_target" => $row['temp_target'],
                                 "temp_actual" => $row['temp_actual'],
                                 "temp_datetime"    => $row['datetime'],
@@ -151,7 +151,7 @@ if(isset($_GET['zonename'])) {
         // for every zone, ordered by zone id for a stable consistent order.
 
         // Current averaged temperature across all zones
-        $query = "SELECT z.id, z.name, z.zone_state, zcs.temp_target,
+        $query = "SELECT z.id, z.name, IF(zcs.mode = 0, 0, 1) AS mode, zcs.temp_target,
                          ROUND(AVG(m.payload), 2) AS temp_actual,
                          MAX(m.datetime) AS datetime
                   FROM zone z
@@ -194,7 +194,7 @@ if(isset($_GET['zonename'])) {
                                 $zones[] = array(
                                         "id"          => $zone_id,
                                         "name"        => $row['name'],
-                                         "state"      => $row['zone_state'],
+                                        "mode"        => $row['mode'],
                                        "temp_target" => $row['temp_target'],
                                         "temp_actual" => $row['temp_actual'],
                                 	      "temp_datetime"    => $row['datetime'],
