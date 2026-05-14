@@ -97,7 +97,7 @@ if(isset($_GET['zonename'])) {
         $zonename = mysqli_real_escape_string($conn, $_GET['zonename']);
 
         // Current averaged temperature
-        $query = "SELECT z.id, z.name, zcs.temp_target,
+        $query = "SELECT z.id, z.name, IF(zcs.mode = 0, 0, 1) AS mode, zcs.temp_target,
                          ROUND(AVG(m.payload), 2) AS temp_actual,
                          MAX(m.datetime) AS datetime
                   FROM zone z
@@ -133,9 +133,12 @@ if(isset($_GET['zonename'])) {
                         http_response_code(200);
                         echo json_encode(array(
                                 "success"     => True,
+                                "id"          => $row['id'],
                                 "name"        => $row['name'],
+                                "mode"        => $row['mode'],
                                 "temp_target" => $row['temp_target'],
                                 "temp_actual" => $row['temp_actual'],
+                                "temp_datetime"    => $row['datetime'],
                                 "min"         => isset($minmax[$zone_id]) ? $minmax[$zone_id]['min'] : null,
                                 "max"         => isset($minmax[$zone_id]) ? $minmax[$zone_id]['max'] : null,
                                 "delta"       => isset($delta[$zone_id])  ? $delta[$zone_id]         : null
@@ -148,7 +151,7 @@ if(isset($_GET['zonename'])) {
         // for every zone, ordered by zone id for a stable consistent order.
 
         // Current averaged temperature across all zones
-        $query = "SELECT z.id, z.name, zcs.temp_target,
+        $query = "SELECT z.id, z.name, IF(zcs.mode = 0, 0, 1) AS mode, zcs.temp_target,
                          ROUND(AVG(m.payload), 2) AS temp_actual,
                          MAX(m.datetime) AS datetime
                   FROM zone z
@@ -189,7 +192,9 @@ if(isset($_GET['zonename'])) {
                                         $latest_datetime = $row['datetime'];
                                 }
                                 $zones[] = array(
+                                        "id"          => $zone_id,
                                         "name"        => $row['name'],
+                                	"mode"        => $row['mode'],
                                         "temp_target" => $row['temp_target'],
                                         "temp_actual" => $row['temp_actual'],
                                         "min"         => isset($minmax[$zone_id]) ? $minmax[$zone_id]['min'] : null,
