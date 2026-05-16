@@ -90,6 +90,59 @@ function getDelta($conn, $where_zone = "") {
         return $rows;
 }
 
+// return active state
+function check_active($mode) {
+	// ------------------------------------------------------------------------
+	// Zone Main Mode
+        // ------------------------------------------------------------------------
+	// 0 - idle
+	// 10 - fault
+	// 20 - frost
+	// 30 - overtemperature
+	// 40 - holiday
+	// 50 - nightclimate
+	// 60 - boost
+	// 70 - override
+	// 80 - sheduled
+	// 90 - away
+	// 100 - hysteresis
+	// 110 - Add-On
+	// 120 - HVAC
+	// 130 - undertemperature
+	// 140 - manual*/
+
+        // ------------------------------------------------------------------------
+	// Zone sub mode - running/ stopped different types
+        // ------------------------------------------------------------------------
+	// 0 - stopped (above cut out setpoint or not running in this mode)
+	// 1 - heating running
+	// 2 - stopped (within deadband)
+	// 3 - stopped (coop start waiting for the system_controller)
+	// 4 - manual operation ON
+	// 5 - manual operation OFF
+	// 6 - cooling running
+	// 7 - HVAC Fan Only
+	// 8 - Max Running Time Exceeded - Hysteresis active*/
+
+        $mode_main=floor($mode/10)*10;
+        $mode_sub=floor($mode%10);
+        switch ($mode_main) {
+                case 20:
+                case 30:
+                case 50:
+                case 60:
+                case 70:
+        	case 80:
+                case 100:
+                case 140:
+			$active = 1;
+			break;
+		default:
+			$active = 0;
+	}
+	return $active;
+}
+
 if(isset($_GET['zonename'])) {
         // --- Single zone mode ---
         // Returns current averaged temp, today's min/max, and last-hour delta
@@ -97,7 +150,7 @@ if(isset($_GET['zonename'])) {
         $zonename = mysqli_real_escape_string($conn, $_GET['zonename']);
 
         // Current averaged temperature
-        $query = "SELECT z.id, z.name, IF(zcs.mode = 0, 0, 1) AS mode, zcs.temp_target,
+        $query = "SELECT z.id, z.name, zcs.mode, zcs.temp_target,
                          ROUND(AVG(m.payload), 2) AS temp_actual,
                          MAX(m.datetime) AS datetime
                   FROM zone z
@@ -132,16 +185,16 @@ if(isset($_GET['zonename'])) {
                         $delta        = getDelta($conn,  "AND z.name = '{$zonename}'");
                         http_response_code(200);
                         echo json_encode(array(
-                                "success"     => True,
-                                "id"          => $row['id'],
-                                "name"        => $row['name'],
-                                "mode"        => $row['mode'],
-                                "temp_target" => $row['temp_target'],
-                                "temp_actual" => $row['temp_actual'],
-                                "temp_datetime"    => $row['datetime'],
-                                "min"         => isset($minmax[$zone_id]) ? $minmax[$zone_id]['min'] : null,
-                                "max"         => isset($minmax[$zone_id]) ? $minmax[$zone_id]['max'] : null,
-                                "delta"       => isset($delta[$zone_id])  ? $delta[$zone_id]         : null
+                                "success"	=> True,
+                                "id"		=> $row['id'],
+                                "name"		=> $row['name'],
+                                "active"	=> check_active($row['mode']),
+                                "temp_target"	=> $row['temp_target'],
+                                "temp_actual"	=> $row['temp_actual'],
+                                "temp_datetime"	=> $row['datetime'],
+                                "min"         	=> isset($minmax[$zone_id]) ? $minmax[$zone_id]['min'] : null,
+                                "max"         	=> isset($minmax[$zone_id]) ? $minmax[$zone_id]['max'] : null,
+                                "delta"       	=> isset($delta[$zone_id])  ? $delta[$zone_id]         : null
                         ));
                 }
         }
@@ -151,7 +204,7 @@ if(isset($_GET['zonename'])) {
         // for every zone, ordered by zone id for a stable consistent order.
 
         // Current averaged temperature across all zones
-        $query = "SELECT z.id, z.name, IF(zcs.mode = 0, 0, 1) AS mode, zcs.temp_target,
+        $query = "SELECT z.id, z.name, zcs.mode, zcs.temp_target,
                          ROUND(AVG(m.payload), 2) AS temp_actual,
                          MAX(m.datetime) AS datetime
                   FROM zone z
@@ -192,15 +245,15 @@ if(isset($_GET['zonename'])) {
                                         $latest_datetime = $row['datetime'];
                                 }
                                 $zones[] = array(
-                                        "id"          => $zone_id,
-                                        "name"        => $row['name'],
-                                        "mode"        => $row['mode'],
-                                       "temp_target" => $row['temp_target'],
-                                        "temp_actual" => $row['temp_actual'],
-                                	      "temp_datetime"    => $row['datetime'],
-                                        "min"         => isset($minmax[$zone_id]) ? $minmax[$zone_id]['min'] : null,
-                                        "max"         => isset($minmax[$zone_id]) ? $minmax[$zone_id]['max'] : null,
-                                        "delta"       => isset($delta[$zone_id])  ? $delta[$zone_id]         : null
+                                        "id"		=> $zone_id,
+                                        "name"		=> $row['name'],
+                                        "active"	=> check_active($row['mode']),
+                                       	"temp_target"	=> $row['temp_target'],
+                                        "temp_actual"	=> $row['temp_actual'],
+                                	"temp_datetime"	=> $row['datetime'],
+                                        "min"		=> isset($minmax[$zone_id]) ? $minmax[$zone_id]['min'] : null,
+                                        "max"		=> isset($minmax[$zone_id]) ? $minmax[$zone_id]['max'] : null,
+                                        "delta"		=> isset($delta[$zone_id])  ? $delta[$zone_id]         : null
                                 );
                         } while($row = mysqli_fetch_assoc($result));
                         http_response_code(200);
