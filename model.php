@@ -3538,12 +3538,14 @@ echo '
                                 </div>
                         </div>
                         <div class="modal-body">';
-                                $query = "SELECT hw_compensation.zone_id, hw_compensation.sensor_id, hw_compensation.hw_coefficient, hw_compensation.hw_threshold,
-                                        hw_compensation.enabled, zone_sensors.default_c
-                                        FROM hw_compensation, zone_sensors
-                                        WHERE zone_sensors.zone_id = hw_compensation.zone_id LIMIT 1;";
-                                $result = $conn->query($query);
-                                if (mysqli_num_rows($result) > 0){
+                                $query = "SELECT zone.id, zone.name, zone_sensors.default_c FROM zone, zone_sensors WHERE (zone_sensors.zone_id) = zone.id AND type_id =3;";
+                                $z_results = $conn->query($query);
+                                if ($z_results) {
+                                        $query = "SELECT hw_compensation.zone_id, hw_compensation.sensor_id, hw_compensation.hw_coefficient, hw_compensation.hw_threshold,
+                                                hw_compensation.enabled, zone_sensors.default_c
+                                                FROM hw_compensation, zone_sensors
+                                                WHERE zone_sensors.zone_id = hw_compensation.zone_id LIMIT 1;";
+                                        $result = $conn->query($query);
                                         $hw_zone = 1;
                                         $row = mysqli_fetch_array($result);
                                         echo '<p class="text-muted">'.$lang['hw_comp_info_text'].'</p>
@@ -3564,12 +3566,8 @@ echo '
                                         <div class="form-group" class="control-label"><label>'.$lang['zone'].'</label> <small class="text-muted">'.$lang['select_hw_zone_info'].'</small>
                                                 <select class="form-select" type="text" id="hw_comp_zone" name="hw_comp_zone" >';
                                                 //get list of heat relays to display
-                                                $query = "SELECT zone.id, zone.name, zone_sensors.default_c FROM zone, zone_sensors WHERE (zone_sensors.zone_id) = zone.id AND type_id =3;";
-                                                $result = $conn->query($query);
-                                                if ($result){
-                                                        while ($zrow=mysqli_fetch_array($result)) {
-                                                                echo '<option value="'.$zrow['id'].'" ' . ($zrow['id']==$row['zone_id'] ? 'selected' : '') . '>'.$zrow['name'].'</option>';
-                                                        }
+                                                while ($zrow=mysqli_fetch_array($z_results)) {
+                                                        echo '<option value="'.$zrow['id'].'" ' . ($zrow['id']==$row['zone_id'] ? 'selected' : '') . '>'.$zrow['name'].'</option>';
                                                 }
                                                 echo '</select>
                                                 <div class="help-block with-errors"></div>
