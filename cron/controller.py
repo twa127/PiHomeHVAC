@@ -27,7 +27,7 @@ print("********************************************************")
 print("*              System Controller Script                *")
 print("*                                                      *")
 print("*               Build Date: 10/02/2023                 *")
-print("*       Version 0.12 - Last Modified 05/05/2026        *")
+print("*       Version 0.13 - Last Modified 18/05/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -1555,46 +1555,53 @@ try:
 
                 #only process active zones with a sensor or a category 2 type zone
                 if zone_status == 1 and (zone_sensor_found or zone_category == 2):
-                    rval = get_zone_schedule_status(
-                        zone_id,
-                        holidays_status,
-                        away_status,
-                        summer_status,
-                    )
-                    sch_status = rval['sch_status']
-                    sch_name = rval['sch_name']
-                    #if currently idle then get end buffer status
-                    if zone_status_current == 0:
-                        smart_off_flag =  rval['smart_off_flag']
-                        smart_off_time = rval['smart_off_time']
-                        smart_off_time_str = datetime.datetime.fromtimestamp(smart_off_time).strftime('%Y-%m-%d %H:%M:%S')
+                    if sc_mode == 1:
+                        rval = get_zone_schedule_status(
+                            zone_id,
+                            holidays_status,
+                            away_status,
+                            summer_status,
+                        )
+                        sch_status = rval['sch_status']
+                        sch_name = rval['sch_name']
+                        #if currently idle then get end buffer status
+                        if zone_status_current == 0:
+                            smart_off_flag =  rval['smart_off_flag']
+                            smart_off_time = rval['smart_off_time']
+                            smart_off_time_str = datetime.datetime.fromtimestamp(smart_off_time).strftime('%Y-%m-%d %H:%M:%S')
+                        else:
+                            smart_off_flag = False
+                        if sch_active == 0 and sch_status == 1:
+                            sch_active = 1
+                        if rval['sch_count'] == 0:
+                            sch_status = 0
+                            sch_c = 0
+                            sch_holidays = 0
+                            time_id = 0
+                        else:
+                            sch_end_time = rval['end_time']
+                            sch_end_time_str = datetime.datetime.fromtimestamp(sch_end_time).strftime('%Y-%m-%d %H:%M:%S')
+                            sch_status = rval['sch_status']
+                            time_id = rval['time_id']
+                            cur.execute(
+                                "SELECT temperature, coop, holidays_id FROM schedule_daily_time_zone WHERE schedule_daily_time_id = %s AND zone_id = %s LIMIT 1;",
+                                (time_id, zone_id),
+                            )
+                            if cur.rowcount > 0:
+                                sdtz = cur.fetchone()
+                                sdtz_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+                                sch_c = sdtz[sdtz_to_index["temperature"]]
+                                sch_coop = sdtz[sdtz_to_index["coop"]]
+                                if sdtz[sdtz_to_index["holidays_id"]] > 0:
+                                    sch_holidays = 1
+                                else:
+                                    sch_holidays = 0
                     else:
-                        smart_off_flag = False
-                    if sch_active == 0 and sch_status == 1:
-                        sch_active = 1
-                    if rval['sch_count'] == 0:
                         sch_status = 0
                         sch_c = 0
                         sch_holidays = 0
                         time_id = 0
-                    else:
-                        sch_end_time = rval['end_time']
-                        sch_end_time_str = datetime.datetime.fromtimestamp(sch_end_time).strftime('%Y-%m-%d %H:%M:%S')
-                        sch_status = rval['sch_status']
-                        time_id = rval['time_id']
-                        cur.execute(
-                            "SELECT temperature, coop, holidays_id FROM schedule_daily_time_zone WHERE schedule_daily_time_id = %s AND zone_id = %s LIMIT 1;",
-                            (time_id, zone_id),
-                        )
-                        if cur.rowcount > 0:
-                            sdtz = cur.fetchone()
-                            sdtz_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
-                            sch_c = sdtz[sdtz_to_index["temperature"]]
-                            sch_coop = sdtz[sdtz_to_index["coop"]]
-                            if sdtz[sdtz_to_index["holidays_id"]] > 0:
-                                sch_holidays = 1
-                            else:
-                                sch_holidays = 0
+                        smart_off_flag = False
 
                     #update the current schedule status
                     cur.execute(
