@@ -27,7 +27,7 @@ print("********************************************************")
 print("*              System Controller Script                *")
 print("*                                                      *")
 print("*               Build Date: 10/02/2023                 *")
-print("*       Version 0.13 - Last Modified 18/05/2026        *")
+print("*       Version 0.14 - Last Modified 23/05/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -2916,9 +2916,9 @@ try:
                             print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Zone: Weather Factor          " + bc.red + str(weather_fact) + bc.ENDC)
                             print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Zone: DeadBand                " + bc.red + str(zone_sp_deadband) + bc.ENDC)
                             if zone_category == 5:
-                                print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Zone: Cut In Temperature      " + bc.red + str(temp_cut_out_rising) + bc.ENDC)
-                            else:
                                 print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Zone: Cut In Temperature      " + bc.red + str(temp_cut_out_falling) + bc.ENDC)
+                            else:
+                                print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Zone: Cut In Temperature      " + bc.red + str(temp_cut_out_rising) + bc.ENDC)
                             print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Zone: Cut Out Temperature     " + bc.red + str(temp_cut_out) + bc.ENDC)
 
                     for key in controllers_dict[zone_id]:
