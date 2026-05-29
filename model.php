@@ -4529,11 +4529,11 @@ echo '
                 						} elseif ($vrow['category'] == 2) {
 									echo '<span>&nbsp;&nbsp;<small> '.$lang['controller'].': '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
 								} elseif ($vrow['category'] == 3) {
-									echo '<span><em>&nbsp;&nbsp;<small> '.$lang['min'].' '.DispSensor($conn,$vrow['min_c'],$vrow['sensor_type_id']).$unit.', '.$lang['max'].' '.$vrow['max_c'].$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].'&nbsp</small></span>';
+									echo '<span><em>&nbsp;&nbsp;<small> '.$lang['min'].' '.DispSensor($conn,$vrow['min_c'],$vrow['sensor_type_id']).$unit.', '.$lang['max'].' '.$vrow['max_c'].$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].'-'.$vrow['sensor_child_id'].'&nbsp</small></span>';
                 						} elseif ($vrow['category'] == 5) {
-                        						echo '<span><em>&nbsp;&nbsp;<small> '.$lang['min'].' '.DispSensor($conn,$vrow['min_c'],$vrow['sensor_type_id']).$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].' - '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
+                        						echo '<span><em>&nbsp;&nbsp;<small> '.$lang['min'].' '.DispSensor($conn,$vrow['min_c'],$vrow['sensor_type_id']).$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].'-'.$vrow['sensor_child_id'].' - '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
                 						} else {
-                        						echo '<span><em>&nbsp;&nbsp;<small> '.$lang['max'].' '.DispSensor($conn,$vrow['max_c'],$vrow['sensor_type_id']).$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].' - '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
+                        						echo '<span><em>&nbsp;&nbsp;<small> '.$lang['max'].' '.DispSensor($conn,$vrow['max_c'],$vrow['sensor_type_id']).$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].'-'.$vrow['sensor_child_id'].' - '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
                 						}
 							echo '</div>';
 						} else {
@@ -4543,11 +4543,11 @@ echo '
 		                                                } elseif ($vrow['category'] == 2) {
                 						        echo '<span>&nbsp;&nbsp;<small> '.$lang['controller'].': '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
 		                                                } elseif ($vrow['category'] == 3) {
-						                        echo '<span><em>&nbsp;&nbsp;<small> '.$lang['min'].' '.DispSensor($conn,$vrow['min_c'],$vrow['sensor_type_id']).$unit.', '.$lang['max'].' '.$vrow['max_c'].$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].'&nbsp</small></span>';
+						                        echo '<span><em>&nbsp;&nbsp;<small> '.$lang['min'].' '.DispSensor($conn,$vrow['min_c'],$vrow['sensor_type_id']).$unit.', '.$lang['max'].' '.$vrow['max_c'].$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].'-'.$vrow['sensor_child_id'].'&nbsp</small></span>';
                                                 		} elseif ($vrow['category'] == 5) {
-					                        	echo '<span><em>&nbsp;&nbsp;<small> '.$lang['min'].' '.DispSensor($conn,$vrow['min_c'],$vrow['sensor_type_id']).$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].' - '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
+					                        	echo '<span><em>&nbsp;&nbsp;<small> '.$lang['min'].' '.DispSensor($conn,$vrow['min_c'],$vrow['sensor_type_id']).$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].'-'.$vrow['sensor_child_id'].' - '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
                                                 		} else {
-					                        	echo '<span><em>&nbsp;&nbsp;<small> '.$lang['max'].' '.DispSensor($conn,$vrow['max_c'],$vrow['sensor_type_id']).$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].' - '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
+					                        	echo '<span><em>&nbsp;&nbsp;<small> '.$lang['max'].' '.DispSensor($conn,$vrow['max_c'],$vrow['sensor_type_id']).$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].'-'.$vrow['sensor_child_id'].' - '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
 								}
 							echo '</div>';
  						}
