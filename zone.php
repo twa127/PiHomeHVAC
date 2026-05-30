@@ -841,34 +841,37 @@ $count_num_sensors =count($sensorArray);
                                                         }
 
 							// re-build the sensor list based on the zone type (1 = temperature, 2 = humidity)
-						 	var opt = document.getElementById("sens_id0").getElementsByTagName("option");
-							var jArray = <?php echo json_encode($sensorArray); ?>;
+                            var id = <?php echo $id; ?>;
+                            if(id == 0) {
+                            	var opt = document.getElementById("sens_id0").getElementsByTagName("option");
+                                var jArray = <?php echo json_encode($sensorArray); ?>;
 
-						 	for(j=opt.length-1;j>=0;j--)
-						 	{
-						        	document.getElementById("sens_id0").options.remove(j);
-						 	}
+                                for(j=opt.length-1;j>=0;j--)
+                                    {
+                                    	document.getElementById("sens_id0").options.remove(j);
+                                    }
 
-						        for(j=0;j<jArray.length;j++)
-						        {
-						                var optn = document.createElement("OPTION");
-								var stype = parseInt(jArray[j]['sensor_type_id']);
-						                optn.text = jArray[j]['name'];
-						                optn.value = jArray[j]['id'];
-								if(stype == sensor_type || zone_cat === "2") {
-						                	document.getElementById("sens_id0").options.add(optn);
-								}
-						        }
+                                    for(j=0;j<jArray.length;j++)
+                                    {
+                                        var optn = document.createElement("OPTION");
+                                        var stype = parseInt(jArray[j]['sensor_type_id']);
+                                        optn.text = jArray[j]['name'];
+                                    	optn.value = jArray[j]['id'];
+                                        if(stype == sensor_type || zone_cat === "2") {
+                                        	document.getElementById("sens_id0").options.add(optn);
+                                        }
+                                    }
 
-                                                        document.getElementById("selected_zone_category").value = zone_cat;
-                                                        var e = document.getElementById("type");
-                                                        var selected_type = e.options[e.selectedIndex].text;
-                                                        document.getElementById("selected_zone_type").value = selected_type;
+                                    document.getElementById("selected_zone_category").value = zone_cat;
+                                    var e = document.getElementById("type");
+                                    var selected_type = e.options[e.selectedIndex].text;
+                                    document.getElementById("selected_zone_type").value = selected_type;
 
-                                                        //set initial sensor
-//                                                        document.getElementById("zone_sensor_id").value = document.getElementById("selected_sensor_id").value;
-                                                        document.getElementById("selected_sensor_type_id").value = sensor_type;
-						}
+                                    //set initial sensor
+//                                   document.getElementById("zone_sensor_id").value = document.getElementById("selected_sensor_id").value;
+                                    document.getElementById("selected_sensor_type_id").value = sensor_type;
+                                }
+                            }
 						</script>
 
 						<!-- Default Temperature -->
@@ -951,7 +954,7 @@ $count_num_sensors =count($sensorArray);
                                                         <?php for ($i = 0; $i < $sensor_count; $i++) { ?>
                                                         	<div class="wrap" id>
 									<!-- Sensor ID -->
-									<div class="form-group" class="control-label" id="sensor_id" style="display:block"><label id="sensor_id_label_1"><?php echo $lang['primary_temperature_sensor']; ?></label> <small class="text-muted" id="sensor_id_label_2"><?php echo $lang['zone_sensor_id_info'];?></small>
+                                    <div class="form-group" class="control-label" id="sensor_id" style="display:block"><label id="sensor_id_label_1"><?php if($i == 0) { echo $lang['primary_temperature_sensor']; } else { echo $lang['secondary_temperature_sensor']; } ?></label> <small class="text-muted" id="sensor_id_label_2"><?php echo $lang['zone_sensor_id_info'];?></small>
 										<input type="hidden" id="selected_sensors_id[]" name="selected_sensors_id[]" value="<?php echo $zone_sensors[$i]['zone_sensor_id']?>"/>
 										<div class="entry input-group col-12" id="sen_id - <?php echo $i ?>">
 											<select id="sens_id<?php echo $i ?>" onchange="SensorIDList(this.options[this.selectedIndex].value, <?php echo $i ?>)" name="sens_id<?php echo $i ?>" class="form-select" data-bs-error="<?php echo $lang['zone_temp_sensor_id_error']; ?>" autocomplete="off">
