@@ -3192,12 +3192,13 @@ try:
                 MQTT_HOSTNAME = results_mqtt[description_to_index["ip"]]
                 MQTT_PORT = results_mqtt[description_to_index["port"]]
                 MQTT_USERNAME = results_mqtt[description_to_index["username"]]
-                result = subprocess.run(
-                    ['php', '/var/www/cron/mqtt_passwd_decrypt.php', '2'],         # program and arguments
-                    stdout=subprocess.PIPE,                     # capture stdout
-                    check=True                                  # raise exception if program fails
-                )
-                MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                if "anonymous" not in MQTT_USERNAME:
+                    result = subprocess.run(
+                        ['php', '/var/www/cron/mqtt_passwd_decrypt.php', '2'],         # program and arguments
+                        stdout=subprocess.PIPE,                     # capture stdout
+                        check=True                                  # raise exception if program fails
+                    )
+                    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
                 if paho_version.find("1.5.0") != -1:
                     mqttClient = mqtt.Client(MQTT_CLIENT_ID)
                     mqttClient.on_connect = on_connect_1  # attach function to callback
@@ -3213,7 +3214,8 @@ try:
                     mqttClient.enable_logger(logger)
 
                 mqttClient.on_message = on_message
-                mqttClient.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
+                if "anonymous" not in MQTT_USERNAME:
+                    mqttClient.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
                 signal.signal(signal.SIGTERM, signal_handler)
                 signal.signal(signal.SIGINT, signal_handler)
                 mqttClient._connect_timeout = 10.0
