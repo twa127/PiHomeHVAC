@@ -2502,7 +2502,7 @@ if($what=="mqtt_broker"){
         $inp_Ip =  $_GET['inp_Ip'];
         $inp_Port =  $_GET['inp_Port'];
         $inp_Username =  $_GET['inp_Username'];
-        $inp_Password =  enc_passwd($_GET['inp_Password']);
+        if(strpos($inp_Username, 'anonymous') !== false) { $inp_Password = "";  } else { $inp_Password = enc_passwd($_GET['inp_Password']); }
         $inp_Enabled =  $_GET['inp_Enabled'];
         $inp_Type =  $_GET['inp_Type'];
 
