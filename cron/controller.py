@@ -353,9 +353,9 @@ def get_zone_schedule_status(
     qry_str = """SELECT schedule_daily_time.id AS time_id, schedule_daily_time.start, schedule_daily_time.start_sr, schedule_daily_time.start_ss, schedule_daily_time.start_offset,
         schedule_daily_time.end, schedule_daily_time.end_sr, schedule_daily_time.end_ss, schedule_daily_time.end_offset, schedule_daily_time.WeekDays,
         schedule_daily_time.status AS time_status, schedule_daily_time.sch_name, schedule_daily_time.type AS sch_type, schedule_daily_time.smart_off,
-        schedule_daily_time.show_disabled, schedule_daily_time.disable_in_summer, schedule_daily_time_zone.disabled, schedule_daily_time_zone.status AS zone_sch_status
+        schedule_daily_time.show_disabled, schedule_daily_time.disable_in_summer, schedule_daily_time_zone.disabled
         FROM `schedule_daily_time`, `schedule_daily_time_zone`
-        WHERE (schedule_daily_time.id = schedule_daily_time_zone.schedule_daily_time_id) AND zone_id = %s"""
+        WHERE (schedule_daily_time.id = schedule_daily_time_zone.schedule_daily_time_id) AND zone_id = %s AND schedule_daily_time_zone.status = 1"""
     if away_status == 1:
         qry_str = qry_str + " AND schedule_daily_time.type = 1"
     else:
@@ -410,7 +410,6 @@ def get_zone_schedule_status(
             smart_off = s[sch_to_index["smart_off"]]
             zone_disabled =  s[sch_to_index["disabled"]]
             zone_show_disabled =  s[sch_to_index["show_disabled"]]
-            zone_sch_status =  s[sch_to_index["zone_sch_status"]]
             zone_disable_in_summer =  s[sch_to_index["disable_in_summer"]]
             #use sunrise/sunset if any flags set
             if start_sr == 1 or start_ss == 1 or end_sr == 1 or end_ss == 1:
@@ -489,7 +488,7 @@ def get_zone_schedule_status(
             )
             con.commit()  # commit above
             if time_now > start_time and time_now < end_time and WeekDays  > 0:
-                if time_status == 1 and zone_sch_status == 1 and zone_disabled == 0 and (summertime == False or summer_status == 1):
+                if time_status == 1 and zone_disabled == 0 and (summertime == False or summer_status == 1 or zone_disable_in_summer == 0):
                     sch_status = 1
                     #set the smart_off flag
                     if smart_off != 0:
@@ -503,11 +502,11 @@ def get_zone_schedule_status(
                         smart_off_flag = False
                         smart_off_time = 0
                     break #exit the loop if an active schedule found
-                elif zone_sch_status == 1 and zone_disabled == 1 and zone_show_disabled == 1:
+                elif zone_disabled == 1 and zone_show_disabled == 1:
                     sch_status = 2
                     smart_off_flag = False
                     smart_off_time = 0
-                elif zone_sch_status == 1 and zone_disable_in_summer == 1 and summertime and summer_status == 0 and zone_show_disabled == 1:
+                elif zone_disable_in_summer == 1 and summertime and summer_status == 0 and zone_show_disabled == 1:
                     sch_status = 3
                     smart_off_flag = False
                     smart_off_time = 0
