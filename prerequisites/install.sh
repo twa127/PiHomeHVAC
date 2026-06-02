@@ -55,6 +55,9 @@ then
     echo "Installing paho-mqtt"
     sudo pip3 install paho-mqtt --break-system-packages
 
+    echo "Installing bleak"
+    sudo pip3 install bleak --break-system-packages
+
     echo "Installing python3-mysqldb"
     sudo apt-get -y install python3-mysqldb
 
