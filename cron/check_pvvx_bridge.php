@@ -30,7 +30,7 @@ $line = "-----------------------------------------------------------------------
 
 echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Python  PVVX MQTT Bridge Script Status Check Script Started \n";
 
-// Checking if RC10 Control script is running
+// Checking if PVVX MQTT Bridge script is running
 exec("ps ax | grep '$pvvx_mqtt_bridge_script_txt' | grep -v grep", $pids);
 $nopids = count($pids);
 if($nopids==0) { // Script not running
