@@ -1166,6 +1166,7 @@ $lang['end_date'] = "End Date";
 $lang['disable_schedule_in_summer'] = "Setup Guide Disable Schedule in Summer";
 $lang['summer'] = "Summer";
 $lang['winter'] = "Winter";
+$lang['setup_guide_xaomi_sensors'] = "Setup Guide Xaomi Mijia Bluetooth Sensors";
 
 if (file_exists(__DIR__.'/lo.php')) { require_once(__DIR__.'/lo.php'); }
 ?>
