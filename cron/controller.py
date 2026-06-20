@@ -27,7 +27,7 @@ print("********************************************************")
 print("*              System Controller Script                *")
 print("*                                                      *")
 print("*               Build Date: 10/02/2023                 *")
-print("*       Version 0.14 - Last Modified 23/05/2026        *")
+print("*       Version 0.15 - Last Modified 20/06/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -2202,7 +2202,10 @@ try:
                                         zone_state = 0
                                 elif zone_c >= zone_max_c:
                                     zone_status = 0
-                                    zone_mode = 30
+                                    if sch_status == 0:
+                                        zone_mode = 0
+                                    else:
+                                        zone_mode = 30
                                     stop_cause="Zone Reached its Max Temperature " + str(zone_max_c) + ")"
                                     zone_state = 0
                                 elif hysteresis == 1 and floor(zone_status_prev%10) != 8:
