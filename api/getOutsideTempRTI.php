@@ -67,8 +67,8 @@ if(! $sensor) {
         $sensor_time = $sensor['datetime'];
 
         $query = "SELECT ROUND(MIN(payload), 2) AS min_temp, ROUND(MAX(payload), 2) AS max_temp
-                FROM messages_in
-                WHERE node_id = '{$node_id}' AND child_id = {$child_id} LIMIT 1;";
+                FROM messages_in m
+                WHERE node_id = '{$node_id}' AND child_id = {$child_id} AND DATE(m.datetime) = CURDATE() LIMIT 1;";
         $result = $conn->query($query);
         $row = mysqli_fetch_array($result);
         $min = $row['min_temp'];
