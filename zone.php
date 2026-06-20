@@ -859,6 +859,7 @@ $count_num_sensors =count($sensorArray);
                                     	optn.value = jArray[j]['id'];
                                         if(stype == sensor_type || zone_cat === "2") {
                                         	document.getElementById("sens_id0").options.add(optn);
+                                            if(j == 0) (option.setAttribute('selected', true);)
                                         }
                                     }
 
