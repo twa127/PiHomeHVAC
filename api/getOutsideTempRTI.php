@@ -73,12 +73,21 @@ if(! $sensor) {
         $row = mysqli_fetch_array($result);
         $min = $row['min_temp'];
         $max = $row['max_temp'];
-        $query = "SELECT ROUND(MAX(payload), 2) - ROUND(MIN(payload), 2) AS delta
+        $query = "SELECT payload AS temp_1hour
                 FROM messages_in
-                WHERE node_id = '{$node_id}' AND child_id = {$child_id} AND datetime >= DATE_SUB(NOW(),INTERVAL 1 HOUR)LIMIT 1;";
+                WHERE node_id = '{$node_id}' AND child_id = {$child_id} AND datetime >= DATE_SUB(NOW(),INTERVAL 1 HOUR)
+                ORDER BY id ASC LIMIT 1;";
         $result = $conn->query($query);
         $row = mysqli_fetch_array($result);
-        $delta = $row['delta'];
+        $temp_1hour = $row['temp_1hour'];
+        $query = "SELECT payload AS temp_now
+                FROM messages_in
+                WHERE node_id = '{$node_id}' AND child_id = {$child_id} AND datetime >= DATE_SUB(NOW(),INTERVAL 1 HOUR)
+                ORDER BY id DESC LIMIT 1;";
+        $result = $conn->query($query);
+        $row = mysqli_fetch_array($result);
+        $temp_now = $row['temp_now'];
+        $delta = round($temp_now - $temp_1hour, 2);
         http_response_code(200);
         echo json_encode(array("success" => True, "temp_actual" => $sensor_temp, "temp_datetime" => $sensor_time, "min" => $min, "max" => $max, "delta" => $delta));
 }
