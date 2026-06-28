@@ -514,6 +514,7 @@ def get_zone_schedule_status(
                     sch_status = 0
                     smart_off_flag = False
                     smart_off_time = 0
+                break #exit the loop if an active schedule found
             else:
                 sch_status = 0
                 smart_off_flag = False
