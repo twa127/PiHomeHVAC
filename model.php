@@ -2613,7 +2613,7 @@ echo '<div class="modal fade" id="set_summer" tabindex="-1" role="dialog" aria-l
                                 <i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
-                                <li><a class="dropdown-item" href="pdf_download.php?file=disable_schedule_in_summer.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['disable_schedule_in_summer'].'</a></li>
+                                <li><a class="dropdown-item" href="pdf_download.php?file=disable_schedule_in_summer.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_guide_disable_schedule_in_summer'].'</a></li>
                          </ul>
                 </div>
             </div>
