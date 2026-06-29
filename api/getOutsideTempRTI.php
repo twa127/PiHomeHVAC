@@ -53,8 +53,20 @@ if(isset($_GET['sensorname'])) {
                 }
         }
 } else {
-        $node_id = "1";
-        $child_id = 0;
+        $query = "SELECT `weather_sensor_id`, `n`.`node_id`, `s`.`sensor_child_id`
+                FROM `system_controller` `sc`
+                JOIN `sensors` `s` ON `s`.`id` = `sc`.`weather_sensor_id`
+                JOIN `nodes` `n` ON `n`.`id` = `s`.`sensor_id`
+                LIMIT 1;";
+        $result = $conn->query($query);
+        $row = mysqli_fetch_assoc($result);
+        if(! $row) {
+                $node_id = "1";
+                $child_id = 0;
+        } else {
+                $node_id = $row['node_id'];
+                $child_id = $row['sensor_child_id'];
+        }
 }
 $query = "SELECT * FROM messages_in_view_24h WHERE node_id = '{$node_id}' AND child_id = {$child_id} LIMIT 1;";
 $result = $conn->query($query);
