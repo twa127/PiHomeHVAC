@@ -604,6 +604,7 @@ if ($settings_id == 1) {
                 	        	<h3 class="degre" ><i class="bi bi-toggle2-off red" style="font-size: 1.5rem;"></i></h3>
 				       	<h3 class="status"></small></h3>
 		        		</button>
+            			<!-- placeholder -->
 			</div>
 			<!-- /.row -->
 		</div>
