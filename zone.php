@@ -828,50 +828,47 @@ $count_num_sensors =count($sensorArray);
 						                document.getElementById("system_controller_id_label").style.visibility = 'hidden';
 						                document.getElementById("system_controller_id").required = false;
 						        }
-                                                        if (map_bin & 0b10000000000 && sensor_type === "1") {
-                                                                document.getElementById("default_m_label_1").style.visibility = 'visible';
-								document.getElementById("default_m_label_2").style.visibility = 'visible';
-                                                                document.getElementById("m_default").style.display = 'block';
-                                                                document.getElementById("m_default").required = true;
-                                                        } else {
-                                                                document.getElementById("m_default").style.display = 'none';
-                                                                document.getElementById("default_m_label_1").style.visibility = 'hidden';
-								document.getElementById("default_m_label_2").style.visibility = 'hidden';
-                                                                document.getElementById("m_default").required = false;
-                                                        }
+                                if (map_bin & 0b10000000000 && sensor_type === "1") {
+                                	document.getElementById("default_m_label_1").style.visibility = 'visible';
+									document.getElementById("default_m_label_2").style.visibility = 'visible';
+                                    document.getElementById("m_default").style.display = 'block';
+                                    document.getElementById("m_default").required = true;
+                                } else {
+                                    document.getElementById("m_default").style.display = 'none';
+                                	document.getElementById("default_m_label_1").style.visibility = 'hidden';
+									document.getElementById("default_m_label_2").style.visibility = 'hidden';
+                                    document.getElementById("m_default").required = false;
+                                }
 
-							// re-build the sensor list based on the zone type (1 = temperature, 2 = humidity)
-                            var id = <?php echo $id; ?>;
-                            if(id == 0) {
-                            	var opt = document.getElementById("sens_id0").getElementsByTagName("option");
-                                var jArray = <?php echo json_encode($sensorArray); ?>;
+                                // re-build the sensor list based on the zone type (1 = temperature, 2 = humidity)
+                                var id = <?php echo $id; ?>;
+                                if(id == 0) {
+                                    var opt = document.getElementById("sens_id0").getElementsByTagName("option");
+                                    var jArray = <?php echo json_encode($sensorArray); ?>;
 
-                                for(j=opt.length-1;j>=0;j--)
-                                    {
+                                    for(j=opt.length-1;j>=0;j--) {
                                     	document.getElementById("sens_id0").options.remove(j);
                                     }
 
-                                    for(j=0;j<jArray.length;j++)
-                                    {
+                                    for(j=0;j<jArray.length;j++) {
                                         var optn = document.createElement("OPTION");
                                         var stype = parseInt(jArray[j]['sensor_type_id']);
                                         optn.text = jArray[j]['name'];
-                                    	optn.value = jArray[j]['id'];
+                                        optn.value = jArray[j]['id'];
                                         if(stype == sensor_type || zone_cat === "2") {
-                                        	document.getElementById("sens_id0").options.add(optn);
-                                            if(j == 0) (option.setAttribute('selected', true);)
+                                            document.getElementById("sens_id0").options.add(optn);
+                                            if(j == 0) {option.setAttribute('selected', true);}
                                         }
                                     }
-
-                                    document.getElementById("selected_zone_category").value = zone_cat;
-                                    var e = document.getElementById("type");
-                                    var selected_type = e.options[e.selectedIndex].text;
-                                    document.getElementById("selected_zone_type").value = selected_type;
-
-                                    //set initial sensor
-//                                   document.getElementById("zone_sensor_id").value = document.getElementById("selected_sensor_id").value;
-                                    document.getElementById("selected_sensor_type_id").value = sensor_type;
                                 }
+                                document.getElementById("selected_zone_category").value = zone_cat;
+                                var e = document.getElementById("type");
+                                var selected_type = e.options[e.selectedIndex].text;
+                                document.getElementById("selected_zone_type").value = selected_type;
+
+                                //set initial sensor
+                                //document.getElementById("zone_sensor_id").value = document.getElementById("selected_sensor_id").value;
+                                document.getElementById("selected_sensor_type_id").value = sensor_type;
                             }
 						</script>
 
