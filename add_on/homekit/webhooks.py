@@ -108,42 +108,43 @@ try:
 #                   print(r.url)
 
         # Process Outlets
-        x = data['platforms'][1]['outlets']
-        for i in x:
-            outlet_id = i['id']
-            con = mdb.connect(dbhost, dbuser, dbpass, dbname)
-            cursorselect = con.cursor()
-            cursorselect.execute(
-                "SELECT zone_state FROM zone WHERE id = (%s) LIMIT 1",
-                (i['id'][6:],),
-            )
-            if cursorselect.rowcount > 0:
-                outlet_to_index = dict(
-                    (d[0], i)
-                    for i, d
-                    in enumerate(cursorselect.description)
+        if 'outlets' in data['platforms'][1]:
+            x = data['platforms'][1]['outlets']
+            for i in x:
+                outlet_id = i['id']
+                con = mdb.connect(dbhost, dbuser, dbpass, dbname)
+                cursorselect = con.cursor()
+                cursorselect.execute(
+                    "SELECT zone_state FROM zone WHERE id = (%s) LIMIT 1",
+                    (i['id'][6:],),
                 )
-                outlet = cursorselect.fetchone()
-                cursorselect.close()
-                con.close()
-                z_state = outlet[outlet_to_index['zone_state']]
-                if z_state == 1:
-                    zone_state = True
-                else:
-                    zone_state = False
-                request_url = urllib.request.urlopen('http://127.0.0.1:51828/?accessoryId=' + outlet_id)
-                x = request_url.read()
-                y = x.decode("utf-8")
-                z = json.loads(y)
-                state = z["state"]
-                if zone_state != state:
-#                   print(zone_state, state)
-                   if z_state == 1:
-                       payload = {'accessoryId': outlet_id, 'state': 'true'}
-                   else:
-                       payload = {'accessoryId': outlet_id, 'state': 'false'}
-                   r = requests.get('http://127.0.0.1:51828/', params=payload)
-#                   print(r.url)
+                if cursorselect.rowcount > 0:
+                    outlet_to_index = dict(
+                        (d[0], i)
+                        for i, d
+                        in enumerate(cursorselect.description)
+                    )
+                    outlet = cursorselect.fetchone()
+                    cursorselect.close()
+                    con.close()
+                    z_state = outlet[outlet_to_index['zone_state']]
+                    if z_state == 1:
+                        zone_state = True
+                    else:
+                        zone_state = False
+                    request_url = urllib.request.urlopen('http://127.0.0.1:51828/?accessoryId=' + outlet_id)
+                    x = request_url.read()
+                    y = x.decode("utf-8")
+                    z = json.loads(y)
+                    state = z["state"]
+                    if zone_state != state:
+#                       print(zone_state, state)
+                       if z_state == 1:
+                           payload = {'accessoryId': outlet_id, 'state': 'true'}
+                       else:
+                           payload = {'accessoryId': outlet_id, 'state': 'false'}
+                       r = requests.get('http://127.0.0.1:51828/', params=payload)
+#                       print(r.url)
 
         # Process Sensors
         x = data['platforms'][1]['sensors']
@@ -194,88 +195,87 @@ try:
                     payload = {'accessoryId': sensor_id, 'value': sensor_temp}
                     r = requests.get('http://127.0.0.1:51828/', params=payload)
 #                    print(r.url)
-                    if sensor_id == "sensor33":
-                        pass
 
         # Process Thermostats
-        x = data['platforms'][1]['thermostats']
-        for i in x:
-            thermostat_id = i['id']
-            id = i['id'][10:]
-            # Get the termperature from the sensor associated with this thermostat
-            con = mdb.connect(dbhost, dbuser, dbpass, dbname)
+        if 'thermostats' in data['platforms'][1]:
+            x = data['platforms'][1]['thermostats']
+            for i in x:
+                thermostat_id = i['id']
+                id = i['id'][10:]
+                # Get the termperature from the sensor associated with this thermostat
+                con = mdb.connect(dbhost, dbuser, dbpass, dbname)
             cursorselect = con.cursor()
-            cursorselect.execute(
-                "SELECT nodes.node_id, sensors.sensor_child_id FROM sensors, nodes WHERE (sensors.sensor_id = nodes.id) AND sensors.id = (%s) LIMIT 1;",
-                (i['id'][10:],),
-            )
-            sensor_to_index = dict(
-                (d[0], i)
-                for i, d
-                in enumerate(cursorselect.description)
-            )
-            result = cursorselect.fetchone()
-            cursorselect.close()
-            con.close()
-            node_id = result[sensor_to_index['node_id']]
-            node_id = str(node_id)
-            child_id = result[sensor_to_index['sensor_child_id']]
-            con = mdb.connect(dbhost, dbuser, dbpass, dbname)
-            cursorselect = con.cursor()
-            cursorselect.execute(
-                'SELECT `payload`  FROM `messages_in_view_24h` WHERE `node_id` = (%s) AND `child_id` = (%s) LIMIT 1',
-                [node_id, child_id],
-            )
-            if cursorselect.rowcount > 0:
-                msg_in_to_index = dict(
+                cursorselect.execute(
+                    "SELECT nodes.node_id, sensors.sensor_child_id FROM sensors, nodes WHERE (sensors.sensor_id = nodes.id) AND sensors.id = (%s) LIMIT 1;",
+                    (i['id'][10:],),
+                )
+                sensor_to_index = dict(
                     (d[0], i)
                     for i, d
                     in enumerate(cursorselect.description)
                 )
-                ttemp = cursorselect.fetchone()
+                result = cursorselect.fetchone()
                 cursorselect.close()
                 con.close()
-                thermostat_temp = float(ttemp[msg_in_to_index['payload']])
-                # Update the thermostat current temperature
-                payload = {'accessoryId': thermostat_id, 'currenttemperature': thermostat_temp}
+                node_id = result[sensor_to_index['node_id']]
+                node_id = str(node_id)
+                child_id = result[sensor_to_index['sensor_child_id']]
+                con = mdb.connect(dbhost, dbuser, dbpass, dbname)
+                cursorselect = con.cursor()
+                cursorselect.execute(
+                    'SELECT `payload`  FROM `messages_in_view_24h` WHERE `node_id` = (%s) AND `child_id` = (%s) LIMIT 1',
+                    [node_id, child_id],
+                )
+                if cursorselect.rowcount > 0:
+                    msg_in_to_index = dict(
+                        (d[0], i)
+                        for i, d
+                        in enumerate(cursorselect.description)
+                    )
+                    ttemp = cursorselect.fetchone()
+                    cursorselect.close()
+                    con.close()
+                    thermostat_temp = float(ttemp[msg_in_to_index['payload']])
+                    # Update the thermostat current temperature
+                    payload = {'accessoryId': thermostat_id, 'currenttemperature': thermostat_temp}
+                    r = requests.get('http://127.0.0.1:51828/', params=payload)
+
+                # webhooks thermostat does not return any values, MaxAir is updated through the thermostatscript api
+
+                # Set the thermostat state
+                con = mdb.connect(dbhost, dbuser, dbpass, dbname)
+                cursorselect = con.cursor()
+                cursorselect.execute("SELECT sc_mode FROM system_controller LIMIT 1;")
+                zc_state_to_index = dict(
+                    (d[0], i)
+                    for i, d
+                    in enumerate(cursorselect.description)
+                )
+                result = cursorselect.fetchone()
+                cursorselect.close()
+                con.close()
+                sc_mode = int(result[zc_state_to_index['sc_mode']])
+
+                if sc_mode == 0:
+                    mode = 0
+                elif sc_mode == 1:
+                    mode = 3
+                elif sc_mode == 2:
+                    mode = 1
+                elif sc_mode == 3:
+                    mode = 2
+#                print(mode)
+                payload = {'accessoryId': thermostat_id, 'targetstate': mode}
+                r = requests.get('http://127.0.0.1:51828/', params=payload)
+                payload = {'accessoryId': thermostat_id, 'currentstate': 0}
                 r = requests.get('http://127.0.0.1:51828/', params=payload)
 
-            # webhooks thermostat does not return any values, MaxAir is updated through the thermostatscript api
+#                if mode != 0:
+#                    target_temp = result[zc_state_to_index['temp_target']]
+#                    payload = {'accessoryId': thermostat_id, 'targettemperature': target_temp}
+#                    r = requests.get('http://127.0.0.1:51828/', params=payload)
 
-            # Set the thermostat state
-            con = mdb.connect(dbhost, dbuser, dbpass, dbname)
-            cursorselect = con.cursor()
-            cursorselect.execute("SELECT sc_mode FROM system_controller LIMIT 1;")
-            zc_state_to_index = dict(
-                (d[0], i)
-                for i, d
-                in enumerate(cursorselect.description)
-            )
-            result = cursorselect.fetchone()
-            cursorselect.close()
-            con.close()
-            sc_mode = int(result[zc_state_to_index['sc_mode']])
-
-            if sc_mode == 0:
-                mode = 0
-            elif sc_mode == 1:
-                mode = 3
-            elif sc_mode == 2:
-                mode = 1
-            elif sc_mode == 3:
-                mode = 2
-#            print(mode)
-            payload = {'accessoryId': thermostat_id, 'targetstate': mode}
-            r = requests.get('http://127.0.0.1:51828/', params=payload)
-            payload = {'accessoryId': thermostat_id, 'currentstate': 0}
-            r = requests.get('http://127.0.0.1:51828/', params=payload)
-
-#            if mode != 0:
-#                target_temp = result[zc_state_to_index['temp_target']]
-#                payload = {'accessoryId': thermostat_id, 'targettemperature': target_temp}
-#                r = requests.get('http://127.0.0.1:51828/', params=payload)
-
-        time.sleep(15)
+            time.sleep(15)
 
 except configparser.Error as e:
     print("ConfigParser:", format(e))
