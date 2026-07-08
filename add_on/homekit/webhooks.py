@@ -12,24 +12,24 @@ class bc:
 
 
 print(bc.hed + " ")
-print("    __  __                             _         ")
-print("   |  \/  |                    /\     (_)        ")
-print("   | \  / |   __ _  __  __    /  \     _   _ __  ")
-print("   | |\/| |  / _` | \ \/ /   / /\ \   | | | '__| ")
-print("   | |  | | | (_| |  >  <   / ____ \  | | | |    ")
-print("   |_|  |_|  \__,_| /_/\_\ /_/    \_\ |_| |_|    ")
+print(r"    __  __                             _         ")
+print(r"   |  \/  |                    /\     (_)        ")
+print(r"   | \  / |   __ _  __  __    /  \     _   _ __  ")
+print(r"   | |\/| |  / _` | \ \/ /   / /\ \   | | | '__| ")
+print(r"   | |  | | | (_| |  >  <   / ____ \  | | | |    ")
+print(r"   |_|  |_|  \__,_| /_/\_\ /_/    \_\ |_| |_|    ")
 print(" ")
 print("        " + bc.SUB + "S M A R T   T H E R M O S T A T " + bc.ENDC)
 print(bc.WARN + " ")
 print("********************************************************")
 print("*   Script to update Homebridge Switches and Sensors   *")
 print("*      Build Date: 06/02/2022                          *")
-print("*      Version 0.1 - Last Modified 06/02/2022          *")
+print("*      Version 0.2 - Last Modified 08/07/2026          *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
 
-import MySQLdb as mdb, sys, serial, telnetlib, time, datetime, os
+import MySQLdb as mdb, sys, serial, time, datetime, os
 import configparser, logging
 from datetime import datetime
 import struct
@@ -204,7 +204,7 @@ try:
                 id = i['id'][10:]
                 # Get the termperature from the sensor associated with this thermostat
                 con = mdb.connect(dbhost, dbuser, dbpass, dbname)
-            cursorselect = con.cursor()
+                cursorselect = con.cursor()
                 cursorselect.execute(
                     "SELECT nodes.node_id, sensors.sensor_child_id FROM sensors, nodes WHERE (sensors.sensor_id = nodes.id) AND sensors.id = (%s) LIMIT 1;",
                     (i['id'][10:],),
