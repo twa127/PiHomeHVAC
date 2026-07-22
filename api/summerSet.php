@@ -38,16 +38,16 @@ if(! $row) {
         if(isset($_GET['state'])) {
                 switch ($_GET['state']) {
                         case 'true':
-                                $summer_status = 1;
+                                $summer_status = 0;
                                 break;
                         case 'false':
-                                $summer_status = 0;
-                                break;
-                        case '1':
                                 $summer_status = 1;
                                 break;
-                        case '0':
+                        case '1':
                                 $summer_status = 0;
+                                break;
+                        case '0':
+                                $summer_status = 1;
                                 break;
                         default:
                                 http_response_code(400);
@@ -55,12 +55,12 @@ if(! $row) {
                                 $summer_status = -1;
                 }
                 if($summer_status == 0 or $summer_status == 1) {
-                       	$query = "UPDATE summer SET status = '{$summer_status}';";
-                        $conn->query($query);
+                        $query = "UPDATE summer SET status = '{$summer_status}';";
                         if($conn->query($query)){
                                 http_response_code(200);
-                                if($summer_status == 1) {$summer_status = True;} else {$summer_status = False;}
-                                echo json_encode(array("success" => True, "state" => $summer_status));
+                                // Translate the native DB value back to the RTI-facing boolean.
+                                if($summer_status == 0) {$rti_state = True;} else {$rti_state = False;}
+                                echo json_encode(array("success" => True, "state" => $rti_state));
                         } else {
                                 http_response_code(400);
                                 echo json_encode(array("success" => False, "state" => "Update database error."));
@@ -68,7 +68,7 @@ if(! $row) {
                 }
         } else {
                 http_response_code(200);
-                if($row['status'] == 1) {$summer_status = True; $on_off = 'on';} else {$summer_status = False; $on_off = 'off';}
+                if($row['status'] == 0) {$summer_status = True; $on_off = 'on';} else {$summer_status = False; $on_off = 'off';}
                 echo json_encode(array("success" => True, "state" => $summer_status, "state_str" => $on_off));
         }
 }
