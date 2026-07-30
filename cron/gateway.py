@@ -26,7 +26,7 @@ print("* MySensors Wifi/Ethernet/Serial Gateway Communication *")
 print("* Script to communicate with MySensors Nodes, for more *")
 print("* info please check MySensors API.                     *")
 print("*      Build Date: 18/09/2017                          *")
-print("*      Version 0.38 - Last Modified 05/05/2026         *")
+print("*      Version 0.39 - Last Modified 30/07/2026         *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -117,6 +117,14 @@ logging.basicConfig(
 run_22 = 0
 new_log = 0
 write_mqtt_log = False
+
+def is_number(s):
+    try:
+        float(s)
+    except ValueError:  # Failed
+        return False
+    else:  # Succeeded
+        return True
 
 def write_mqtt_log(message):
     global new_log
@@ -2629,7 +2637,7 @@ def on_message(client, userdata, message):
             message_str_json = json.loads(message_str)
 
             # process  relays state message
-            if (mqtt_brand == 0 and "POWER" in message_str_json and mqtt_payload is not None and "POWER" in str_attribute) or \
+            if  not is_number(message_str) and (mqtt_brand == 0 and "POWER" in message_str_json and mqtt_payload is not None and "POWER" in str_attribute) or \
                 ((mqtt_brand == 1 or mqtt_brand == 2 or mqtt_brand == 3) and ("state" in message_str_json or "state_l1" in message_str_json or "state_l2" in message_str_json) and \
                 mqtt_payload is not None and ("state" in str_attribute or "state_l1" in str_attribute or "state_l2" in str_attribute)):
                 cur_mqtt.execute(
@@ -2669,7 +2677,6 @@ def on_message(client, userdata, message):
                                     mqttClient.loop_stop()
                                 print(infomsg)
                                 sys.exit(1)
-            elif (isinstance(message_str_json, float) and mqtt_payload is not None) or \
                 ("Temperature" in message_str_json and "Humidity" in message_str_json and "DewPoint" in message_str_json and message_str_json['DewPoint'] is not None \
                 and mqtt_payload is not None) or ("DewPoint" not in message_str_json and mqtt_payload is not None):
                 # Get reading type (continous or on-change)
