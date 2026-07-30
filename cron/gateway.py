@@ -2677,6 +2677,7 @@ def on_message(client, userdata, message):
                                     mqttClient.loop_stop()
                                 print(infomsg)
                                 sys.exit(1)
+            elif (is_number(message_str) and mqtt_payload is not None) or \
                 ("Temperature" in message_str_json and "Humidity" in message_str_json and "DewPoint" in message_str_json and message_str_json['DewPoint'] is not None \
                 and mqtt_payload is not None) or ("DewPoint" not in message_str_json and mqtt_payload is not None):
                 # Get reading type (continous or on-change)
