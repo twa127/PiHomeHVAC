@@ -27,7 +27,7 @@ print("********************************************************")
 print("*            Boiler Reset Control  Script              *")
 print("*                                                      *")
 print("*               Build Date: 18/02/2025                 *")
-print("*       Version 0.01 - Last Modified 18/02/2025        *")
+print("*       Version 0.02 - Last Modified 02/08/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -151,6 +151,13 @@ def boiler():
         status = bool(result[reset_to_index["status"]])
         type = result[reset_to_index["type"]]
         reset_count = int(result[reset_to_index["reset_count"]])
+        if "POWER_CYCLE" in type:
+            relay_id = boiler_power_relay_id
+            relay_child_id = boiler_power_relay_child_id
+        else:
+            relay_id = reset_relay_id
+            relay_child_id = reset_relay_child_id
+
         # if reset request is present, then clear by using 'reset_boiler'
         if status :
             print(bc.dtm + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Actioning ReBoot Request")
@@ -163,7 +170,7 @@ def boiler():
             cursorupdate.execute(query)
             cursorupdate.close()
             cnx.commit()
-            reset_boiler(cnx, reset_relay_id, reset_relay_child_id)
+            reset_boiler(cnx, relay_id, relay_child_id)
             cursorselect.close()
             cnx.close()
             return
@@ -213,6 +220,9 @@ def main() :
     global reset_id
     global reset_relay_child_id
     global reset_relay_id
+    global boiler_power_id
+    global boiler_power_relay_child_id
+    global boiler_power_relay_id
     global status_id
     global status_sensor_id
     global status_sensor_child_id
@@ -262,7 +272,7 @@ def main() :
             state_node_id = int(result[node_to_index["node_id"]])
             state_sensor = True
 
-    # check if a 'Boiler reset' relay exists in the database
+    # check if a 'Boiler Reset' relay exists in the database
     reset_relay = False
     cur.execute("SELECT * FROM relays WHERE name = 'Boiler Reset' LIMIT 1;")
     result = cur.fetchone()
@@ -282,6 +292,27 @@ def main() :
             )
             reset_relay_node_id = int(result[node_to_index["node_id"]])
             reset_relay = True
+
+    # check if a 'Boiler Power' relay exists in the database
+    boiler_power_relay = False
+    cur.execute("SELECT * FROM relays WHERE name = 'Boiler Power' LIMIT 1;")
+    result = cur.fetchone()
+    if cur.rowcount > 0 :
+        relay_to_index = dict(
+            (d[0], i) for i, d in enumerate(cur.description)
+        )
+        boiler_power_id = int(result[relay_to_index["id"]])
+        boiler_power_relay_id = int(result[relay_to_index["relay_id"]])
+        boiler_power_relay_on_trigger = int(result[relay_to_index["on_trigger"]])
+        boiler_power_relay_child_id = int(result[relay_to_index["relay_child_id"]])
+        cur.execute('SELECT node_id FROM nodes WHERE id = (%s)', (boiler_power_relay_id, ))
+        result =cur.fetchone()
+        if cur.rowcount > 0 :
+            node_to_index = dict(
+                (d[0], i) for i, d in enumerate(cur.description)
+            )
+            boiler_power_relay_node_id = int(result[node_to_index["node_id"]])
+            boiler_power_relay = True
 
     # Create the container (outer) email message.
     USER    = 'boiler@overkillsystems.com'
