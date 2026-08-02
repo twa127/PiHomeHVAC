@@ -34,7 +34,7 @@ echo '
             </div>
             <div class="modal-footer">
                         <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['cancel'].'</button>
-                        <a href="javascript:power_cycle_boiler()" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm">'.$lang['yes'].'</a>
+                        <a href="javascript:boiler_power_cycle()" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm">'.$lang['yes'].'</a>
             </div>
         </div>
     </div>
