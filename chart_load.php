@@ -43,7 +43,7 @@ while ($row = mysqli_fetch_assoc($result)) {
         $payload = $row['payload'];
         if ($row['node_id'] == 0) {
                 $system_c[] = array(strtotime($datetime) * 1000, DispSensor($conn,$payload,1));
-        } elseif ($row['node_id'] == $node_id && child_id == $child_id) {
+        } elseif ($row['node_id'] == $node_id && $row['child_id'] == $child_id) {
                 $weather_c[] = array(strtotime($datetime) * 1000, DispSensor($conn,$payload,1));
         }
 }
