@@ -21,13 +21,29 @@ $system_c = array();
 
 $query="select * from messages_in where datetime > DATE_SUB( NOW(), INTERVAL 24 HOUR)";
 $result = $conn->query($query);
+// find the node and child id for the weater sensor
+$query = "SELECT `weather_sensor_id`, `n`.`node_id`, `s`.`sensor_child_id`
+        FROM `system_controller` `sc`
+        JOIN `sensors` `s` ON `s`.`id` = `sc`.`weather_sensor_id`
+        JOIN `nodes` `n` ON `n`.`id` = `s`.`sensor_id`
+        LIMIT 1;";
+$weather_sensor = $conn->query($query);
+$row = mysqli_fetch_assoc($weather_sensor);
+if(! $row) {
+        $node_id = "1";
+        $child_id = 0;
+} else {
+        $node_id = $row['node_id'];
+        $child_id = $row['sensor_child_id'];
+}
+
 //create array of pairs of x and y values
 while ($row = mysqli_fetch_assoc($result)) {
         $datetime = $row['datetime'];
         $payload = $row['payload'];
         if ($row['node_id'] == 0) {
                 $system_c[] = array(strtotime($datetime) * 1000, DispSensor($conn,$payload,1));
-        } elseif ($row['node_id'] == 1) {
+        } elseif ($row['node_id'] == $node_id && child_id == $child_id) {
                 $weather_c[] = array(strtotime($datetime) * 1000, DispSensor($conn,$payload,1));
         }
 }
