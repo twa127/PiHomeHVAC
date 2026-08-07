@@ -12,8 +12,8 @@ echo " \033[0m \n";
 echo "                \033[45m S M A R T   T H E R M O S T A T \033[0m \n";
 echo "\033[31m";
 echo "**********************************************************\n";
-echo "*       EMS Script Version 0.1 Build Date 05/02/2026     *\n";
-echo "*          Last Modification Date 05/02/2026             *\n";
+echo "*       EMS Script Version 0.2 Build Date 05/02/2026     *\n";
+echo "*          Last Modification Date 07/08/2026             *\n";
 echo "*                                Have Fun - PiHome.eu    *\n";
 echo "**********************************************************\n";
 echo " \033[0m \n";
@@ -25,6 +25,7 @@ require_once(__DIR__.'../../st_inc/functions.php');
 ini_set('max_execution_time', 60); 
 $date_time = date('Y-m-d H:i:s');
 $ems_script_txt = 'python3 /var/www/cron/ems/rc10_control.py';
+$ems_log_file = '/var/www/cron/ems/ems.log';
 $line = "--------------------------------------------------------------------------\n";
 
 echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Python EMS Script Status Check Script Started \n"; 
@@ -62,9 +63,26 @@ if($nopids==0) { // Script not running
 			exec("ps aux | grep '$ems_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
 		}
 	}
+        // check is strip has stalled, using last update of the log file
+        if (file_exists($ems_log_file)) {
+                $date = new DateTimeImmutable();
+                $date =  $date->getTimestamp();
+                $last_log = filemtime($ems_log_file);
+                $elapse_time = $date - $last_log;
+                if($elapse_time > 30) {
+                        // get the current PID
+                        exec("ps aux | grep '$ems_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
+                        // Kill
+                        exec("kill -9 $out[0] 2> /dev/null");
+                        echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Script Killed. Started New \n";
+                        exec("$ems_script_txt </dev/null >/dev/null 2>&1 & ");
+                        exec("ps aux | grep '$ems_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
+                }
+        }
         echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Python EMS Script is \033[0;32;40mRunning\033[0m \n";
         exec("ps -eo s,pid,cmd | grep '$ems_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
         echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - The PID is: \033[0;32;40m" . $out[0]."\033[0m \n";
+        echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Last Run: \033[0;32;40m" . $elapse_time."\033[0m \n";
 }
 echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Python EMS Script Status Check Script Ended \n"; 
 echo "\033[32m***************************************************************************\033[0m";
