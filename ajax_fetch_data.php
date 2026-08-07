@@ -220,7 +220,7 @@ if ($type <= 4 || $type == 38) {
                 	break;
 	        case 3:
                         if ($sensor_type_id != 3) {
-                                if ($zone_weather_comp == 0) {
+                                if ($zone_weather_comp == 0 || len($rval['target']) == 0) {
                                         echo $rval['target'];
                                 } else {
                                         echo "[".$rval['target']."]";
