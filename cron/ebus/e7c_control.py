@@ -27,7 +27,7 @@ print("********************************************************")
 print("*          EBus Set FlowTempDesired  Script            *")
 print("*                                                      *")
 print("*               Build Date: 24/04/2023                 *")
-print("*       Version 0.05 - Last Modified 12/06/2026        *")
+print("*       Version 0.06 - Last Modified 08/08/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -192,13 +192,17 @@ def update_maxair (conn, node_id, sensor_id, val_1, val_2, msg_in, msg_in_val) :
             cnx.execute(query)
             conn.commit()
         except mdb.Error as e:
-            print("DB Error %d: %s" % (e.args[0], e.args[1]))
-            print(traceback.format_exc())
-            logging.error(e)
-            logging.info(traceback.format_exc())
-            conn.close()
-            print(infomsg)
-            sys.exit(1)
+            # skip deadlock error
+            if e.args[0] == 1213:
+                pass
+            else:
+                print("DB Error %d: %s" % (e.args[0], e.args[1]))
+                print(traceback.format_exc())
+                logging.error(e)
+                logging.info(traceback.format_exc())
+                conn.close()
+                print(infomsg)
+                sys.exit(1)
         # check if the sensor is generating graph data
         if graph_num > 0 :
             tdelta = 0
