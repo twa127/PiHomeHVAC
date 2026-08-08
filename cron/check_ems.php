@@ -54,7 +54,7 @@ if($nopids==0) { // Script not running
                 $notpids=count($tpids);
                 echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Number of Terminated Script Killed \033[41m$notpids\033[0m \n";
                 foreach($tpids as $tpid){
-                        exec("kill -9 $tpid 2> /dev/null"); // Kill all EMS script ghost processes (in stat "T"(Terminated)). Common occurrence after running script in terminal and termina>
+                        exec("kill -9 $tpid 2> /dev/null"); // Kill all EMS script ghost processes (in stat "T"(Terminated)). Common occurrence after running script in terminal and terminating by Ctrl+z
                 }
                 if($nopids-$notpids>1 || $nopids-$notpids==0) { // Proceed if none or more than one script runs
                         if($nopids-$notpids>1) { // Proceed if more than one active EMS script
