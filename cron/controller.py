@@ -27,7 +27,7 @@ print("********************************************************")
 print("*              System Controller Script                *")
 print("*                                                      *")
 print("*               Build Date: 10/02/2023                 *")
-print("*       Version 0.17 - Last Modified 28/06/2026        *")
+print("*       Version 0.18 - Last Modified 08/08/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -540,6 +540,7 @@ def get_zone_schedule_status(
 
 #resysnc the relays if MySensor type and shetch_version > 0.35 (multi controller type interface)
 def resync():
+    #check and update zone relays
     try:
         cur.execute("""UPDATE messages_out
                          JOIN relays r ON r.relay_id = messages_out.n_id AND r.relay_child_id = messages_out.child_id
@@ -547,6 +548,32 @@ def resync():
                          JOIN zone_relays zr ON zr.zone_relay_id = r.id
                          SET messages_out.payload = zr.state, messages_out.sent = 0
                          WHERE (CAST(zr.state as char(255)) != messages_out.payload OR CAST(r.state as char(255)) != messages_out.payload) AND n.type = 'MySensor'
+                         AND ((n.node_id != '0' AND n.sketch_version >= 0.35) OR (n.node_id = '0' AND n.sketch_version >= 0.38));"""
+                   )
+        con.commit()  # commit above
+    except mdb.Error as e:
+        # skip deadlock error (caused by something adding new data to the table)
+        if e.args[0] == 2014 or e.args[0] == 1020:
+            pass
+        else:
+            print("DB Error %d: %s" % (e.args[0], e.args[1]))
+            print(traceback.format_exc())
+            logging.error(e)
+            logging.info(traceback.format_exc())
+            con.close()
+            if MQTT_CONNECTED == 1:
+                mqttClient.disconnect()
+                mqttClient.loop_stop()
+            print(infomsg)
+            sys.exit(1)
+
+    #check and update stand alone relays
+    try:
+        cur.execute("""UPDATE messages_out
+                         JOIN relays r ON r.relay_id = messages_out.n_id AND r.relay_child_id = messages_out.child_id
+                         JOIN nodes n ON n.id = messages_out.n_id
+                         SET messages_out.payload = r.state, messages_out.sent = 0
+                         WHERE r.id NOT IN (SELECT zone_relay_id FROM zone_relays) AND r.id NOT IN (SELECT heat_relay_id FROM system_controller) AND (CAST(r.state as char(255)) != messages_out.payload) AND n.type = 'MySensor'
                          AND ((n.node_id != '0' AND n.sketch_version >= 0.35) OR (n.node_id = '0' AND n.sketch_version >= 0.38));"""
                    )
         con.commit()  # commit above
