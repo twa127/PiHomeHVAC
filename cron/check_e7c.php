@@ -12,8 +12,8 @@ echo " \033[0m \n";
 echo "                \033[45m S M A R T   T H E R M O S T A T \033[0m \n";
 echo "\033[31m";
 echo "****************************************************************\n";
-echo "* eBUS FowlTempDesiredScript Version 0.1 Build Date 04/05/2023 *\n";
-echo "*             Last Modification Date 04/05/2023                *\n";
+echo "* eBUS FowlTempDesiredScript Version 0.2 Build Date 04/05/2023 *\n";
+echo "*             Last Modification Date 08/08/2026                *\n";
 echo "*                                      Have Fun - PiHome.eu    *\n";
 echo "****************************************************************\n";
 echo " \033[0m \n";
@@ -25,6 +25,7 @@ require_once(__DIR__.'../../st_inc/functions.php');
 ini_set('max_execution_time', 60);
 $date_time = date('Y-m-d H:i:s');
 $flowtemp_script_txt = 'python3 /var/www/cron/ebus/e7c_control.py';
+$ebus_log_file = '/var/log/ebus/log.txt';
 $line = "--------------------------------------------------------------------------\n";
 
 echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Python Set EBus FlowTempDesired Script Status Check Script Started \n";
@@ -39,7 +40,10 @@ if($nopids==0) { // Script not running
 	exec("ps aux | grep '$flowtemp_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
 	echo "\033[36m".date('Y-m-d H:i:s')."\033[0m - The PID is: \033[41m".$out[0]."\033[0m \n";
         $pid_details = exec("ps -p '$out[0]' -o lstart=");
-        $query = "UPDATE ebus_device SET pid = '{$out[0]}', pid_running_since = '{$pid_details}' LIMIT 1";
+        $query = "UPDATE bus_controller SET pid = '{$out[0]}', pid_running_since = '{$pid_details}' LIMIT 1";
+        $conn->query($query);
+        echo mysqli_error($conn)."\n";
+        $query = "INSERT INTO bus_controller_logs (`sync`, `purge`, pid, pid_start_time, pid_datetime) VALUES ('0', '0', '{$out[0]}', '{$pid_details}', '{$date_time}')";
         $conn->query($query);
         echo mysqli_error($conn)."\n";
 } else {
@@ -53,7 +57,7 @@ if($nopids==0) { // Script not running
 			exec("kill -9 $tpid 2> /dev/null"); // Kill all eBUS script ghost processes (in stat "T"(Terminated)). Common occurrence after running script in terminal and terminating by Ctrl+z
 		}
 		if($nopids-$notpids>1 || $nopids-$notpids==0) { // Proceed if none or more than one script runs
-			if($nopids-$notpids>1) { // Proceed if more than one active eBUS script 
+			if($nopids-$notpids>1) { // Proceed if more than one active eBUS script
 				exec("ps -eo s,pid,cmd | grep '$flowtemp_script_txt' | grep -v grep | awk '{ print $2 }'", $tpids);
 				$notpids=$nopids-$notpids;
 				echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Multiple Active eBUS FlowTempDesired Script are Running \033[41m$notpids\033[0m \n";
@@ -66,15 +70,36 @@ if($nopids==0) { // Script not running
 			exec("ps aux | grep '$flowtemp_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
 		}
 	}
+        // check is strip has stalled, using last update of the log file
+        if (file_exists($ebus_log_file)) {
+                $date = new DateTimeImmutable();
+                $date =  $date->getTimestamp();
+                $last_log = filemtime($ebus_log_file);
+                $elapse_time = $date - $last_log;
+                if($elapse_time > 30) {
+                        // get the current PID
+                        exec("ps aux | grep '$flowtemp_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
+                        // Kill
+                        exec("kill -9 $out[0] 2> /dev/null");
+                        echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Script Killed. Started New \n";
+                        exec("$flowtemp_script_txt </dev/null >/dev/null 2>&1 & ");
+                        exec("ps aux | grep '$flowtemp_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
+                        $pid_details = exec("ps -p '$out[0]' -o lstart=");
+                        $query = "UPDATE bus_controller SET pid = '{$out[0]}', pid_running_since = '{$pid_details}' LIMIT 1";
+                        $conn->query($query);
+                        echo mysqli_error($conn)."\n";
+                        $query = "INSERT INTO bus_controller_logs (`sync`, `purge`, pid, pid_start_time, pid_datetime) VALUES ('0', '0', '{$out[0]}', '{$pid_details}', '{$date_time}')";
+                        $conn->query($query);
+                        echo mysqli_error($conn)."\n";
+                }
+        }
 	echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Python eBUS Script is \033[42mRunning\033[0m \n";
 	exec("ps -eo s,pid,cmd | grep '$flowtemp_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
 	echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - The PID is: \033[42m" . $out[0]."\033[0m \n";
+        echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Last Run: \033[0;32;40m" . $elapse_time."\033[0m \n";
         $pid_details = exec("ps -p '$out[0]' -o lstart=");
-        $query = "UPDATE ebus_device SET pid = '{$out[0]}', pid_running_since = '{$pid_details}' LIMIT 1";
-        $conn->query($query);
-        echo mysqli_error($conn)."\n";
 }
-echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Python eBUS FlowTempDesired Script Status Check Script Ended \n"; 
+echo "\033[36m".date('Y-m-d H:i:s'). "\033[0m - Python eBUS FlowTempDesired Script Status Check Script Ended \n";
 echo "\033[32m***************************************************************************\033[0m";
 echo "\n";
 ?>
