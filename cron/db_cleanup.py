@@ -24,7 +24,7 @@ print(bc.WARN + " ")
 print("********************************************************")
 print("*              Database Cleanup Script                 *")
 print("*      Build Date: 18/09/2017                          *")
-print("*      Version 0.01 - Last Modified 21/03/2026         *")
+print("*      Version 0.02 - Last Modified 08/08/2026         *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -63,14 +63,16 @@ if cur.rowcount > 0:
     interval_2 = row[row_to_index["nodes_battery"]]
     interval_3 = row[row_to_index["gateway_logs"]]
     interval_4 = row[row_to_index["relay_logs"]]
-    interval_5 = "24 HOUR"
+    interval_5 = row[row_to_index["bus_controller_logs"]]
+    interval_6 = "24 HOUR"
 
     qry_tuple = ('DELETE FROM messages_in WHERE datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_1),
                  'DELETE FROM nodes_battery WHERE `update` < DATE_SUB(CURDATE(), INTERVAL {});'.format(interval_2),
                  'DELETE FROM nodes_battery WHERE node_id NOT IN (SELECT nodes.node_id  FROM nodes UNION SELECT CONCAT(nodes.node_id,"-",mqtt_devices.child_id) AS node_id FROM mqtt_devices, nodes WHERE mqtt_devices.nodes_id = nodes.id);',
-                 'DELETE FROM `sensor_graphs` WHERE `datetime` < DATE_SUB(CURDATE(), INTERVAL {});'.format(interval_5),
+                 'DELETE FROM `sensor_graphs` WHERE `datetime` < DATE_SUB(CURDATE(), INTERVAL {});'.format(interval_6),
                  'DELETE FROM `gateway_logs` WHERE pid_datetime < DATE_SUB(CURDATE(), INTERVAL {})  AND id != (SELECT id FROM (SELECT id FROM `gateway_logs` ORDER BY id DESC LIMIT 1) myselect);'.format(interval_3),
-                 'DELETE FROM relay_logs WHERE datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_4))
+                 'DELETE FROM relay_logs WHERE datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_4),
+                 'DELETE FROM bus_controller_logs WHERE pid_datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_5))
     for q in qry_tuple:
         try:
             cur.execute(q)
