@@ -40,7 +40,7 @@ if($nopids==0) { // Script not running
         exec("ps aux | grep '$ems_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
         echo "\033[36m".date('Y-m-d H:i:s')."\033[0m - The PID is: \033[41m".$out[0]."\033[0m \n";
         $pid_details = exec("ps -p '$out[0]' -o lstart=");
-        $query = "UPDATE ebus_device SET pid = '{$out[0]}', pid_running_since = '{$pid_details}' LIMIT 1";
+        $query = "UPDATE bus_controller SET pid = '{$out[0]}', pid_running_since = '{$pid_details}' LIMIT 1";
         $conn->query($query);
         echo mysqli_error($conn)."\n";
         $query = "INSERT INTO bus_controller_logs (`sync`, `purge`, pid, pid_start_time, pid_datetime) VALUES ('0', '0', '{$out[0]}', '{$pid_details}', '{$date_time}')";
@@ -85,7 +85,7 @@ if($nopids==0) { // Script not running
                         exec("$ems_script_txt </dev/null >/dev/null 2>&1 & ");
                         exec("ps aux | grep '$ems_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $out);
                         $pid_details = exec("ps -p '$out[0]' -o lstart=");
-                        $query = "UPDATE ebus_device SET pid = '{$out[0]}', pid_running_since = '{$pid_details}' LIMIT 1";
+                        $query = "UPDATE bus_controller SET pid = '{$out[0]}', pid_running_since = '{$pid_details}' LIMIT 1";
                         $conn->query($query);
                         echo mysqli_error($conn)."\n";
                         $query = "INSERT INTO bus_controller_logs (`sync`, `purge`, pid, pid_start_time, pid_datetime) VALUES ('0', '0', '{$out[0]}', '{$pid_details}', '{$date_time}')";
