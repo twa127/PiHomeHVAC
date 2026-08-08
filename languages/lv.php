@@ -1137,6 +1137,8 @@ $lang['setup_guide_disable_schedule_in_summer'] = "Setup Guide Disable Schedule 
 $lang['summer'] = "Summer";
 $lang['winter'] = "Winter";
 $lang['setup_guide_xaomi_sensors'] = "Setup Guide Xaomi Mijia Bluetooth Sensors";
+$lang['bus_controller_scr_info'] = "Bus Controller Script Process Info";
+$lang['smart_home_bus_controller_scr'] = "Script Re-Started in Last 1 Hour";
 
 if (file_exists(__DIR__.'/lo.php')) { require_once(__DIR__.'/lo.php'); }
 ?>
