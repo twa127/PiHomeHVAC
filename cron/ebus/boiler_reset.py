@@ -27,7 +27,7 @@ print("********************************************************")
 print("*            Boiler Reset Control  Script              *")
 print("*                                                      *")
 print("*               Build Date: 18/02/2025                 *")
-print("*       Version 0.02 - Last Modified 02/08/2026        *")
+print("*       Version 0.03 - Last Modified 04/08/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -78,32 +78,34 @@ cur = con.cursor()
 
 # Create the container (outer) email message.
 USER    = 'boiler@overkillsystems.com'
-PASS    = 'Tr3!!3b0rg'
+PASS    = 'Tr3ll3b0rg'
 HOST    = 'smtp.livemail.co.uk'
 SUBJECT = "HX15 Boiler Status"
 TO      = "terry.adams@overkillsystems.com"
 FROM    = "boiler@overkillsystems.com"
+PORT    = 465
 
 # Initialise variables
 # ********************
 MAX_RELIGHTS = 10                                       # Maximum number of relight attempts
 rl_count = 0
 
-def reset_boiler(conn, n_id, child_id):
+def reset_boiler(conn, relay_id, n_id, child_id):
     global EMails
     global Failed_EMails
 
     cursorupdate = conn.cursor()
-    query = ("UPDATE messages_out SET payload = 1, sent = 0 WHERE `n_id` = " + str(n_id) + " AND `child_id` = " + str(child_id) + ";")
+    query = ("UPDATE messages_out SET payload = '1', sent = 0 WHERE `n_id` = " + str(n_id) + " AND `child_id` = " + str(child_id) + ";")
     cursorupdate.execute(query)
-    cursorupdate.close()
+#    cursorupdate.close()
     conn.commit()
     time.sleep(2)
-    cursorupdate = conn.cursor()
-    query = ("UPDATE messages_out SET payload = 0, sent = 0 WHERE `n_id` = " + str(n_id) + " AND `child_id` = " + str(child_id) + ";")
+#    cursorupdate = conn.cursor()
+    query = ("UPDATE messages_out SET payload = '0', sent = 0 WHERE `n_id` = " + str(n_id) + " AND `child_id` = " + str(child_id) + ";")
     cursorupdate.execute(query)
-    cursorupdate.close()
+#    cursorupdate.close()
     conn.commit()
+    cursorupdate.close()
     print(bc.dtm + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Triggering Boiler Reset Relay")
 
     # send an email notification
@@ -113,8 +115,11 @@ def reset_boiler(conn, n_id, child_id):
     BODY = f"From: {FROM}\nTo: {TO}\nSubject: {SUBJECT}\n\n{TEXT}\r\n"
 
     try:
-        server = smtplib.SMTP(HOST)
-#       server.set_debuglevel(1)
+        if PORT == 465 :
+            server = smtplib.SMTP_SSL(HOST, PORT)
+        else :
+            server = smtplib.SMTP(HOST, PORT)
+#        server.set_debuglevel(1)
         server.login(USER, PASS)
         server.sendmail(FROM, TO, BODY)
         server.quit()
@@ -147,22 +152,15 @@ def boiler():
         reset_to_index = dict(
             (d[0], i) for i, d in enumerate(cursorselect.description)
         )
-        id = int(result[reset_to_index["id"]])
+        r_id = int(result[reset_to_index["id"]])
         status = bool(result[reset_to_index["status"]])
         type = result[reset_to_index["type"]]
-        reset_count = int(result[reset_to_index["reset_count"]])
-        if "POWER_CYCLE" in type:
-            relay_id = boiler_power_relay_id
-            relay_child_id = boiler_power_relay_child_id
-        else:
-            relay_id = reset_relay_id
-            relay_child_id = reset_relay_child_id
 
         # if reset request is present, then clear by using 'reset_boiler'
         if status :
             print(bc.dtm + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Actioning ReBoot Request")
             cursorupdate = cnx.cursor()
-            query = ("UPDATE reset SET status = 0, sync = 0, end_datetime = '" + str(datetime.datetime.now()) + "' WHERE id = " + str(id) + ";")
+            query = ("UPDATE reset SET status = 0, sync = 0, end_datetime = '" + str(datetime.datetime.now()) + "' WHERE id = " + str(r_id) + ";")
             cursorupdate.execute(query)
             cnx.commit()
             # clear the 'state' sensor error indicator
@@ -170,42 +168,69 @@ def boiler():
             cursorupdate.execute(query)
             cursorupdate.close()
             cnx.commit()
-            reset_boiler(cnx, relay_id, relay_child_id)
+            if "POWER_CYCLE" in type:
+                id = boiler_power_id
+                relay_id = boiler_power_relay_id
+                relay_child_id = boiler_power_relay_child_id
+            else:
+                id = reset_id
+                relay_id = reset_relay_id
+                relay_child_id = reset_relay_child_id
+            reset_boiler(cnx, id, relay_id, relay_child_id)
             cursorselect.close()
             cnx.close()
             return
         # no reset requests in the database, so check if boiler is in error state
         else :
             # check if any schedules are running
-            cursorselect.execute("""SELECT `zone`.id, `zone`.name, `zone_current_state`.`schedule`
-                            FROM `zone_current_state`, `zone`
-                            WHERE (`zone_current_state`.`zone_id` = `zone`.`id`) AND `zone_current_state`.`schedule` = 1
-                            AND (`zone`.`type_id` = 2 OR `zone`.`type_id` = 3);""")
-            if cursorselect.rowcount > 0 :
-                schedule = True
-            else:
-                schedule = False
-            # check the current error state of the boiler
-            cursorselect.execute("SELECT `current_val_1` FROM `sensors` WHERE id = " + str(state_id) + ";")
+            cursorselect.execute("SELECT `active_status` FROM `system_controller` LIMIT 1;")
             result = cursorselect.fetchone()
             if cursorselect.rowcount > 0 :
-                sensor_to_index = dict(
+                sc_to_index = dict(
                     (d[0], i) for i, d in enumerate(cursorselect.description)
                 )
-                error_flag = bool(result[sensor_to_index["current_val_1"]])
-                # the boiler is in error state
-                if error_flag :
-                    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    cursor_reset = cnx.cursor()
-                    print(bc.dtm + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Add New AUTO ReSet Request")
-                    reset_count = 1
-                    qry_str = "INSERT INTO `reset`(`sync`, `purge`, `status`, `type`, `reset_count`, `start_datetime`) VALUES (0,0,1,'AUTO'," + str(rl_count) + ",'" + timestamp + "');"
-                    cursor_reset.execute(qry_str)
-                    cursor_reset.close()
-                    cnx.commit()
-#                    print("reset_count ",reset_count)
+                if result[sc_to_index["active_status"]] == 1:
+                    # check the current error state of the boiler
+                    cursorselect.execute("SELECT `current_val_1` FROM `sensors` WHERE id = " + str(state_id) + ";")
+                    result = cursorselect.fetchone()
+                    if cursorselect.rowcount > 0 :
+                        sensor_to_index = dict(
+                            (d[0], i) for i, d in enumerate(cursorselect.description)
+                        )
+                        error_flag = bool(result[sensor_to_index["current_val_1"]])
+                        # the boiler is in error state
+                        if error_flag :
+                            timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                            qry_str = """SELECT COUNT(*) AS `reset_count` FROM `reset`
+                                         WHERE `start_datetime` >= DATE_SUB(NOW(),INTERVAL 5 MINUTE) AND `type` LIKE 'AUTO_RESET' AND `type` NOT LIKE 'AUTO_POWER' ;"""
+                            cursorselect.execute(qry_str)
+                            result = cursorselect.fetchone()
+                            reset_count_to_index = dict(
+                                (d[0], i) for i, d in enumerate(cursorselect.description)
+                            )
+                            if result[reset_count_to_index["reset_count"]] > 5:
+                                id = boiler_power_id
+                                relay_id = boiler_power_relay_id
+                                relay_child_id = boiler_power_relay_child_id
+                                qry_str = "INSERT INTO `reset`(`sync`, `purge`, `status`, `type`, `reset_count`, `start_datetime`) VALUES (0,0,1,'AUTO_POWER'," + str(rl_count) + ",'" + timestamp + "');"
+                            else:
+                                id = reset_id
+                                relay_id = reset_relay_id
+                                relay_child_id = reset_relay_child_id
+                                qry_str = "INSERT INTO `reset`(`sync`, `purge`, `status`, `type`, `reset_count`, `start_datetime`) VALUES (0,0,1,'AUTO_RESET'," + str(rl_count) + ",'" + timestamp + "');"
+                            cursor_reset = cnx.cursor()
+                            cursor_reset.execute(qry_str)
+                            cursor_reset.close()
+                            cnx.commit()
+                            reset_boiler(cnx, id, relay_id, relay_child_id)
+                            print(bc.dtm + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Add New AUTO ReSet Request")
+#                            print("reset_count ",reset_count)
+                        else :
+                            print(bc.dtm + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Boiler NOT in Error State")
+                    else :
+                        print(bc.dtm + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - NO Boiler State Sensor Found")
                 else :
-                    print(bc.dtm + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Boiler NOT in Error State")
+                    print(bc.dtm + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Boiler NOT Active")
 
             cursorselect.close()
             cnx.close()
@@ -316,7 +341,7 @@ def main() :
 
     # Create the container (outer) email message.
     USER    = 'boiler@overkillsystems.com'
-    PASS    = 'Tr3!!3b0rg'
+    PASS    = 'Tr3ll3b0rg'
     HOST    = 'smtp.livemail.co.uk'
     SUBJECT = "HX15 Boiler Status"
     TO      = "terry.adams@overkillsystems.com"
@@ -328,8 +353,11 @@ def main() :
     BODY = f"From: {FROM}\nTo: {TO}\nSubject: {SUBJECT}\n\n{TEXT}\r\n"
 
     try:
-        server = smtplib.SMTP(HOST)
-#       server.set_debuglevel(1)
+        if PORT == 465 :
+            server = smtplib.SMTP_SSL(HOST, PORT)
+        else :
+            server = smtplib.SMTP(HOST, PORT)
+#        server.set_debuglevel(1)
         server.login(USER, PASS)
         server.sendmail(FROM, TO, BODY)
         server.quit()
