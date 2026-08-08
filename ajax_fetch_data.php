@@ -1219,6 +1219,29 @@ if ($type <= 4 || $type == 38) {
                 $scpid_running_since = $scrow['pid_running_since'];
                 $sc_color = "green";
         }
+        $query = "SELECT * FROM information_schema.tables WHERE table_name = 'bus_controller';";
+        $result = $conn->query($query);
+        $rowcount=mysqli_num_rows($result);
+        if ($rowcount > 0) {
+                $bus_controller = true;
+                $query = "SELECT * FROM bus_controller LIMIT 1";
+                $result = $conn->query($query);
+                $bcrow = mysqli_fetch_array($result);
+                $bc_script_txt = "python3 ".$bcrow['script_name'];
+                exec("ps -eo pid,etime,cmd | grep '$bc_script_txt' | grep -v grep | awk '{ print $2 }' | head -1", $pids);
+                $nopids = count($pids);
+                if ($nopids == 0) {
+                        $bcpid = "";
+                        $bcpid_grunning_since = "";
+                        $bc_color = "red";
+                } else {
+                        $bcpid = $bcrow['pid'];
+                        $bcpid_running_since =$bcrow['pid_running_since'];
+                        $bc_color = "green";
+                }
+        } else {
+                $bus_controller = false;
+        }
 
 	echo '<br><h4 class="info"><i class="bi bi-activity '. $gw_color .'" style="font-size:2rem;"></i> '.$lang['smart_home_gateway_scr_info'].'</h4>
 	<div class="list-group">
@@ -1286,8 +1309,26 @@ if ($type <= 4 || $type == 38) {
 		} else {
 			$sc_restarted = '0';
 		}
-		echo '<div class="list-group-item d-flex justify-content-between"><span>'.$lang['smart_home_gateway_scr'].':</span><span class="text-muted small"><em>'.$sc_restarted.'</em></span></div>';
-	echo '</div>';
+		echo '<div class="list-group-item d-flex justify-content-between"><span>'.$lang['smart_home_gateway_scr'].':</span><span class="text-muted small"><em>'.$sc_restarted.'</em></span></div>
+	</div>
+        <!-- /.list-group -->';
+
+	if($bus_controller) {
+	        echo '<br><h4 class="info"><i class="bi bi-activity '. $bc_color .'" style="font-size:2rem;"></i> '.$lang['bus_controller_scr_info'].'</h4>
+		<div class="list-group">
+			<div class="list-group-item d-flex justify-content-between"><span>PID</span><span class="text-muted small"><em> '.$bcpid.'</em></span></div>
+			<div class="list-group-item d-flex justify-content-between"><span>'.$lang['smart_home_gateway_pid'].':</span><span class="text-muted small"><em>'.$bcpid_running_since.'</em></span></div>';
+
+			$query = "select * FROM bus_controller_logs WHERE pid_datetime >= NOW() - INTERVAL 60 MINUTE;";
+			$result = $conn->query($query);
+			if (mysqli_num_rows($result) != 0){
+				$bc_restarted = mysqli_num_rows($result);
+			} else {
+				$bc_restarted = '0';
+			}
+			echo '<div class="list-group-item d-flex justify-content-between"><span>'.$lang['smart_home_bus_controller_scr'].':</span><span class="text-muted small"><em>'.$bc_restarted.'</em></span></div>
+		</div>';
+	}
 } elseif ($type == 35) {
         //----------------------
         //update ethernet modal
