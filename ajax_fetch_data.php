@@ -1256,11 +1256,20 @@ if ($type <= 4 || $type == 38) {
 		} else {
 			$gw_restarted = '0';
                 }
+                $query = "select * FROM gateway_logs WHERE pid_datetime >= NOW() - INTERVAL 24 HOUR;";
+                $result = $conn->query($query);
+                $rowcount = mysqli_num_rows($result);
+                if ($rowcount != 0){
+                        $gw_restarted_24 = $rowcount;
+                } else {
+                        $gw_restarted_24 = '0';
+                }
                 if ($nopids != 0) {
 			$query = "select * FROM gateway_logs ORDER BY id DESC LIMIT 1;";
 			$result = $conn->query($query);
 			$glrow = mysqli_fetch_array($result);
 			echo '<div class="list-group-item d-flex justify-content-between"><span>'.$lang['smart_home_gateway_scr'].':</span><span class="text-muted small"><em>'.$gw_restarted.'</em></span></div>';
+			echo '<div class="list-group-item d-flex justify-content-between"><span>'.$lang['smart_home_gateway_scr_24'].':</span><span class="text-muted small"><em>'.$gw_restarted_24.'</em></span></div>';
 			if ($gw_restarted == '0') {
                 	        $query = "SELECT *
                         	        FROM nodes
@@ -1309,7 +1318,15 @@ if ($type <= 4 || $type == 38) {
 		} else {
 			$sc_restarted = '0';
 		}
-		echo '<div class="list-group-item d-flex justify-content-between"><span>'.$lang['smart_home_gateway_scr'].':</span><span class="text-muted small"><em>'.$sc_restarted.'</em></span></div>
+		echo '<div class="list-group-item d-flex justify-content-between"><span>'.$lang['smart_home_gateway_scr'].':</span><span class="text-muted small"><em>'.$sc_restarted.'</em></span></div>';
+                $query = "select * FROM controller_zone_logs WHERE zone_id = 0 AND start_datetime >= NOW() - INTERVAL 24 HOUR;";
+                $result = $conn->query($query);
+                if (mysqli_num_rows($result) != 0){
+                        $sc_restarted_24 = mysqli_num_rows($result);
+                } else {
+                        $sc_restarted_24 = '0';
+                }
+		echo '<div class="list-group-item d-flex justify-content-between"><span>'.$lang['smart_home_gateway_scr_24'].':</span><span class="text-muted small"><em>'.$sc_restarted_24.'</em></span></div>
 	</div>
         <!-- /.list-group -->';
 

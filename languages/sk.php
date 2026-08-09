@@ -1168,6 +1168,7 @@ $lang['winter'] = "Winter";
 $lang['setup_guide_xaomi_sensors'] = "Setup Guide Xaomi Mijia Bluetooth Sensors";
 $lang['bus_controller_scr_info'] = "Bus Controller Script Process Info";
 $lang['smart_home_bus_controller_scr'] = "Script Re-Started in Last 1 Hour";
+$lang['smart_home_gateway_scr_24'] = "Script Re-Started in Last 24 Hours";
 
 if (file_exists(__DIR__.'/lo.php')) { require_once(__DIR__.'/lo.php'); }
 ?>
