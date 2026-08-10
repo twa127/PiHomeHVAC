@@ -24,13 +24,14 @@ print(bc.WARN + " ")
 print("********************************************************")
 print("*              Database Cleanup Script                 *")
 print("*      Build Date: 18/09/2017                          *")
-print("*      Version 0.02 - Last Modified 08/08/2026         *")
+print("*      Version 0.03 - Last Modified 10/08/2026         *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
 
-import MySQLdb as mdb, os, datetime
+import MySQLdb as mdb, datetime
 import configparser
+from pathlib import Path
 
 line_len = 189
 
@@ -48,12 +49,18 @@ dbname = config.get('db', 'dbname')
 con = mdb.connect(dbhost, dbuser, dbpass, dbname)
 cur = con.cursor()
 
-while os.path.isfile("/tmp/on_message_running") or os.path.isfile("/tmp/sc_running") or os.path.isfile("/tmp/gpio_ds18b20_running"):
+while Path("/tmp/on_message_running").exists() or Path("/tmp/sc_running").exists() or Path("/tmp/gpio_ds18b20_running").exists():
     print(bc.blu + (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + bc.wht + " - Waiting for gateway.py")
     print("-" * line_len)
 
 print(bc.blu + (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + bc.wht + " - DB Cleanup Script Started")
 print("-" * line_len)
+
+cur.execute("SELECT * FROM information_schema.tables WHERE table_name = 'bus_controller';")
+if cur.rowcount > 0:
+    bus_controller = True
+else:
+    bus_controller = False
 
 cur.execute("SELECT * FROM db_cleanup LIMIT 1;")
 if cur.rowcount > 0:
@@ -63,16 +70,26 @@ if cur.rowcount > 0:
     interval_2 = row[row_to_index["nodes_battery"]]
     interval_3 = row[row_to_index["gateway_logs"]]
     interval_4 = row[row_to_index["relay_logs"]]
-    interval_5 = row[row_to_index["bus_controller_logs"]]
+    if bus_controller:
+        interval_5 = row[row_to_index["bus_controller_logs"]]
     interval_6 = "24 HOUR"
 
-    qry_tuple = ('DELETE FROM messages_in WHERE datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_1),
-                 'DELETE FROM nodes_battery WHERE `update` < DATE_SUB(CURDATE(), INTERVAL {});'.format(interval_2),
-                 'DELETE FROM nodes_battery WHERE node_id NOT IN (SELECT nodes.node_id  FROM nodes UNION SELECT CONCAT(nodes.node_id,"-",mqtt_devices.child_id) AS node_id FROM mqtt_devices, nodes WHERE mqtt_devices.nodes_id = nodes.id);',
-                 'DELETE FROM `sensor_graphs` WHERE `datetime` < DATE_SUB(CURDATE(), INTERVAL {});'.format(interval_6),
-                 'DELETE FROM `gateway_logs` WHERE pid_datetime < DATE_SUB(CURDATE(), INTERVAL {})  AND id != (SELECT id FROM (SELECT id FROM `gateway_logs` ORDER BY id DESC LIMIT 1) myselect);'.format(interval_3),
-                 'DELETE FROM relay_logs WHERE datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_4),
-                 'DELETE FROM bus_controller_logs WHERE pid_datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_5))
+    if bus_controller:
+        qry_tuple = ('DELETE FROM messages_in WHERE datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_1),
+                     'DELETE FROM nodes_battery WHERE `update` < DATE_SUB(CURDATE(), INTERVAL {});'.format(interval_2),
+                     'DELETE FROM nodes_battery WHERE node_id NOT IN (SELECT nodes.node_id  FROM nodes UNION SELECT CONCAT(nodes.node_id,"-",mqtt_devices.child_id) AS node_id FROM mqtt_devices, nodes WHERE mqtt_devices.nodes_id = nodes.id);',
+                     'DELETE FROM `sensor_graphs` WHERE `datetime` < DATE_SUB(CURDATE(), INTERVAL {});'.format(interval_6),
+                     'DELETE FROM `gateway_logs` WHERE pid_datetime < DATE_SUB(CURDATE(), INTERVAL {})  AND id != (SELECT id FROM (SELECT id FROM `gateway_logs` ORDER BY id DESC LIMIT 1) myselect);'.format(interval_3),
+                     'DELETE FROM relay_logs WHERE datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_4),
+                     'DELETE FROM bus_controller_logs WHERE pid_datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_5))
+    else:
+        qry_tuple = ('DELETE FROM messages_in WHERE datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_1),
+                     'DELETE FROM nodes_battery WHERE `update` < DATE_SUB(CURDATE(), INTERVAL {});'.format(interval_2),
+                     'DELETE FROM nodes_battery WHERE node_id NOT IN (SELECT nodes.node_id  FROM nodes UNION SELECT CONCAT(nodes.node_id,"-",mqtt_devices.child_id) AS node_id FROM mqtt_devices, nodes WHERE mqtt_devices.nodes_id = nodes.id);',
+                     'DELETE FROM `sensor_graphs` WHERE `datetime` < DATE_SUB(CURDATE(), INTERVAL {});'.format(interval_6),
+                     'DELETE FROM `gateway_logs` WHERE pid_datetime < DATE_SUB(CURDATE(), INTERVAL {})  AND id != (SELECT id FROM (SELECT id FROM `gateway_logs` ORDER BY id DESC LIMIT 1) myselect);'.format(interval_3),
+                     'DELETE FROM relay_logs WHERE datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_4))
+
     for q in qry_tuple:
         try:
             cur.execute(q)
@@ -81,9 +98,7 @@ if cur.rowcount > 0:
         except:
             print(bc.dtm + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - Query '" + q + " 'Failed.")
 
-if os.path.exists("/tmp/db_cleanup_running"):
-    os.remove("/tmp/db_cleanup_running")
-
+Path("/tmp/db_cleanup_running").unlink(missing_ok=True)
 if con:
     con.close()
 

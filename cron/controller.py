@@ -34,7 +34,7 @@ print(" " + bc.ENDC)
 
 line_len = 100; #length of seperator lines
 
-import MySQLdb as mdb, sys, serial, os, fnmatch, subprocess
+import MySQLdb as mdb, sys, serial, fnmatch, subprocess
 import configparser, logging
 import datetime
 import time
@@ -49,6 +49,7 @@ except:
     blinka = False
 import traceback
 from math import floor
+from pathlib import Path
 
 # Debug print to screen configuration
 if len(sys.argv) == 1:
@@ -1299,7 +1300,7 @@ try:
                         # Path for 'zone_current_state' log file based on zone_id
                         zone_current_state_log = "../logs/zone" + str(zone_id) + "_current_state.log"
                         #if changed or no existing entries, then add log record to file
-                        if flags != old_flags_dict[zone_id] or not os.path.isfile(zone_current_state_log):
+                        if flags != old_flags_dict[zone_id] or not Path(zone_current_state_log).exists():
                             if len(old_flags_dict[zone_id]) != 0:
                                 log_txt = bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + ': Zone ID status status_prev overrun hysteresis mode mode_prev schedule' + bc.ENDC + '\n'
                                 log_txt = log_txt + '                     ' + flags  + '\n\n'
@@ -4036,8 +4037,7 @@ try:
             print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - Controller Scan Ended")
             print(bc.grn + "*" * line_len + bc.ENDC)
             # remove the running flag file
-            if os.path.exists("/tmp/sc_running"):
-                os.remove("/tmp/sc_running")
+            Path("/tmp/sc_running").unlink(missing_ok=True)
             if dbgLevel >= 1:
                 time.sleep(10)
             else:

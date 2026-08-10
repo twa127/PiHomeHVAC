@@ -26,12 +26,12 @@ print("* MySensors Wifi/Ethernet/Serial Gateway Communication *")
 print("* Script to communicate with MySensors Nodes, for more *")
 print("* info please check MySensors API.                     *")
 print("*      Build Date: 18/09/2017                          *")
-print("*      Version 0.39 - Last Modified 30/07/2026         *")
+print("*      Version 0.40 - Last Modified 09/08/2026         *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
 
-import MySQLdb as mdb, sys, serial, time, datetime, os, fnmatch
+import MySQLdb as mdb, sys, serial, time, datetime, fnmatch
 import configparser, logging
 from datetime import datetime, timedelta
 import struct
@@ -49,6 +49,7 @@ except:
 import traceback
 import subprocess
 from math import floor
+from pathlib import Path
 
 # Debug print to screen configuration
 if len(sys.argv) == 1:
@@ -116,7 +117,7 @@ logging.basicConfig(
 
 run_22 = 0
 new_log = 0
-write_mqtt_log = False
+write_mqtt_log_file = False
 
 def is_number(s):
     try:
@@ -130,7 +131,7 @@ def write_mqtt_log(message):
     global new_log
     # Write log to a file
     if new_log == 1 :                                 # create a new log file at 22hours every day
-        os.remove('/var/www/logs/gateway_mqtt.log')            # remove existing log file
+        Path("/var/www/logs/gateway_mqtt.log").unlink(missing_ok=True)
         with open("/var/www/logs/gateway_mqtt.log", 'w') as f:
             f.write(message)
         new_log = 0
@@ -2242,8 +2243,7 @@ def on_disconnect_1(client, userdata, rc):
     con_mqtt.close()
     if rc != 0:
         print("\nUnexpected disconnection.\n")
-        cmd = 'sudo pkill -f gateway.py'
-        os.system(cmd)
+        sys.exit(1)
     else:
         print("\nSuccessfully disconnected from the brooker\n")
 
@@ -2282,7 +2282,7 @@ def on_connect_2(client, userdata, flags, reason_code, properties):
             print("\nConnection failed\n")
             mqtt_log_txt = mqtt_log_txt + "Connection failed at: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n"
             MQTT_CONNECTED = 0
-    if len(mqtt_log_txt) > 0 and write_mqtt_log:
+    if len(mqtt_log_txt) > 0 and write_mqtt_log_file:
         write_mqtt_log(mqtt_log_txt)
 
 # Function run when the MQTT client disconnects to the brooker for paho-mqtt Version 2
@@ -2297,9 +2297,8 @@ def on_disconnect_2(client, userdata, flags, reason_code, properties):
     if reason_code > 0:
         print("\nUnexpected disconnection.\n")
         mqtt_log_txt = mqtt_log_txt + "Unexpected disconnection: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n"
-        cmd = 'sudo pkill -f gateway.py'
-        os.system(cmd)
-    if len(mqtt_log_txt) > 0 and write_mqtt_log:
+        sys.exit(1)
+    if len(mqtt_log_txt) > 0 and write_mqtt_log_file:
         write_mqtt_log(mqtt_log_txt)
 
 # Function run when the MQTT client publishes a message to the brooker for paho-mqtt Version 2
@@ -2321,7 +2320,7 @@ def on_publish(client, userdata, mid, reason_code, properties):
         print("We could also try using a list of acknowledged mid rather than removing from pending list,")
         print("but remember that mid could be re-used !")
     mqtt_log_txt = mqtt_log_txt + "Exiting on_message\n"
-    if len(mqtt_log_txt) > 0 and write_mqtt_log:
+    if len(mqtt_log_txt) > 0 and write_mqtt_log_file:
         write_mqtt_log(mqtt_log_txt)
 
 # To be run when an MQTT message is received to write the sensor value into messages_in for both paho-mqtt Version 1 and Version 2
@@ -2329,11 +2328,11 @@ def on_message(client, userdata, message):
     global mqtt_lock
     mqtt_log_txt = ""
     mqtt_log_txt = "Entering on_message\n"
-    if os.path.isfile("/tmp/db_cleanup_running"):
+    if Path("/tmp/db_cleanup_running").exists():
         mqtt_log_txt = mqtt_log_txt + "db_cleanup flag SET\n"
     else:
         mqtt_log_txt = mqtt_log_txt + "db_cleanup flag CLEAR\n"
-    if os.path.isfile("/tmp/sc_running"):
+    if Path("/tmp/sc_running").exists():
         mqtt_log_txt = mqtt_log_txt + "sc_running flag SET\n"
     else:
         mqtt_log_txt = mqtt_log_txt + "sc_running flag CLEAR\n"
@@ -2341,7 +2340,7 @@ def on_message(client, userdata, message):
         mqtt_log_txt = mqtt_log_txt + "mqtt_lock SET\n"
     else:
         mqtt_log_txt = mqtt_log_txt + "mqtt_lock CLEAR\n"
-    while os.path.isfile("/tmp/db_cleanup_running") or os.path.isfile("/tmp/sc_running") or os.path.isfile("/tmp/gpio_ds18b20_running") or mqtt_lock:
+    while Path("/tmp/db_cleanup_running").exists() or Path("/tmp/sc_running").exists() or Path("/tmp/gpio_ds18b20_running").exists() or mqtt_lock:
         pass
     global mqtt_msgcount
     global clear_hour_timer
@@ -3011,7 +3010,7 @@ def on_message(client, userdata, message):
                     )
     mqtt_lock = False
 
-    if len(mqtt_log_txt) > 0 and write_mqtt_log:
+    if len(mqtt_log_txt) > 0 and write_mqtt_log_file:
         write_mqtt_log(mqtt_log_txt)
 
 class ProgramKilled(Exception):
@@ -3417,7 +3416,7 @@ try:
 
     while 1:
         mqtt_log_txt = "Entering Main Processing Loop\n"
-        if not os.path.isfile("/tmp/db_cleanup_running") and not os.path.isfile("/tmp/sc_running"):
+        if not Path("/tmp/db_cleanup_running").exists() and not Path("/tmp/sc_running").exists():
             mqtt_log_txt = mqtt_log_txt + "Aplying mqtt_lock\n"
             mqtt_lock = True
             # get todays date and time
@@ -3446,7 +3445,7 @@ try:
                     if time.time() - ping_timer >= 60:
                         ping_timer = time.time()
                         gateway_up = (
-                            True if os.system("ping -c 1 " + gatewaylocation) == 0 else False
+                            True if subprocess.call("ping -c 1 " + gatewaylocation, shell=True) == 0 else False
                         )
                         if not gateway_up:
                             raise GatewayException("Unable to contact Gateway at: - " + gatewaylocation)
@@ -3834,7 +3833,7 @@ try:
             if clear_hour_timer :
                 hour_timer = time.time()
             mqtt_log_txt = mqtt_log_txt + "Removing mqtt_lock\n"
-            if len(mqtt_log_txt) > 0 and write_mqtt_log:
+            if len(mqtt_log_txt) > 0 and write_mqtt_log_file:
                 write_mqtt_log(mqtt_log_txt)
             mqtt_lock = False
             time.sleep(0.1)
