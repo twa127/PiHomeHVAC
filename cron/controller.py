@@ -27,7 +27,7 @@ print("********************************************************")
 print("*              System Controller Script                *")
 print("*                                                      *")
 print("*               Build Date: 10/02/2023                 *")
-print("*       Version 0.18 - Last Modified 08/08/2026        *")
+print("*       Version 0.19 - Last Modified 11/08/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -56,6 +56,15 @@ if len(sys.argv) == 1:
     dbgLevel = 0  # 0-off, 1-info, 2-detailed, 3-all
 else:
     dbgLevel = int(sys.argv[1])
+
+# Logging exceptions to log file
+logfile = "/var/www/logs/controller.log"
+infomsg = "More info in log file: " + logfile
+logging.basicConfig(
+    filename=logfile,
+    level=logging.DEBUG,
+    format=("\n### %(asctime)s - %(levelname)s - %(message)s  ###"),
+)
 
 #check if exceeded timeout
 def exceeded_timeout(notice, seen_time):
@@ -735,6 +744,9 @@ timer_flag = 0
 old_flags_dict = {}
 try:
     while 1:
+        # wait for the db_cleanup.py script to finish
+        while Path("/tmp/db_cleanup_running").exists():
+            pass
         # Creates a running flag file
         with open('/tmp/sc_running', 'w') as fp:
             pass
@@ -4058,8 +4070,43 @@ try:
                     con.commit()  # commit above
             time.sleep(10)
 
-except:
+except configparser.Error as e:
+    print("ConfigParser:", format(e))
     print(traceback.format_exc())
+    logging.error(e)
+    logging.info(traceback.format_exc())
+except mdb.Error as e:
+    print("DB Error %d: %s" % (e.args[0], e.args[1]))
+    print(traceback.format_exc())
+    logging.error(e)
+    logging.info(traceback.format_exc())
+except serial.SerialException as e:
+    print("SerialException:", format(e))
+    print(traceback.format_exc())
+    logging.error(e)
+    logging.info(traceback.format_exc())
+except EOFError as e:
+    print("EOFError:", format(e))
+    print(traceback.format_exc())
+    logging.error(e)
+    logging.info(traceback.format_exc())
+except TypeError as e:
+    print("TypeError:", format(e))
+    print(traceback.format_exc())
+    logging.error(e)
+    logging.info(traceback.format_exc())
+except Exception as e:
+    print(format(e))
+    print(traceback.format_exc())
+    logging.error(e)
+    logging.info(traceback.format_exc())
+except ProgramKilled as e:
+    print(format(e))
+    print(traceback.format_exc())
+    logging.error(e)
+    logging.info(traceback.format_exc())
 finally:
-    con.close()
+    if con.open:
+        con.close()
+    print(infomsg)
     sys.exit(1)
