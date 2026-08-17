@@ -62,66 +62,55 @@ function getMinMax($conn, $where_zone = "") {
 
 // --- Helper: fetch delta for a zone (last hour) ---
 function getDelta($conn, $where_zone = "") {
-        // get the first record from 1 hour ago
-        $query = "SELECT id, name, avg_payload_l AS last
-                  FROM (
-                      SELECT z.id, z.name, m.datetime,
-                             AVG(m.payload) AS avg_payload_l
-                      FROM zone_sensors
-                      JOIN zone z ON z.id = zone_sensors.zone_id
-                      JOIN sensors s ON s.id = zone_sensors.zone_sensor_id
-                      JOIN nodes n ON n.id = s.sensor_id
-                      JOIN messages_in m ON m.node_id = n.node_id AND m.child_id = s.sensor_child_id
-                      WHERE m.datetime >= DATE_SUB(NOW(), INTERVAL 1 HOUR)
-                      AND s.sensor_type_id = 1
-                      AND z.type_id
-                      {$where_zone}
-                      GROUP BY z.id, z.name, m.datetime
-                      ORDER BY m.datetime DESC
-                  ) AS averaged
-                  GROUP BY id, name
-                  ORDER BY id ASC;";
-        $result = $conn->query($query);
-        $rows_l = array();
-        if($result) {
-                while($row = mysqli_fetch_assoc($result)) {
-                        $rows_l[$row['id']] = $row['last'];
-                }
-        }
-
-        // get the first record from 1 hour ago
-        $query = "SELECT id, name, avg_payload_f AS first
-                  FROM (
-                      SELECT z.id, z.name, m.datetime,
-                             AVG(m.payload) AS avg_payload_f
-                      FROM zone_sensors
-                      JOIN zone z ON z.id = zone_sensors.zone_id
-                      JOIN sensors s ON s.id = zone_sensors.zone_sensor_id
-                      JOIN nodes n ON n.id = s.sensor_id
-                      JOIN messages_in m ON m.node_id = n.node_id AND m.child_id = s.sensor_child_id
-                      WHERE m.datetime >= DATE_SUB(NOW(), INTERVAL 1 HOUR)
-                      AND s.sensor_type_id = 1
-                      AND z.type_id
-                      {$where_zone}
-                      GROUP BY z.id, z.name, m.datetime
-                      ORDER BY m.datetime ASC
-                  ) AS averaged
-                  GROUP BY id, name
-                  ORDER BY id ASC;";
-        $result = $conn->query($query);
-        $rows_f = array();
-        if($result) {
-                while($row = mysqli_fetch_assoc($result)) {
-                        $rows_f[$row['id']] = $row['first'];
-                }
-        }
-
-        // build array of zone_id and change between first and last values over the preceeding 1 hour
         $rows_d = array();
-        foreach ($rows_l as $key => $value) {
-                $delta = round($value - $rows_f[$key], 2);
-                $rows_d[$key] = $delta;
-        }
+        $query = "SELECT id
+                FROM zone z
+                WHERE z.type_id
+                {$where_zone}
+                ORDER BY id ASC;";
+        $z_results = $conn->query($query);
+        if($z_results) {
+                while($z_row = mysqli_fetch_assoc($z_results)) {
+                        $zone_id  = $z_row['id'];
+                        $query = "SELECT z.id, zone_sensor_id
+                                FROM zone_sensors
+                                JOIN zone z ON z.id = zone_sensors.zone_id
+                                AND z.type_id
+                                AND z.id = '$zone_id';";
+                        $zs_results = $conn->query($query);
+                        if($zs_results) {
+                                $delta = 0; // cumulative delta where more than 1 zone sensor
+                                $count = 0; // counter for the numer of sensors attached to the zone
+                                while($zs_row = mysqli_fetch_assoc($zs_results)) {
+                                        $sensor_id = $zs_row['zone_sensor_id'];
+                                        // get the 1 hours data for each sensor
+                                        $query = "SELECT m.payload
+                                                        FROM sensors s
+                                                        JOIN nodes n ON n.id = s.sensor_id
+                                                        JOIN messages_in m ON m.node_id = n.node_id AND m.child_id = s.sensor_child_id
+                                                        WHERE m.datetime >= DATE_SUB(NOW(), INTERVAL 1 HOUR)
+                                                        AND s.sensor_type_id = 1
+                                                        AND s.id = $sensor_id
+                                                        ORDER BY m.datetime ASC;";
+                                        $m_results = $conn->query($query);
+                                        if($m_results) {
+                                                // capture the first and last records from the dataset
+                                                unset($firstValue);
+                                                while($m_row = mysqli_fetch_assoc($m_results)) {
+                                                        if(!isset($firstValue)) {
+                                                                $firstValue = $m_row['payload'];
+                                                        }
+                                                        $lastValue = $m_row['payload'];
+                                                }
+                                        }
+                                        $delta = $delta + ($lastValue - $firstValue);
+                                        $count = $count + 1; //  increment numer of zone sensors counter
+                                } // end while loop through sensors for this zone
+                                $delta = round($delta/$count,2);
+                                $rows_d[$zone_id] = $delta;
+                        } // end if zone sensor/s exist for this zone
+                } // while zone
+        } // end if zones exist
         return $rows_d;
 }
 
