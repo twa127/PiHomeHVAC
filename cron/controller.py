@@ -27,7 +27,7 @@ print("********************************************************")
 print("*              System Controller Script                *")
 print("*                                                      *")
 print("*               Build Date: 10/02/2023                 *")
-print("*       Version 0.19 - Last Modified 11/08/2026        *")
+print("*       Version 0.20 - Last Modified 24/08/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -1842,29 +1842,29 @@ try:
                             boost_active = 1
                             if dbgLevel >= 2:
                                 print(bc.dtm + script_run_time(script_start_timestamp, int_time_stamp) + bc.ENDC + " - One Shot Boost is Active for This Zone")
-                            else:
-                                boost_active = 0
-                                #You can comment out if you dont have Boost Button Console installed.
+                        else:
+                            boost_active = 0
+                            #You can comment out if you dont have Boost Button Console installed.
+                            cur.execute(
+                                "SELECT * FROM boost WHERE zone_id = %s AND status = '1';",
+                                (zone_id, ),
+                            )
+                            if cur.rowcount > 0:
+                                brow = cur.fetchone()
+                                brow_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+                                boost_button_id = brow[brow_to_index['boost_button_id']]
+                                boost_button_child_id = brow[brow_to_index['boost_button_child_id']]
                                 cur.execute(
-                                    "SELECT * FROM boost WHERE zone_id = %s AND status = '1';",
-                                    (zone_id, ),
+                                    "UPDATE messages_out SET payload = %s, sent = '0' WHERE zone_id = %s AND node_id = %s AND child_id = %s LIMIT 1;",
+                                    [str(boost_active), zone_id, boost_button_id, boost_button_child_id],
                                 )
-                                if cur.rowcount > 0:
-                                    brow = cur.fetchone()
-                                    brow_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
-                                    boost_button_id = brow[brow_to_index['boost_button_id']]
-                                    boost_button_child_id = brow[brow_to_index['boost_button_child_id']]
-                                    cur.execute(
-                                        "UPDATE messages_out SET payload = %s, sent = '0' WHERE zone_id = %s AND node_id = %s AND child_id = %s LIMIT 1;",
-                                        [str(boost_active), zone_id, boost_button_id, boost_button_child_id],
-                                    )
-                                    con.commit()  # commit above
-                                    #update Boost Records in database
-                                    cur.execute(
-                                        "UPDATE boost SET status = %s, sync = '0' WHERE zone_id = %s AND status = '1';",
-                                        [str(boost_active), zone_id],
-                                    )
-                                    con.commit()  # commit above
+                                con.commit()  # commit above
+                                #update Boost Records in database
+                                cur.execute(
+                                    "UPDATE boost SET status = %s, sync = '0' WHERE zone_id = %s AND status = '1';",
+                                    [str(boost_active), zone_id],
+                                )
+                                con.commit()  # commit above
 
                     #check boost time is passed, if it passed then update db and set to boost status to 0
                     elif boost_status == 1:
