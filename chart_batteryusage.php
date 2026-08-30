@@ -42,14 +42,16 @@ var bat_level_dataset = [
 			$str_arr = explode ("-", $node_id);
 			$query="select * from sensors where sensor_id = '{$id}' AND sensor_child_id = '{$str_arr[1]}' limit 1;";
 			$graph_color = $str_arr[1];
+                        $label = " - ID ".$id."-".$str_arr[1];
 		} else {
                 	$query="select * from sensors where sensor_id = '{$id}' limit 1;";
 			$graph_color = '0';
+                        $label = " - ID ".$id;
 		}
                 $result_ts = $conn->query($query);
                 $temp_sensor_row = mysqli_fetch_array($result_ts);
                 $name = $temp_sensor_row['name'];
-                $label = $name ." - ID ".$id;
+		$label =  $name.$label;
                 $graph_id = $id.".".$graph_color; //assume battery node colour same as child_id = 0
 		$query="SELECT bat_voltage, bat_level, `update`
 			FROM nodes_battery

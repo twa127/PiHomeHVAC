@@ -4050,6 +4050,9 @@ try:
             print(bc.grn + "*" * line_len + bc.ENDC)
             # remove the running flag file
             Path("/tmp/sc_running").unlink(missing_ok=True)
+            # end of main processing loop, close database connection
+            if con.open:
+                con.close()
             if dbgLevel >= 1:
                 time.sleep(10)
             else:
@@ -4068,6 +4071,11 @@ try:
                         "UPDATE system SET test_mode = 2;",
                     )
                     con.commit()  # commit above
+            # remove the running flag file
+            Path("/tmp/sc_running").unlink(missing_ok=True)
+            # end of main processing loop, close database connection
+            if con.open:
+                con.close()
             time.sleep(10)
 
 except configparser.Error as e:

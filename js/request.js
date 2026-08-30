@@ -1133,7 +1133,10 @@ var x = document.getElementById("db_cleanup").querySelectorAll("input");
 var i;
 var idata="w=set_db_cleanup&o=update";
     for (i = 0; i < x.length; i++) {
-        idata+="&"+x[i].id+"="+x[i].value;
+        if(x[i].name == "status")
+             idata+="&"+x[i].id+"="+x[i].checked;
+        else
+             idata+="&"+x[i].id+"="+x[i].value;
     }
     idata+="&wid=0";
     $.get('db.php',idata)

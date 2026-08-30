@@ -1442,56 +1442,101 @@ echo '
 
 //Setup Database Cleanup intervals
 echo '<div class="modal fade" id="db_cleanup" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
-                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
-                <h5 class="modal-title">'.$lang['db_cleanup'].'</h5>
-            </div>
-            <div class="modal-body">
-                <p class="text-muted">'.$lang['db_cleanup_text'].'</p>
-                <table class="table table-bordered">
-                        <tr>
-                                <th class="col-2 text-center"><small>'.$lang['table_name'].'</small></th>
-                                <th class="col-1 text-center"><small>'.$lang['db_cleanup_value'].'</small></th>
-                                <th class="col-2 text-center"><small>'.$lang['db_cleanup_period'].'</small></th>
-                        </tr>';
-                        $query = "SELECT * FROM db_cleanup LIMIT 1;";
-                        $result = $conn->query($query);
-                        $db_row = mysqli_fetch_assoc($result);
-                        $query = "SELECT column_name
-                                FROM INFORMATION_SCHEMA.COLUMNS
-                                WHERE TABLE_SCHEMA = 'maxair' AND table_name = 'db_cleanup' AND ordinal_position > 3
-                                ORDER BY ordinal_position;";
-                        $results = $conn->query($query);
-                        $x = 0;
-                        while ($row = mysqli_fetch_assoc($results)) {
-                                $col_name = $row["column_name"];
-                                $per_int = $db_row[$col_name];
-                                $pieces = explode(" ", $per_int);
-                                $period = $pieces[0];
-                                $interval = $pieces[1];
-                                echo '<tr>
-                                        <td>'.$row["column_name"].'</td>
-                			<td><input id="period'.$x.'" type="text" class="float-left text" style="border: none" name="period'.$x.'"  size="3" value="'.$period.'" placeholder="Period" required></td>
-                                        <td><select class="form-select" type="text" id="ival'.$x.'" name="ival'.$x.'" onchange=set_interval('.$x.')>
-                                                <option value="HOUR" ' . ($interval=='HOUR' ? 'selected' : '') . '>'.$lang['HOUR'].'</option>
-                                                <option value="DAY" ' . ($interval=='DAY' ? 'selected' : '') . '>'.$lang['DAY'].'</option>
-                                                <option value="WEEK" ' . ($interval=='WEEK' ? 'selected' : '') . '>'.$lang['WEEK'].'</option>
-                                                <option value="MONTH" ' . ($interval=='MONTH' ? 'selected' : '') . '>'.$lang['MONTH'].'</option>
-                                        </select></td>
-                                        <input type="hidden" id="set_interval'.$x.'" name="set_interval_type" value="'.$interval.'">
-                                </tr>';
-                                $x = $x + 1;
-                        }
-                echo '</table>
-            </div>
-                <div class="modal-footer">
-                        <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
-                        <input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="set_db_cleanup()">
-            </div>
-        </div>
-    </div>
+	<div class="modal-dialog">
+        	<div class="modal-content">
+            		<div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                		<button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                		<h5 class="modal-title">'.$lang['db_cleanup'].'</h5>
+		                <div class="dropdown float-right">
+        		                <a class="" data-bs-toggle="dropdown" href="#">
+                		                <i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
+                        		</a>
+                        		<ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
+                                		<li><a class="dropdown-item" href="pdf_download.php?file=database_cleanup.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_database_cleanup'].'</a></li>
+                         		</ul>
+				</div>
+                	</div>
+            		<div class="modal-body">
+	    			<p class="text-muted">'.$lang['db_cleanup_text'].'</p>';
+            			$query = "SELECT * FROM db_cleanup LIMIT 1;";
+                		$result = $conn->query($query);
+                		$db_row = mysqli_fetch_assoc($result);
+                		$enabled = $db_row['status'];
+                		$start_time = $db_row['start_time'];
+                		$result = $db_row['result'];
+                		$last_run = $db_row['last_run'];
+                		if ($result == 1) {
+                    			$last_result = "bi bi-check-lg green";
+				} else {
+                    			$last_result = "bi bi-x-lg red";
+				}
+                		echo '<div class="row mb-2">
+                			<div class="col-5">
+        					<div class="form-group" class="control-label">
+                					<div class="form-check">';
+                        					if ($enabled == '1' || $enabled == 1){
+        								echo '<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" value="1" id="checkbox8" name="status" checked>';
+                        					} else {
+        								echo '<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" value="1" id="checkbox8" name="status">';
+                        					}
+                        					echo '<label class="form-check-label" for="checkbox8">'.$lang['enable_db_cleanup'].'</label>
+                					</div>
+        					</div>
+					</div>
+                        		<div class="col-3">
+                                		<div class="control-label align-items-end"><label>'.$lang['run_db_cleanup_at'].'</label></div>
+                        		</div>
+					<div class="col-4">
+		                		<div class="form-group">
+                		        		<input class="form-control" type="time" id="start_time" name="start_time" value="'.$start_time.'" placeholder="Start Time" required>
+                				</div>
+					</div>
+				</div>
+                		<br>
+                		<table class="table table-bordered">
+                        		<tr>
+                                		<th class="col-2 text-center"><small>'.$lang['table_name'].'</small></th>
+                                		<th class="col-1 text-center"><small>'.$lang['db_cleanup_value'].'</small></th>
+                                		<th class="col-2 text-center"><small>'.$lang['db_cleanup_period'].'</small></th>
+                        		</tr>';
+                       			$query = "SELECT column_name
+                                		FROM INFORMATION_SCHEMA.COLUMNS
+                                		WHERE TABLE_SCHEMA = 'maxair' AND table_name = 'db_cleanup' AND ordinal_position > 7
+                                		ORDER BY ordinal_position;";
+                        		$results = $conn->query($query);
+                        		$x = 0;
+                        		while ($row = mysqli_fetch_assoc($results)) {
+                                		$col_name = $row["column_name"];
+                                		$per_int = $db_row[$col_name];
+                                		$pieces = explode(" ", $per_int);
+                                		$period = $pieces[0];
+                                		$interval = $pieces[1];
+                                		echo '<tr>
+                                        		<td>'.$row["column_name"].'</td>
+                					<td><input id="period'.$x.'" type="text" class="float-left text" style="border: none" name="period'.$x.'"  size="3" value="'.$period.'" placeholder="Period" required></td>
+                                        		<td><select class="form-select" type="text" id="ival'.$x.'" name="ival'.$x.'" onchange=set_interval('.$x.')>
+                                                		<option value="HOUR" ' . ($interval=='HOUR' ? 'selected' : '') . '>'.$lang['HOUR'].'</option>
+                                                		<option value="DAY" ' . ($interval=='DAY' ? 'selected' : '') . '>'.$lang['DAY'].'</option>
+                                                		<option value="WEEK" ' . ($interval=='WEEK' ? 'selected' : '') . '>'.$lang['WEEK'].'</option>
+                                                		<option value="MONTH" ' . ($interval=='MONTH' ? 'selected' : '') . '>'.$lang['MONTH'].'</option>
+                                        		</select></td>
+                                        		<input type="hidden" id="set_interval'.$x.'" name="set_interval_type" value="'.$interval.'">
+                                		</tr>';
+                                		$x = $x + 1;
+                        		}
+                		echo '</table>
+            		</div>
+            		<div class="modal-footer justify-content-between">
+                		<div>
+                    			<span class="text-muted">Last Run: '.$last_run.' <i class="'.$last_result.'" style="font-size: 1.5rem; -webkit-text-stroke: 1px;"></i></span>
+                		</div>
+                		<div class="actions">
+                        		<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        		<input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="set_db_cleanup()">
+				</div>
+            		</div>
+        	</div>
+    	</div>
 </div>';
 
 //set max cpu temperature

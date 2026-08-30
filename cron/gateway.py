@@ -26,7 +26,7 @@ print("* MySensors Wifi/Ethernet/Serial Gateway Communication *")
 print("* Script to communicate with MySensors Nodes, for more *")
 print("* info please check MySensors API.                     *")
 print("*      Build Date: 18/09/2017                          *")
-print("*      Version 0.40 - Last Modified 09/08/2026         *")
+print("*      Version 0.50 - Last Modified 25/08/2026         *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -118,6 +118,63 @@ logging.basicConfig(
 run_22 = 0
 new_log = 0
 write_mqtt_log_file = False
+run_db_cleanup = 0
+
+def db_cleanup():
+    if dbgLevel >= 2 and dbgMsgIn == 1:
+        print(bc.grn + "\nDB Cleanup Started", bc.ENDC)
+    cur.execute("SELECT * FROM information_schema.tables WHERE table_name = 'bus_controller';")
+    if cur.rowcount > 0:
+        bus_controller = True
+    else:
+        bus_controller = False
+
+    cur.execute("SELECT * FROM db_cleanup LIMIT 1;")
+    if cur.rowcount > 0:
+        row  = cur.fetchone()
+        row_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+        interval_1 = row[row_to_index["messages_in"]]
+        interval_2 = row[row_to_index["nodes_battery"]]
+        interval_3 = row[row_to_index["gateway_logs"]]
+        interval_4 = row[row_to_index["relay_logs"]]
+        if bus_controller:
+            interval_5 = row[row_to_index["bus_controller_logs"]]
+        interval_6 = "24 HOUR"
+
+        if bus_controller:
+            qry_tuple = ('DELETE FROM messages_in WHERE datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_1),
+                         'DELETE FROM nodes_battery WHERE `update` < DATE_SUB(CURDATE(), INTERVAL {});'.format(interval_2),
+                         'DELETE FROM nodes_battery WHERE node_id NOT IN (SELECT nodes.node_id  FROM nodes UNION SELECT CONCAT(nodes.node_id,"-",mqtt_devices.child_id) AS node_id FROM mqtt_devices, nodes WHERE mqtt_devices.nodes_id = nodes.id);',
+                         'DELETE FROM `sensor_graphs` WHERE `datetime` < DATE_SUB(CURDATE(), INTERVAL {});'.format(interval_6),
+                         'DELETE FROM `gateway_logs` WHERE pid_datetime < DATE_SUB(CURDATE(), INTERVAL {})  AND id != (SELECT id FROM (SELECT id FROM `gateway_logs` ORDER BY id DESC LIMIT 1) myselect);'.format(interval_3),
+                         'DELETE FROM relay_logs WHERE datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_4),
+                         'DELETE FROM bus_controller_logs WHERE pid_datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_5))
+        else:
+            qry_tuple = ('DELETE FROM messages_in WHERE datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_1),
+                         'DELETE FROM nodes_battery WHERE `update` < DATE_SUB(CURDATE(), INTERVAL {});'.format(interval_2),
+                         'DELETE FROM nodes_battery WHERE node_id NOT IN (SELECT nodes.node_id  FROM nodes UNION SELECT CONCAT(nodes.node_id,"-",mqtt_devices.child_id) AS node_id FROM mqtt_devices, nodes WHERE mqtt_devices.nodes_id = nodes.id);',
+                         'DELETE FROM `sensor_graphs` WHERE `datetime` < DATE_SUB(CURDATE(), INTERVAL {});'.format(interval_6),
+                         'DELETE FROM `gateway_logs` WHERE pid_datetime < DATE_SUB(CURDATE(), INTERVAL {})  AND id != (SELECT id FROM (SELECT id FROM `gateway_logs` ORDER BY id DESC LIMIT 1) myselect);'.format(interval_3),
+                         'DELETE FROM relay_logs WHERE datetime < DATE_SUB(curdate(), INTERVAL {});'.format(interval_4))
+
+        query_fail = False
+        for q in qry_tuple:
+            try:
+                cur.execute(q)
+                con.commit()
+            except:
+                query_fail = True
+
+        if dbgLevel >= 2 and dbgMsgIn == 1:
+            if query_fail:
+                print(bc.grn + "DB Cleanup Failed", bc.ENDC)
+                return False
+            else:
+                print(bc.grn + "DB Cleanup Successful", bc.ENDC)
+                return True
+    else:
+        print(bc.grn + "DB Cleanup Nothing to Clean", bc.ENDC)
+        return False
 
 def is_number(s):
     try:
@@ -2240,10 +2297,8 @@ def on_connect_1(client, userdata, flags, rc):
 # Function run when the MQTT client disconnects to the brooker for paho-mqtt Version 1
 def on_disconnect_1(client, userdata, rc):
     MQTT_CONNECTED = 0
-    con_mqtt.close()
     if rc != 0:
         print("\nUnexpected disconnection.\n")
-        sys.exit(1)
     else:
         print("\nSuccessfully disconnected from the brooker\n")
 
@@ -2290,14 +2345,12 @@ def on_disconnect_2(client, userdata, flags, reason_code, properties):
     mqtt_log_txt = ""
 
     MQTT_CONNECTED = 0
-    con_mqtt.close()
     if reason_code == 0:
         print("\nSuccessfully disconnected from the broker\n")
         mqtt_log_txt = mqtt_log_txt + "Successfully disconnected from the broker at: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n"
     if reason_code > 0:
         print("\nUnexpected disconnection.\n")
         mqtt_log_txt = mqtt_log_txt + "Unexpected disconnection: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n"
-        sys.exit(1)
     if len(mqtt_log_txt) > 0 and write_mqtt_log_file:
         write_mqtt_log(mqtt_log_txt)
 
@@ -2328,10 +2381,6 @@ def on_message(client, userdata, message):
     global mqtt_lock
     mqtt_log_txt = ""
     mqtt_log_txt = "Entering on_message\n"
-    if Path("/tmp/db_cleanup_running").exists():
-        mqtt_log_txt = mqtt_log_txt + "db_cleanup flag SET\n"
-    else:
-        mqtt_log_txt = mqtt_log_txt + "db_cleanup flag CLEAR\n"
     if Path("/tmp/sc_running").exists():
         mqtt_log_txt = mqtt_log_txt + "sc_running flag SET\n"
     else:
@@ -2340,7 +2389,7 @@ def on_message(client, userdata, message):
         mqtt_log_txt = mqtt_log_txt + "mqtt_lock SET\n"
     else:
         mqtt_log_txt = mqtt_log_txt + "mqtt_lock CLEAR\n"
-    while Path("/tmp/db_cleanup_running").exists() or Path("/tmp/sc_running").exists() or Path("/tmp/gpio_ds18b20_running").exists() or mqtt_lock:
+    while Path("/tmp/sc_running").exists() or Path("/tmp/gpio_ds18b20_running").exists() or mqtt_lock:
         pass
     global mqtt_msgcount
     global clear_hour_timer
@@ -3000,6 +3049,29 @@ def on_message(client, userdata, message):
                             )
                             ##cur.execute('UPDATE `nodes` SET `last_seen`=now() WHERE node_id = %s', [node_id])
                             con_mqtt.commit()
+		# tidy up if min_value has been changed to 0
+                else:
+                    mqtt_bat_id = mqtt_node_id + "-" + str(mqtt_child_device_id)
+                    cur_mqtt.execute(
+                        "SELECT * FROM `battery` where `node_id` = (%s) LIMIT 1;",
+                        [mqtt_bat_id],
+                    )
+                    if cur_mqtt.rowcount > 0:
+                        if dbgLevel >= 2 and dbgMsgIn == 1:
+                            print(
+                                "9d: Deleting Battery for MQTT Device:",
+                                mqtt_bat_id,
+                            )
+                        cur_mqtt.execute(
+                            "DELETE FROM `battery` WHERE `node_id` = (%s)",
+                            [mqtt_bat_id,],
+                        )
+                        con_mqtt.commit()
+                        cur_mqtt.execute(
+                            "DELETE FROM `nodes_battery` WHERE `node_id` = (%s)",
+                            [mqtt_bat_id,],
+                        )
+                        con_mqtt.commit()
 
                 if dbgLevel >= 2 and dbgMsgIn == 1:
                     print(
@@ -3416,13 +3488,12 @@ try:
 
     while 1:
         mqtt_log_txt = "Entering Main Processing Loop\n"
-        if not Path("/tmp/db_cleanup_running").exists() and not Path("/tmp/sc_running").exists():
+        if not Path("/tmp/sc_running").exists():
             mqtt_log_txt = mqtt_log_txt + "Aplying mqtt_lock\n"
             mqtt_lock = True
             # get todays date and time
             today = datetime.today()
             runHour = today.strftime('%H')
-            today = today.strftime('%Y-%m-%d')
             if (runHour == '22') and run_22 == 0:             # clear at 2200 hours
                 new_log = 1                                    # flag to delete log file each day
                 run_22 = 1                                     # flag to only do once
@@ -3431,6 +3502,31 @@ try:
 
             if (runHour == '23'):
                 run_22 = 0                                     # clear for next day
+
+            # run db_clean_up at scheduled time
+            cur.execute("SELECT status, start_time FROM db_cleanup LIMIT 1")
+            row = cur.fetchone()
+            db_cleanup_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
+            status = row[db_cleanup_to_index["status"]]
+            # check id db_cleanup is enabled
+            if status == 1:
+                # start time in the format HH:MM
+                start_time = "{:0>8}".format(str(row[db_cleanup_to_index["start_time"]]))[:5]
+                # end time is 1 minute later, to give db_cleanup time to execute
+                end_time =  "{:0>8}".format(str(row[db_cleanup_to_index["start_time"]] + timedelta(minutes=1)))[:5]
+                db_cleanup_time = today.strftime('%H:%M')
+                if start_time in db_cleanup_time and run_db_cleanup == 0:
+                    cleanup_result = db_cleanup()
+                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    cur.execute(
+                        "UPDATE db_cleanup SET result = %s, last_run = %s WHERE id = 1;",
+                        (cleanup_result, timestamp),
+                    )
+                    con.commit()  # commit above
+                    run_db_cleanup = 1
+                # reset the run flag after 1 minute
+                if end_time in db_cleanup_time:
+                    run_db_cleanup = 0
 
             #initialize the transaction acounters
             cur.execute("SELECT c_f, test_mode FROM system LIMIT 1")

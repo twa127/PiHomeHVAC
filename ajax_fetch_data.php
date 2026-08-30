@@ -683,7 +683,11 @@ if ($type <= 4 || $type == 38) {
 	        $query = "SELECT * FROM nodes where id = {$sensor_id} LIMIT 1;";
         	$nresult = $conn->query($query);
 	        $nrow = mysqli_fetch_array($nresult);
-        	$node_id = $nrow['node_id'];
+		if (strpos($nrow["type"], "MQTT") !== false) {
+                        $node_id = $nrow['node_id']."-".$sensor_child_id;
+		} else {
+        		$node_id = $nrow['node_id'];
+		}
 	        $last_seen = $nrow['last_seen'];
 		$batquery = "select * from nodes_battery where node_id = '{$node_id}' ORDER BY id desc limit 1;";
 		$batresults = $conn->query($batquery);
@@ -695,7 +699,7 @@ if ($type <= 4 || $type == 38) {
 				<div class="text-start">&nbsp&nbsp'.$nrow['node_id'].'_'.$sensor_child_id.' - '.$s_name.'</div>
 			</div>
 			<div class="form-group row">';
-				if ($bcount > 0) { echo '<div class="text-start">&nbsp&nbsp<i class="bi bi-battery-half"></i> '.round($brow ['bat_level'],0).'% - '.$brow ['bat_voltage'].'</div>'; } else { echo '<div class="text-start">&nbsp&nbsp<i class="bi bi-battery-half"></i></div>'; }
+				if ($bcount > 0) { echo '<div class="text-start">&nbsp&nbsp<i class="bi bi-battery-half"></i> '.round($brow ['bat_level'],0).'% - '.$brow ['bat_voltage'].'</div>'; } else { echo '<div class="text-start">&nbsp&nbsp<i class="bi bi-battery-half"></i>&nbsp&nbsp'.$lang['no_battery'].'</div>'; }
 			echo '</div>
 			<div class="form-group row">
 				<div class="d-flex justify-content-between">';
@@ -1343,7 +1347,15 @@ if ($type <= 4 || $type == 38) {
 			} else {
 				$bc_restarted = '0';
 			}
+                        $query = "select * FROM bus_controller_logs WHERE pid_datetime >= NOW() - INTERVAL 24 HOUR;";
+                        $result = $conn->query($query);
+                        if (mysqli_num_rows($result) != 0){
+                                $bc_restarted_24 = mysqli_num_rows($result);
+                        } else {
+                                $bc_restarted_24 = '0';
+                        }
 			echo '<div class="list-group-item d-flex justify-content-between"><span>'.$lang['smart_home_bus_controller_scr'].':</span><span class="text-muted small"><em>'.$bc_restarted.'</em></span></div>
+                        <div class="list-group-item d-flex justify-content-between"><span>'.$lang['smart_home_gateway_scr_24'].':</span><span class="text-muted small"><em>'.$bc_restarted_24.'</em></span></div>
 		</div>';
 	}
 } elseif ($type == 35) {

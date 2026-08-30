@@ -31,6 +31,10 @@ if(isset($_GET['page_name'])) {
 
 include("header.php");
 
+// clear any residual test mode flag
+$query = "UPDATE system SET test_mode = 0 WHERE test_mode = 1 OR test_mode = 2;";
+$conn->query($query);
+
 echo '<div class="container-fluid">
 	<br>
 	<input type="hidden" id="page_link" value="'.$page_name.'">

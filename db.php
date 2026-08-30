@@ -1976,32 +1976,42 @@ if($what=="set_buttons"){
 
 //Set DB Cleanup
 if($what=="set_db_cleanup"){
-        $query = "SELECT column_name
-                FROM INFORMATION_SCHEMA.COLUMNS
-                WHERE TABLE_SCHEMA = 'maxair' AND table_name = 'db_cleanup' AND ordinal_position > 3
-                ORDER BY ordinal_position;";
-        $results = $conn->query($query);
-	$x = 0;
-        while ($row = mysqli_fetch_assoc($results)) {
-                $column_name = $row['column_name'];
-                $period = $_GET["period".$x];
-                $interval = $_GET["set_interval".$x];
-                $query = "UPDATE db_cleanup SET ".$column_name." = '".$period." ".$interval."' WHERE id = 1 LIMIT 1;";
-                $update_error=0;
-                if(!$conn->query($query)){
-                        $update_error=1;
-                }
-		$x = $x + 1;
-        }
-        if($update_error==0){
-                header('Content-type: application/json');
-                echo json_encode(array('Success'=>'Success','Query'=>$query));
-                return;
-        }else{
-                header('Content-type: application/json');
+        $enabled = $_GET['checkbox8'];
+        if ($enabled=='true'){$status = 1;} else {$status = 0;}
+	$start_time = $_GET['start_time'];
+	$query = "UPDATE db_cleanup SET status = ".$status.", start_time = '".$start_time."' WHERE id = 1 LIMIT 1;";
+	if($conn->query($query)){
+        	$query = "SELECT column_name
+                	FROM INFORMATION_SCHEMA.COLUMNS
+	                WHERE TABLE_SCHEMA = 'maxair' AND table_name = 'db_cleanup' AND ordinal_position > 7
+        	        ORDER BY ordinal_position;";
+	        $results = $conn->query($query);
+		$x = 0;
+	        while ($row = mysqli_fetch_assoc($results)) {
+        	        $column_name = $row['column_name'];
+                	$period = $_GET["period".$x];
+	                $interval = $_GET["set_interval".$x];
+        	        $query = "UPDATE db_cleanup SET ".$column_name." = '".$period." ".$interval."' WHERE id = 1 LIMIT 1;";
+                	$update_error=0;
+	                if(!$conn->query($query)){
+        	                $update_error=1;
+                	}
+			$x = $x + 1;
+        	}
+	        if($update_error==0){
+        	        header('Content-type: application/json');
+                	echo json_encode(array('Success'=>'Success','Query'=>$query));
+	                return;
+        	}else{
+                	header('Content-type: application/json');
+	                echo json_encode(array('Message'=>'Database query failed.\r\nQuery=' . $query));
+        	        return;
+        	}
+	} else {
+        	header('Content-type: application/json');
                 echo json_encode(array('Message'=>'Database query failed.\r\nQuery=' . $query));
                 return;
-        }
+	}
 }
 
 //enable graph categories to be displayed

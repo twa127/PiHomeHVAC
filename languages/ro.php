@@ -743,7 +743,7 @@ $lang['toggle_page'] = "Toggle Page";
 $lang['index_number'] = "Index Number";
 $lang['set_buttons_text'] = "Place Buttons on Home or OneTouch Screen and set display ordering.";
 $lang['db_cleanup'] = "DB Cleanup";
-$lang['db_cleanup_text'] = "Set the Interval Value and Period (as HOUR, DAY, WEEK or MONTH)";
+$lang['db_cleanup_text'] = "Enable periodical database cleanup, select time of day to execute and set the Interval Value and Period (as HOUR, DAY, WEEK or MONTH)";
 $lang['db_cleanup_value'] = "Value";
 $lang['db_cleanup_period'] = "Period";
 $lang['table_name'] = "Table Name";
@@ -1170,6 +1170,8 @@ $lang['setup_guide_xaomi_sensors'] = "Setup Guide Xaomi Mijia Bluetooth Sensors"
 $lang['bus_controller_scr_info'] = "Bus Controller Script Process Info";
 $lang['smart_home_bus_controller_scr'] = "Script Re-Started in Last 1 Hour";
 $lang['smart_home_gateway_scr_24'] = "Script Re-Started in Last 24 Hours";
+$lang['setup_database_cleanup'] = "Database Clean-up";
+$lang['no_battery'] = "No Battery";
 
 if (file_exists(__DIR__.'/lo.php')) { require_once(__DIR__.'/lo.php'); }
 ?>
