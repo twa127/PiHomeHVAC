@@ -94,7 +94,7 @@ function getDelta($conn, $where_zone = "") {
                                                         ORDER BY m.datetime ASC;";
                                         $m_results = $conn->query($query);
                                         if($m_results) {
-                                                // capture the first and last records from the dataset
+						// capture the first and last records from the dataset
                                                 unset($firstValue);
                                                 while($m_row = mysqli_fetch_assoc($m_results)) {
                                                         if(!isset($firstValue)) {
