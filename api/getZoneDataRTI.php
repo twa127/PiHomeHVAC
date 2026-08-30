@@ -93,8 +93,7 @@ function getDelta($conn, $where_zone = "") {
                                                         AND s.id = $sensor_id
                                                         ORDER BY m.datetime ASC;";
                                         $m_results = $conn->query($query);
-                                        if($m_results) {
-						// capture the first and last records from the dataset
+                                        if($m_results) { // capture the first and last records from the dataset
                                                 unset($firstValue);
                                                 while($m_row = mysqli_fetch_assoc($m_results)) {
                                                         if(!isset($firstValue)) {
