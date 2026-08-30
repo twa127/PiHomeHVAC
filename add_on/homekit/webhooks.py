@@ -24,7 +24,7 @@ print(bc.WARN + " ")
 print("********************************************************")
 print("*   Script to update Homebridge Switches and Sensors   *")
 print("*      Build Date: 06/02/2022                          *")
-print("*      Version 0.2 - Last Modified 08/07/2026          *")
+print("*      Version 0.2 - Last Modified 30/08/2026          *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -49,7 +49,7 @@ logfile = "/var/www/logs/main.log"
 infomsg = "More info in log file: " + logfile
 logging.basicConfig(
     filename=logfile,
-    level=logging.DEBUG,
+    level=logging.INFO,
     format=("\n### %(asctime)s - %(levelname)s ###"),
 )
 import json
