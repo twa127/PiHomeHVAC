@@ -2330,15 +2330,14 @@ if($what=="toggle_relay"){
                 }
         }
         if($opp=="exit"){
-                $relay_map =  $_GET['relay_map'];
                 $db_error = 0;
-                $query = "SELECT relay_id, relay_child_id FROM relays ORDER BY relay_id, relay_child_id DESC;";
+                $query = "SELECT relay_id, relay_child_id, previous_state FROM relays ORDER BY relay_id, relay_child_id DESC;";
                 $results = $conn->query($query);
                 $count = $results->num_rows;
                 if ($count != 0) {
 			$n = 0;
                 	while ($row = mysqli_fetch_assoc($results)) {
-                                $payload = $relay_map & (1 << $n++);
+                                $payload = $row['previous_state'];
                         	$query = "UPDATE messages_out SET payload = {$payload}, sent = 0 WHERE n_id = {$row['relay_id']} AND child_id = {$row['relay_child_id']};";
                                 if (!$conn->query($query)) { $db_error = 1; }
                         }

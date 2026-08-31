@@ -1486,7 +1486,6 @@ function toggle_relay_state(wid){
 //Exit Toggle Relay
 function toggle_relay_exit(){
     var idata="w=toggle_relay&o=exit";
-    idata+="&relay_map="+document.getElementById("relay_map").value;
     idata+="&wid=0";
     $.get('db.php',idata)
     .done(function(odata){

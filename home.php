@@ -32,8 +32,23 @@ if(isset($_GET['page_name'])) {
 include("header.php");
 
 // clear any residual test mode flag
-$query = "UPDATE system SET test_mode = 0 WHERE test_mode = 1 OR test_mode = 2;";
-$conn->query($query);
+$query = "SELECT test_mode FROM system WHERE test_mode = 1 OR test_mode = 2;";
+$result = $conn->query($query);
+$rowcount=mysqli_num_rows($result);
+if ($rowcount > 0) {
+	$query = "UPDATE system SET test_mode = 0;";
+	$conn->query($query);
+        $query = "SELECT relay_id, relay_child_id, previous_state FROM relays ORDER BY relay_id, relay_child_id DESC;";
+        $results = $conn->query($query);
+        $count = $results->num_rows;
+        if ($count != 0) {
+        	while ($row = mysqli_fetch_assoc($results)) {
+                	$payload = $row['previous_state'];
+                        $query = "UPDATE messages_out SET payload = {$payload}, sent = 0 WHERE n_id = {$row['relay_id']} AND child_id = {$row['relay_child_id']};";
+                        $conn->query($query);
+                }
+        }
+}
 
 echo '<div class="container-fluid">
 	<br>

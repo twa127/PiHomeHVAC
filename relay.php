@@ -73,9 +73,9 @@ if (isset($_POST['submit'])) {
 	$group_id = $_POST['group_id'];
 	//Add or Edit relay record to relays Table
         $query = "INSERT INTO `relays` (`id`, `sync`, `purge`, `relay_id`, `relay_child_id`, `name`, `type`, `index_id`, `pre_post`, `show_it`, `message_in`,`on_trigger`, `lag_time`,
-                `group_id`, `schedule_prev`,`schedule`, `sch_time_id`,`user_display`, `state`, `current_val_2`, `fail_timeout`)
+                `group_id`, `schedule_prev`,`schedule`, `sch_time_id`,`user_display`, `previous_state`, `state`, `current_val_2`, `fail_timeout`)
                 VALUES ('{$id}', '{$sync}', '{$purge}', '{$selected_relay_id}', '{$relay_child_id}', '{$name}', '{$type}', '{$index_id}', 0, 1, 0, '{$on_trigger}',
-                '{$lag_time}',  '{$group_id}', 0, 0, 0, 0, 0, 0, '{$fail_timeout}')
+                '{$lag_time}',  '{$group_id}', 0, 0, 0, 0, 0, 0, 0, '{$fail_timeout}')
                 ON DUPLICATE KEY UPDATE sync=VALUES(sync), `purge`=VALUES(`purge`), relay_id='{$selected_relay_id}', relay_child_id='{$relay_child_id}', name=VALUES(name),
                 type=VALUES(type), `index_id` = VALUES(index_id), `pre_post` = VALUES(pre_post), `show_it` = '{$show_it}', `message_in` = '{$message_in}', on_trigger=VALUES(on_trigger),
                 lag_time=VALUES(lag_time), group_id=VALUES(group_id), schedule_prev=VALUES(schedule_prev), schedule=VALUES(schedule), sch_time_id=(sch_time_id),
