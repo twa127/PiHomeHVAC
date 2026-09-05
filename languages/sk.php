@@ -1173,6 +1173,7 @@ $lang['enable_db_cleanup'] = "Enable Cleanup";
 $lang['run_db_cleanup_at'] = "Execute Cleanup At:";
 $lang['setup_database_cleanup'] = "Database Clean-up";
 $lang['no_battery'] = "No Battery";
+$lang['mqtt_disconnect_24_hour'] = "MQTT Disconnects in Last 24 Hours";
 
 if (file_exists(__DIR__.'/lo.php')) { require_once(__DIR__.'/lo.php'); }
 ?>

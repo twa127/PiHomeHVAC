@@ -1223,7 +1223,7 @@ if ($type <= 4 || $type == 38) {
                 $scpid_running_since = $scrow['pid_running_since'];
                 $sc_color = "green";
         }
-        $query = "SELECT * FROM information_schema.tables WHERE table_name = 'bus_controller';";
+        $query = "SELECT * FROM information_schema.tables WHERE table_schema = '{$dbname}' AND table_name = 'bus_controller';";
         $result = $conn->query($query);
         $rowcount=mysqli_num_rows($result);
         if ($rowcount > 0) {
@@ -1268,6 +1268,10 @@ if ($type <= 4 || $type == 38) {
                 } else {
                         $gw_restarted_24 = '0';
                 }
+                $query = "select mqtt_disconnect FROM gateway_logs ORDER BY id DESC LIMIT 1;";
+                $result = $conn->query($query);
+		$row = mysqli_fetch_array($result);
+		$mqtt_disconnect_24 = $row['mqtt_disconnect'];
                 if ($nopids != 0) {
 			$query = "select * FROM gateway_logs ORDER BY id DESC LIMIT 1;";
 			$result = $conn->query($query);
@@ -1283,7 +1287,8 @@ if ($type <= 4 || $type == 38) {
                 	        $mqttresult = $conn->query($query);
                         	$mqttrowcount = mysqli_num_rows($mqttresult);
 				if ($mqttrowcount != 0){
-        	        		echo '<div class="list-group-item d-flex justify-content-between"><span>'.$lang['mqtt_per_hour'].':</span><span class="text-muted small"><em>'.$glrow['mqtt_sent'].' - '.$glrow['mqtt_recv'].'</em></span></div>';
+                                        echo '<div class="list-group-item d-flex justify-content-between"><span>'.$lang['mqtt_disconnect_24_hour'].':</span><span class="text-muted small"><em>'.$mqtt_disconnect_24.'</em></span></div>
+                                        <div class="list-group-item d-flex justify-content-between"><span>'.$lang['mqtt_per_hour'].':</span><span class="text-muted small"><em>'.$glrow['mqtt_sent'].' - '.$glrow['mqtt_recv'].'</em></span></div>';
 				}
                         	$query = "SELECT *
                                 	FROM nodes

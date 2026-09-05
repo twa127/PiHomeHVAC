@@ -26,7 +26,7 @@ print("* MySensors Wifi/Ethernet/Serial Gateway Communication *")
 print("* Script to communicate with MySensors Nodes, for more *")
 print("* info please check MySensors API.                     *")
 print("*      Build Date: 18/09/2017                          *")
-print("*      Version 0.50 - Last Modified 25/08/2026         *")
+print("*      Version 0.51 - Last Modified 02/09/2026         *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -102,8 +102,10 @@ mysensor_sent = 0
 gpio_sent = 0
 minute_timer = time.time()
 hour_timer = time.time()
+day_timer = time.time()
 clear_minute_timer = False
 clear_hour_timer = False
+clear_day_timer = False
 mqtt_lock = True
 
 # Logging exceptions to log file
@@ -2296,11 +2298,22 @@ def on_connect_1(client, userdata, flags, rc):
 
 # Function run when the MQTT client disconnects to the brooker for paho-mqtt Version 1
 def on_disconnect_1(client, userdata, rc):
+    global mqtt_disconnect_count
+    global clear_day_timer
+    if time.time() - day_timer <= 24*60*60:
+        mqtt_disconnect_count += 1
+        clear_day_timer = False
+    else:
+        mqtt_disconnect_count = 0
+        clear_day_timer = True
+
     MQTT_CONNECTED = 0
     if rc != 0:
         print("\nUnexpected disconnection.\n")
+        logging.info("Unexpected disconnection")
     else:
         print("\nSuccessfully disconnected from the brooker\n")
+        logging.info("Successfully disconnected from the brooker")
 
 # Function run when the MQTT client connect to the brooker for paho-mqtt Version 2
 def on_connect_2(client, userdata, flags, reason_code, properties):
@@ -2342,14 +2355,25 @@ def on_connect_2(client, userdata, flags, reason_code, properties):
 
 # Function run when the MQTT client disconnects to the brooker for paho-mqtt Version 2
 def on_disconnect_2(client, userdata, flags, reason_code, properties):
+    global mqtt_disconnect_count
+    global clear_day_timer
+    if time.time() - day_timer <= 24*60*60:
+        mqtt_disconnect_count += 1
+        clear_day_timer = False
+    else:
+        mqtt_disconnect_count = 0
+        clear_day_timer = True
+
     mqtt_log_txt = ""
 
     MQTT_CONNECTED = 0
     if reason_code == 0:
         print("\nSuccessfully disconnected from the broker\n")
+        logging.info("Successfully disconnected from the broker")
         mqtt_log_txt = mqtt_log_txt + "Successfully disconnected from the broker at: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n"
     if reason_code > 0:
         print("\nUnexpected disconnection.\n")
+        logging.info("Unexpected disconnection")
         mqtt_log_txt = mqtt_log_txt + "Unexpected disconnection: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n"
     if len(mqtt_log_txt) > 0 and write_mqtt_log_file:
         write_mqtt_log(mqtt_log_txt)
@@ -2537,25 +2561,25 @@ def on_message(client, userdata, message):
                                                 "UPDATE zone_current_state SET mode = %s, status = %s, status_prev = %s  WHERE id = %s;",
                                                 (new_mode, new_status, zone_current_status, zone_current_state_id,),
                                             )
-                                            con.commit()
+                                            con_mqtt.commit()
                                             # Update the messages_out table
                                             cur_mqtt.execute(
                                                 "UPDATE messages_out SET payload = %s  WHERE n_id = %s AND child_id = %s",
                                                 (new_payload, nodes_id, mqtt_child_device_id,),
                                             )
-                                            con.commit()
+                                            con_mqtt.commit()
                                             # Update the zone_relays table
                                             cur_mqtt.execute(
                                                 "UPDATE zone_relays SET state = %s WHERE zone_id = %s;",
                                                 (new_status, mqtt_zone_id,),
                                             )
-                                            con.commit()
+                                            con_mqtt.commit()
                                             # Update the zone table
                                             cur_mqtt.execute(
                                                 "UPDATE zone SET zone_state = %s WHERE id = %s;",
                                                 (new_status, mqtt_zone_id,),
                                             )
-                                            con.commit()
+                                            con_mqtt.commit()
                                     # Process Stand Alone relays
                                     elif mqtt_r_type == 6:
                                         # Update the messages_out table
@@ -2564,7 +2588,7 @@ def on_message(client, userdata, message):
                                                 "UPDATE messages_out SET payload = %s  WHERE n_id = %s AND child_id = %s",
                                                 (new_payload, nodes_id, mqtt_child_device_id,),
                                             )
-                                            con.commit()
+                                            con_mqtt.commit()
                                         except mdb.Error as e:
                                             # skip deadlock error (caused by something adding new data to the table)
                                             if e.args[0] == 2014 or e.args[0] == 1020:
@@ -2591,7 +2615,7 @@ def on_message(client, userdata, message):
                                                     "UPDATE `relays` SET `state` = %s WHERE `id` = %s;",
                                                     (state, mqtt_r_id,),
                                                 )
-                                                con.commit()
+                                                con_mqtt.commit()
                                             except mdb.Error as e:
                                                 # skip deadlock error (caused by something adding new data to the table)
                                                 if e.args[0] == 2014 or e.args[0] == 1020:
@@ -2653,10 +2677,10 @@ def on_message(client, userdata, message):
                             "UPDATE `boost` SET `status` = %s, `boost_button_state` = %s WHERE `id` = %s;",
                             [button_state, button_state, id],
                         )
-                        con.commit()
+                        con_mqtt.commit()
                     except mdb.Error as e:
                         # skip deadlock error (being caused when mysqldunp runs
-                        if e.args[0] == 1213:
+                        if e.args[0] == 1213 or e.args[0] == 2013:
                             pass
                         else:
                             print("DB Error %d: %s" % (e.args[0], e.args[1]))
@@ -3219,6 +3243,7 @@ try:
 
     msgcount = 0  # Defining variable for counting messages processed
     mqtt_msgcount = 0
+    mqtt_disconnect_count = 0
 
     # Get the network address for use by Tasmota devices
     cur.execute(
@@ -3904,13 +3929,13 @@ try:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             try:
                 cur.execute(
-                    "UPDATE gateway_logs SET mqtt_sent = %s, mqtt_recv = %s, mysensors_sent = %s, mysensors_recv = %s, gpio_sent = %s, heartbeat = %s ORDER BY id DESC LIMIT 1;",
-                    (mqtt_sent, mqtt_msgcount, mysensor_sent, msgcount, gpio_sent, timestamp),
+                    "UPDATE gateway_logs SET mqtt_disconnect = %s, mqtt_sent = %s, mqtt_recv = %s, mysensors_sent = %s, mysensors_recv = %s, gpio_sent = %s, heartbeat = %s ORDER BY id DESC LIMIT 1;",
+                    (mqtt_disconnect_count, mqtt_sent, mqtt_msgcount, mysensor_sent, msgcount, gpio_sent, timestamp),
                 )
                 con.commit()
             except mdb.Error as e:
                 # skip deadlock error (being caused when mysqldunp runs
-                if e.args[0] == 1213 or e.args[0] == 2014 or e.args[0] == 1020:
+                if e.args[0] == 1213 or e.args[0] == 2014 or e.args[0] == 1020 or e.args[0] == 2013:
                     pass
                 else:
                     print("DB Error %d: %s" % (e.args[0], e.args[1]))
@@ -3928,6 +3953,8 @@ try:
                 minute_timer = time.time()
             if clear_hour_timer :
                 hour_timer = time.time()
+            if clear_day_timer :
+                day_timer = time.time()
             mqtt_log_txt = mqtt_log_txt + "Removing mqtt_lock\n"
             if len(mqtt_log_txt) > 0 and write_mqtt_log_file:
                 write_mqtt_log(mqtt_log_txt)

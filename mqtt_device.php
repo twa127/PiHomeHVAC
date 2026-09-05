@@ -209,24 +209,71 @@ if (isset($_POST['submit'])) {
 	$rownode = mysqli_fetch_assoc($result);
 } else {
 	$checked = 0;
-	$query = "SELECT child_id FROM mqtt_devices WHERE type = '0' ORDER BY child_id ASC;";
-	$results = $conn->query($query);
-	$new_child_row = mysqli_fetch_assoc($results);
-	$new_child_id_sensor =  $new_child_row["child_id"] + 1;
-	while ($new_child_row = mysqli_fetch_assoc($results)) {
-		if ($new_child_row["child_id"] == $new_child_id_sensor) {
-			$new_child_id_sensor = $new_child_id_sensor +1;
-		}
+	// check for any gaps in sensor child_id sequence
+	$query = "SELECT
+			prev_id + 1 AS gap_start,
+    			curr_id - 1 AS gap_end,
+    			(curr_id - prev_id - 1) AS gap_size
+		FROM (
+    			SELECT
+        			child_id AS curr_id,
+        			LAG(child_id) OVER (ORDER BY child_id) AS prev_id
+    			FROM mqtt_devices
+    			JOIN nodes n ON n.id = mqtt_devices.nodes_id
+    			WHERE mqtt_devices.type = 0 AND n.name LIKE 'MQTT Sensor'
+			) t
+		WHERE curr_id - prev_id > 1
+		ORDER BY gap_start
+		LIMIT 1;";
+	$result = $conn->query($query);
+	$rowcount = mysqli_num_rows($result);
+	if ($rowcount > 0) {
+		$row = mysqli_fetch_assoc($result);
+		$new_child_id_sensor = $row['gap_start'];
+	} else {
+		// no gaps so get last used or 0 when no records
+		$query = "SELECT IFNULL(MAX(child_id), 0) AS max_child_id
+			FROM mqtt_devices
+			JOIN nodes n ON n.id = mqtt_devices.nodes_id
+			WHERE mqtt_devices.type = 0 AND n.name LIKE 'MQTT Sensor'
+			LIMIT 1;";
+	        $result = $conn->query($query);
+		$row = mysqli_fetch_assoc($result);
+                $new_child_id_sensor = $row['max_child_id'] + 1;
 	}
-	$query = "SELECT child_id FROM mqtt_devices WHERE type = '1' ORDER BY child_id ASC;";
-	$results = $conn->query($query);
-	$new_child_row = mysqli_fetch_assoc($results);
-	$new_child_id_controller =  $new_child_row["child_id"] + 1;
-	while ($new_child_row = mysqli_fetch_assoc($results)) {
-		if ($new_child_row["child_id"] == $new_child_id_controller) {
-			$new_child_id_controller = $new_child_id_controller +1;
-		}
-	}
+
+        // check for any gaps in controller/relay child_id sequence
+        $query = "SELECT
+                        prev_id + 1 AS gap_start,
+                        curr_id - 1 AS gap_end,
+                        (curr_id - prev_id - 1) AS gap_size
+                FROM (
+                        SELECT
+                                child_id AS curr_id,
+                                LAG(child_id) OVER (ORDER BY child_id) AS prev_id
+                        FROM mqtt_devices
+                        JOIN nodes n ON n.id = mqtt_devices.nodes_id
+                        WHERE mqtt_devices.type = 1 AND n.name LIKE 'MQTT Controller'
+                        ) t
+                WHERE curr_id - prev_id > 1
+                ORDER BY gap_start
+                LIMIT 1;";
+        $result = $conn->query($query);
+        $rowcount = mysqli_num_rows($result);
+        if ($rowcount > 0) {
+                $row = mysqli_fetch_assoc($result);
+                $new_child_id_controller = $row['gap_start'];
+        } else {
+                // no gaps so get last used or 0 when no records
+                $query = "SELECT IFNULL(MAX(child_id), 0) AS max_child_id
+                        FROM mqtt_devices
+                        JOIN nodes n ON n.id = mqtt_devices.nodes_id
+                        WHERE mqtt_devices.type = 1 AND n.name LIKE 'MQTT Controller'
+                        LIMIT 1;";
+                $result = $conn->query($query);
+                $row = mysqli_fetch_assoc($result);
+                $new_child_id_controller = $row['max_child_id'] + 1;
+        }
 }
 ?>
 

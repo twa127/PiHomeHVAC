@@ -1172,6 +1172,7 @@ $lang['smart_home_bus_controller_scr'] = "Script Re-Started in Last 1 Hour";
 $lang['smart_home_gateway_scr_24'] = "Script Re-Started in Last 24 Hours";
 $lang['setup_database_cleanup'] = "Database Clean-up";
 $lang['no_battery'] = "No Battery";
+$lang['mqtt_disconnect_24_hour'] = "MQTT Disconnects in Last 24 Hours";
 
 if (file_exists(__DIR__.'/lo.php')) { require_once(__DIR__.'/lo.php'); }
 ?>
