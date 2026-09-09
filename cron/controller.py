@@ -27,7 +27,7 @@ print("********************************************************")
 print("*              System Controller Script                *")
 print("*                                                      *")
 print("*               Build Date: 10/02/2023                 *")
-print("*       Version 0.20 - Last Modified 24/08/2026        *")
+print("*       Version 0.21 - Last Modified 09/09/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -563,7 +563,7 @@ def resync():
         con.commit()  # commit above
     except mdb.Error as e:
         # skip deadlock error (caused by something adding new data to the table)
-        if e.args[0] == 2014 or e.args[0] == 1020:
+        if e.args[0] == 2014 or e.args[0] == 1020 or e.args[0] == 1213:
             pass
         else:
             print("DB Error %d: %s" % (e.args[0], e.args[1]))
@@ -571,9 +571,6 @@ def resync():
             logging.error(e)
             logging.info(traceback.format_exc())
             con.close()
-            if MQTT_CONNECTED == 1:
-                mqttClient.disconnect()
-                mqttClient.loop_stop()
             print(infomsg)
             sys.exit(1)
 
@@ -589,7 +586,7 @@ def resync():
         con.commit()  # commit above
     except mdb.Error as e:
         # skip deadlock error (caused by something adding new data to the table)
-        if e.args[0] == 2014 or e.args[0] == 1020:
+        if e.args[0] == 2014 or e.args[0] == 1020 or e.args[0] == 1213:
             pass
         else:
             print("DB Error %d: %s" % (e.args[0], e.args[1]))
@@ -597,9 +594,6 @@ def resync():
             logging.error(e)
             logging.info(traceback.format_exc())
             con.close()
-            if MQTT_CONNECTED == 1:
-                mqttClient.disconnect()
-                mqttClient.loop_stop()
             print(infomsg)
             sys.exit(1)
 
@@ -616,7 +610,7 @@ def resync():
         con.commit()  # commit above
     except mdb.Error as e:
         # skip deadlock error (caused by something adding new data to the table)
-        if e.args[0] == 2014 or e.args[0] == 1020:
+        if e.args[0] == 2014 or e.args[0] == 1020 or e.args[0] == 1213:
             pass
         else:
             print("DB Error %d: %s" % (e.args[0], e.args[1]))
@@ -624,9 +618,6 @@ def resync():
             logging.error(e)
             logging.info(traceback.format_exc())
             con.close()
-            if MQTT_CONNECTED == 1:
-                mqttClient.disconnect()
-                mqttClient.loop_stop()
             print(infomsg)
             sys.exit(1)
 
@@ -735,23 +726,32 @@ def smart_hw():
     else:
         return False
 
-#---------------------
-#Start processing loop
-#---------------------
-timer_flag = 0
-
-#initialise dictionary used to hold the previous 'zone_current_state' values (used to logging to a debug file)
-old_flags_dict = {}
 try:
+    timer_flag = 0
+
+    #initialise dictionary used to hold the previous 'zone_current_state' values (used to logging to a debug file)
+    old_flags_dict = {}
+    NULL = "NULL"
+
+    # Initialise the database access variables
+    config = configparser.ConfigParser()
+    config.read("/var/www/st_inc/db_config.ini")
+    dbhost = config.get("db", "hostname")
+    dbuser = config.get("db", "dbusername")
+    dbpass = config.get("db", "dbpassword")
+    dbname = config.get("db", "dbname")
+
+    # connect to the database
+    con = mdb.connect(dbhost, dbuser, dbpass, dbname)
+    cur = con.cursor()
+
+    #---------------------
+    #Start processing loop
+    #---------------------
     while 1:
-        # wait for the db_cleanup.py script to finish
-        while Path("/tmp/db_cleanup_running").exists():
-            pass
         # Creates a running flag file
         with open('/tmp/sc_running', 'w') as fp:
             pass
-
-        NULL = "NULL"
 
         #set to indicate controller condition
         start_cause ='';
@@ -782,17 +782,6 @@ try:
 
         #initialise the zone_log dictionary.
         zone_log_dict = {}
-
-        # Initialise the database access variables
-        config = configparser.ConfigParser()
-        config.read("/var/www/st_inc/db_config.ini")
-        dbhost = config.get("db", "hostname")
-        dbuser = config.get("db", "dbusername")
-        dbpass = config.get("db", "dbpassword")
-        dbname = config.get("db", "dbname")
-
-        con = mdb.connect(dbhost, dbuser, dbpass, dbname)
-        cur = con.cursor()
 
         # initialise system variables
         cur.execute("SELECT * FROM system LIMIT 1")
@@ -4051,8 +4040,6 @@ try:
             # remove the running flag file
             Path("/tmp/sc_running").unlink(missing_ok=True)
             # end of main processing loop, close database connection
-            if con.open:
-                con.close()
             if dbgLevel >= 1:
                 time.sleep(10)
             else:
@@ -4074,8 +4061,6 @@ try:
             # remove the running flag file
             Path("/tmp/sc_running").unlink(missing_ok=True)
             # end of main processing loop, close database connection
-            if con.open:
-                con.close()
             time.sleep(10)
 
 except configparser.Error as e:

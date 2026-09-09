@@ -26,7 +26,7 @@ print("* MySensors Wifi/Ethernet/Serial Gateway Communication *")
 print("* Script to communicate with MySensors Nodes, for more *")
 print("* info please check MySensors API.                     *")
 print("*      Build Date: 18/09/2017                          *")
-print("*      Version 0.51 - Last Modified 02/09/2026         *")
+print("*      Version 0.52 - Last Modified 09/09/2026         *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -109,7 +109,7 @@ clear_day_timer = False
 mqtt_lock = True
 
 # Logging exceptions to log file
-logfile = "/var/www/logs/paho-mqtt.log"
+logfile = "/var/www/logs/gateway.log"
 infomsg = "More info in log file: " + logfile
 logging.basicConfig(
     filename=logfile,
@@ -2271,6 +2271,7 @@ def on_connect_1(client, userdata, flags, rc):
     if rc == 0:
         MQTT_CONNECTED = 1
         print("\nConnected to broker")
+        logging.info("MQTT Connected to Broker Successfully")
         subscribe_topics = []
         cur_mqtt.execute(
             'SELECT DISTINCT `mqtt_topic` FROM `mqtt_devices` WHERE `type` = "0"'
@@ -2290,9 +2291,11 @@ def on_connect_1(client, userdata, flags, rc):
                 print(topic[0])
         else:
             print("\nConnection failed\n")
+            logging.info("MQTT Failed to Connec")
             MQTT_CONNECTED = 0
     else:
         print("\nConnection failed\n")
+        logging.info("MQTT Failed to Connec")
         MQTT_CONNECTED = 0
 
 
@@ -2321,6 +2324,7 @@ def on_connect_2(client, userdata, flags, reason_code, properties):
 
     if reason_code.is_failure:
         print("\nConnection failed\n")
+        logging.info("MQTT Failed to Connected to Broker")
         mqtt_log_txt = mqtt_log_txt + "Connection failed at: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n"
         MQTT_CONNECTED = 0
     else:
@@ -2328,6 +2332,7 @@ def on_connect_2(client, userdata, flags, reason_code, properties):
         # our subscribed is persisted across reconnections.
         MQTT_CONNECTED = 1
         print("\nConnected to broker")
+        logging.info("MQTT Connected to Broker Successfully")
         mqtt_log_txt = mqtt_log_txt + "Connected to broker at: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n"
         subscribe_topics = []
         cur_mqtt.execute(
@@ -2348,6 +2353,7 @@ def on_connect_2(client, userdata, flags, reason_code, properties):
                 print(topic[0])
         else:
             print("\nConnection failed\n")
+            logging.info("MQTT Failed to Connected to Broker")
             mqtt_log_txt = mqtt_log_txt + "Connection failed at: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n"
             MQTT_CONNECTED = 0
     if len(mqtt_log_txt) > 0 and write_mqtt_log_file:

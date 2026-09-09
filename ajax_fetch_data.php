@@ -1268,10 +1268,10 @@ if ($type <= 4 || $type == 38) {
                 } else {
                         $gw_restarted_24 = '0';
                 }
-                $query = "select mqtt_disconnect FROM gateway_logs ORDER BY id DESC LIMIT 1;";
+                $query = "SELECT SUM(mqtt_disconnect) AS mqtt_disconnect_24 FROM gateway_logs WHERE pid_datetime >= NOW() - INTERVAL 24 HOUR;";
                 $result = $conn->query($query);
 		$row = mysqli_fetch_array($result);
-		$mqtt_disconnect_24 = $row['mqtt_disconnect'];
+		$mqtt_disconnect_24 = $row['mqtt_disconnect_24'];
                 if ($nopids != 0) {
 			$query = "select * FROM gateway_logs ORDER BY id DESC LIMIT 1;";
 			$result = $conn->query($query);
