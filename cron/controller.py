@@ -27,7 +27,7 @@ print("********************************************************")
 print("*              System Controller Script                *")
 print("*                                                      *")
 print("*               Build Date: 10/02/2023                 *")
-print("*       Version 0.21 - Last Modified 09/09/2026        *")
+print("*       Version 0.22 - Last Modified 10/09/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -497,8 +497,8 @@ def get_zone_schedule_status(
                 (run_time, time_id),
             )
             con.commit()  # commit above
-            if time_now > start_time and time_now < end_time and WeekDays  > 0:
-                if time_status == 1 and zone_disabled == 0 and (summertime == False or summer_status == 1 or zone_disable_in_summer == 0):
+            if time_status == 1 and time_now > start_time and time_now < end_time and WeekDays  > 0:
+                if zone_disabled == 0 and (summertime == False or summer_status == 1 or zone_disable_in_summer == 0):
                     sch_status = 1
                     #set the smart_off flag
                     if smart_off != 0:
@@ -520,11 +520,6 @@ def get_zone_schedule_status(
                     sch_status = 3
                     smart_off_flag = False
                     smart_off_time = 0
-                else:
-                    sch_status = 0
-                    smart_off_flag = False
-                    smart_off_time = 0
-                break #exit the loop if an active schedule found
             else:
                 sch_status = 0
                 smart_off_flag = False
