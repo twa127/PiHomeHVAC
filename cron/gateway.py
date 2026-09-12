@@ -26,7 +26,7 @@ print("* MySensors Wifi/Ethernet/Serial Gateway Communication *")
 print("* Script to communicate with MySensors Nodes, for more *")
 print("* info please check MySensors API.                     *")
 print("*      Build Date: 18/09/2017                          *")
-print("*      Version 0.52 - Last Modified 09/09/2026         *")
+print("*      Version 0.53 - Last Modified 12/09/2026         *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -2736,8 +2736,8 @@ def on_message(client, userdata, message):
                     if state != val_2:
                         try:
                             cur_mqtt.execute(
-                                "UPDATE `relays` SET `current_val_2` = %s WHERE id = %s;",
-                                [state, r_id],
+                                "UPDATE `relays` SET `current_val_2` = %s, `state` = %s, `restore_state` = %s WHERE id = %s;",
+                                [state, int(state), not int(state), r_id],
                             )
                             con_mqtt.commit()
                         except mdb.Error as e:
