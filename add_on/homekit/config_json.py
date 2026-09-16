@@ -1,3 +1,36 @@
+#!/usr/bin/python3
+class bc:
+    hed = "\033[95m"
+    dtm = "\033[0;36;40m"
+    ENDC = "\033[0m"
+    SUB = "\033[3;30;45m"
+    WARN = "\033[0;31;40m"
+    grn = "\033[0;32;40m"
+    wht = "\033[0;37;40m"
+    ylw = "\033[93m"
+    fail = "\033[91m"
+
+
+print(bc.hed + " ")
+print(r"    __  __                             _         ")
+print(r"   |  \/  |                    /\     (_)        ")
+print(r"   | \  / |   __ _  __  __    /  \     _   _ __  ")
+print(r"   | |\/| |  / _` | \ \/ /   / /\ \   | | | '__| ")
+print(r"   | |  | | | (_| |  >  <   / ____ \  | | | |    ")
+print(r"   |_|  |_|  \__,_| /_/\_\ /_/    \_\ |_| |_|    ")
+print(" ")
+print("        " + bc.SUB + "S M A R T   T H E R M O S T A T " + bc.ENDC)
+print(bc.WARN + " ")
+print("********************************************************")
+print("* MySensors Wifi/Ethernet/Serial Gateway Communication *")
+print("* Script to communicate with MySensors Nodes, for more *")
+print("* info please check MySensors API.                     *")
+print("*      Build Date: 06/02/2022                          *")
+print("*      Version 0.02 - Last Modified 15/09/2026         *")
+print("*                                 Have Fun - PiHome.eu *")
+print("********************************************************")
+print(" " + bc.ENDC)
+
 import json
 import MySQLdb as mdb
 import configparser
@@ -35,7 +68,7 @@ d['https'] = False
 # get zone names from the database
 con = mdb.connect(dbhost, dbuser, dbpass, dbname)
 cur = con.cursor()
-cur.execute("SELECT zone.*, zone_type.category FROM zone, zone_type WHERE (zone.type_id = zone_type.id) AND zone.status = 1 AND zone_type.category <> 2")
+cur.execute("SELECT zone.*, zone_type.category FROM zone, zone_type WHERE (zone.type_id = zone_type.id) AND zone.status = 1;")
 results = cur.fetchall()
 row_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
 cur.close()
@@ -47,18 +80,26 @@ for row in results:
         sub_d = collections.OrderedDict()
         sub_d['id'] = 'switch' + str(row[row_to_index['id']])
         sub_d['name'] = row[row_to_index['name']] + ' Zone'
-        sub_d['on_url'] = 'http://127.0.0.1/api/boostSet?zonename=' + row[row_to_index['name']] + '&state=1'
-        sub_d['on_method'] = 'GET'
-        sub_d['off_url'] = 'http://127.0.0.1/api/boostSet?zonename=' + row[row_to_index['name']] + '&state=0'
-        sub_d['off_method'] = 'GET'
+        # switch type zones
+        if row[row_to_index['category']] == 2:
+            sub_d['on_url'] = 'http://127.0.0.1/api/binarySet?zonename=' + row[row_to_index['name']] + '&state=1'
+            sub_d['on_method'] = 'GET'
+            sub_d['off_url'] = 'http://127.0.0.1/api/binarySet?zonename=' + row[row_to_index['name']] + '&state=0'
+            sub_d['off_method'] = 'GET'
+        # water and heating type zones
+        else:
+            sub_d['on_url'] = 'http://127.0.0.1/api/boostSet?zonename=' + row[row_to_index['name']] + '&state=1'
+            sub_d['on_method'] = 'GET'
+            sub_d['off_url'] = 'http://127.0.0.1/api/boostSet?zonename=' + row[row_to_index['name']] + '&state=0'
+            sub_d['off_method'] = 'GET'
         switches.append(sub_d)
 d['switches'] = switches
 
-# Add outlets for active zone controllers
-# get zone names from the database
+# Add outlets for active stand alone controllers
+# get relay names from the database
 con = mdb.connect(dbhost, dbuser, dbpass, dbname)
 cur = con.cursor()
-cur.execute("SELECT zone.*, zone_type.category FROM zone, zone_type WHERE (zone.type_id = zone_type.id) AND zone.status = 1 AND zone_type.category = 2")
+cur.execute("SELECT * FROM relays WHERE type = 6;")
 results = cur.fetchall()
 row_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
 cur.close()
@@ -66,15 +107,14 @@ con.close()
 
 outlets = []
 for row in results:
-    if row[row_to_index['status']] == 1:
-        sub_d = collections.OrderedDict()
-        sub_d['id'] = 'outlet' + str(row[row_to_index['id']])
-        sub_d['name'] = row[row_to_index['name']] + ' Zone'
-        sub_d['on_url'] = 'http://127.0.0.1/api/binarySet?zonename=' + row[row_to_index['name']] + '&state=1'
-        sub_d['on_method'] = 'GET'
-        sub_d['off_url'] = 'http://127.0.0.1/api/binarySet?zonename=' + row[row_to_index['name']] + '&state=0'
-        sub_d['off_method'] = 'GET'
-        outlets.append(sub_d)
+    sub_d = collections.OrderedDict()
+    sub_d['id'] = 'outlet' + str(row[row_to_index['id']])
+    sub_d['name'] = row[row_to_index['name']] + ' Outlet'
+    sub_d['on_url'] = 'http://127.0.0.1/api/SetRelayState?relayname=' + row[row_to_index['name']] + '&state=1'
+    sub_d['on_method'] = 'GET'
+    sub_d['off_url'] = 'http://127.0.0.1/api/SetRelayState?relayname=' + row[row_to_index['name']] + '&state=0'
+    sub_d['off_method'] = 'GET'
+    outlets.append(sub_d)
 d['outlets'] = outlets
 
 # Add sensors not associated with a zone

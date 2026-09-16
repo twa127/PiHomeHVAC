@@ -23,6 +23,8 @@ print("        " + bc.SUB + "S M A R T   T H E R M O S T A T " + bc.ENDC)
 print(bc.WARN + " ")
 print("********************************************************")
 print("*   Script to update Homebridge Switches and Sensors   *")
+print("*  Required as part of the Linkage to Home Assistant   *")
+print("*  (when using HomeKit ONLY, this code is NOT reqired) *")
 print("*      Build Date: 06/02/2022                          *")
 print("*      Version 0.2 - Last Modified 30/08/2026          *")
 print("*                                 Have Fun - PiHome.eu *")
@@ -69,7 +71,7 @@ try:
         data = json.load(json_file)
 
     while 1:
-        # Process Switches
+        # Process Switches for Zone Boost
         x = data['platforms'][1]['switches']
         for i in x:
             switch_id = i['id']
@@ -107,7 +109,7 @@ try:
                    r = requests.get('http://127.0.0.1:51828/', params=payload)
 #                   print(r.url)
 
-        # Process Outlets
+        # Process Outlets (stand alone relays)
         if 'outlets' in data['platforms'][1]:
             x = data['platforms'][1]['outlets']
             for i in x:
@@ -115,7 +117,7 @@ try:
                 con = mdb.connect(dbhost, dbuser, dbpass, dbname)
                 cursorselect = con.cursor()
                 cursorselect.execute(
-                    "SELECT zone_state FROM zone WHERE id = (%s) LIMIT 1",
+                    "SELECT state FROM relays WHERE id = (%s) AND type = 6 LIMIT 1",
                     (i['id'][6:],),
                 )
                 if cursorselect.rowcount > 0:
@@ -127,19 +129,19 @@ try:
                     outlet = cursorselect.fetchone()
                     cursorselect.close()
                     con.close()
-                    z_state = outlet[outlet_to_index['zone_state']]
-                    if z_state == 1:
-                        zone_state = True
+                    r_state = outlet[outlet_to_index['state']]
+                    if r_state == 1:
+                        relay_state = True
                     else:
-                        zone_state = False
+                        relay_state = False
                     request_url = urllib.request.urlopen('http://127.0.0.1:51828/?accessoryId=' + outlet_id)
                     x = request_url.read()
                     y = x.decode("utf-8")
                     z = json.loads(y)
                     state = z["state"]
-                    if zone_state != state:
+                    if relay_state != state:
 #                       print(zone_state, state)
-                       if z_state == 1:
+                       if r_state == 1:
                            payload = {'accessoryId': outlet_id, 'state': 'true'}
                        else:
                            payload = {'accessoryId': outlet_id, 'state': 'false'}
