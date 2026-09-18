@@ -45,9 +45,11 @@ if(mysqli_num_rows($result) > 0){
                 <td class="all">' . $row['date'] . '</td>
                 <td class="all">' . $row['total_minuts'] . '</td>
                 <td class="all">' . $row['on_minuts'] . '</td>
-                <td class="all">' . $row['save_minuts'] . '</td>
-                <td class="all">'.number_format(($row['save_minuts']/$row['total_minuts'])*100,0).'%</td>
-                </tr>';
+                <td class="all">' . $row['save_minuts'] . '</td>';
+                if ($row['total_minuts'] > 0) {
+                        echo '<td class="all">'.number_format(($row['save_minuts']/$row['total_minuts'])*100,0).'%</td>';
+                }
+                echo '</tr>';
         }
          echo '</tbody></table>';
 }?>
