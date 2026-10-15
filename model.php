@@ -829,6 +829,43 @@ $("#button_relay_log_hide").on("click", function(){
 });
 </script>
 <?php
+
+//Notifications Model
+echo '<div class="modal fade" id="notifications" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['notifications'].'</h5>
+                        </div>
+                        <div class="modal-body">
+                                <p class="text-muted">'.$lang['notifications_text'].'</p>
+                                <table class="table table-bordered">
+                                        <thead>
+                                                <tr>
+                                                        <th class="col-md-4"><small>'.$lang['date_time'].'</small></th>
+                                                        <th class="col-md-7" style="text-align:center;"><small>'.$lang['message'].'</small></th>
+					                <th class="col-1"></th>
+                                                </tr>
+                                        </thead>';
+                                        $query = "SELECT * FROM notice ORDER BY id ASC;";
+                                        $results = $conn->query($query);
+                                        while ($row = mysqli_fetch_assoc($results)) {
+                                                echo '<tr>
+                                                        <td>'.$row["datetime"].'</td>
+                                                        <td>'.$row["message"].'</td>
+							<td><button class="btn warning btn-danger btn-xs" onclick="delete_notification('.$row["id"].');" data-confirm="'.$lang['delete_notification'].'"><span class="bi bi-trash-fill black"></span></button> </a></td>';
+						echo '</tr>';
+					}
+                                echo '</table>
+                        </div>
+                        <div class="modal-footer">';
+                                echo '<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        </div>
+                </div>
+        </div>
+</div>
+<!-- /.modal -->';
 }
 
 if ($model_num == 2) {
@@ -1367,11 +1404,38 @@ echo '
 						</div>
                                         	<p class="text-muted">Install ReWrite for Apache Web Server</p>
 					</div>';
+
+                                        $installpath = "/var/www/add_on/tinytuya/install.sh";
+                                        $installname = "Install tinytuya";
+					$output = shell_exec("pip3 list|grep tinytuya|awk '{print $1}'");
+					if (str_contains($output, 'tinytuya')) {
+						$installed = 1;
+						$prompt = $lang['Already Installed'];
+					} else {
+						$installed = 0;
+						$prompt = 'Install'; }
+                                        echo '<div class="list-group-item">
+                                                <div class="d-flex justify-content-between">
+                                                        <div>
+                                                                <i class="bi bi-terminal-fill green" style="font-size: 2rem;"></i> '.$installname.'
+                                                        </div>
+                                                        <div>';
+								if ($installed == 0) {
+                                                                	echo '<span class="text-muted small"><button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm"
+                                                                	onclick="install_software(`'.$installpath.'`)">'.$prompt.'</button></span>';
+								} else {
+									echo '<span class="text"><p> '.$lang['already_installed'].'</p></span>';
+								}
+                                                        echo '</div>
+                                                </div>
+                                                <p class="text-muted">Install tinytuya for tuya_bridge.py</p>
+                                        </div>';
+
                                         $path = '/var/www/add_on';
                                         $dir = new DirectoryIterator($path);
                                         foreach ($dir as $fileinfo) {
 						$installed = 0;
-                                                if ($fileinfo->isDir() && !$fileinfo->isDot()) {
+                                                if ($fileinfo->isDir() && !$fileinfo->isDot() && strpos($fileinfo->getFilename(), 'tinytuya') === FALSE) {
                                                         $installpath = $path."/".$fileinfo->getFilename()."/install.sh";
                                                         if (file_exists($installpath)) {
                                                                 $contents = file_get_contents($installpath);
@@ -1411,7 +1475,7 @@ echo '
                                                                                 </div>
                                                                                 <div>';
                                                                                         if ($installed == 0) {
-                                                                echo '<span class="text-muted small"><button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm"
+                                                                				echo '<span class="text-muted small"><button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm"
                                                                                                 onclick="install_software(`'.$installpath.'`)">'.$lang['install'].'</button></span>';
                                                                                         } elseif ($installed == 1) {
                                                                                                 echo '<span class="text"><p> '.$lang['already_installed'].'</p></span>';
@@ -5561,11 +5625,14 @@ echo '
 <p class="text-muted"> '.$lang['sensor_type_info'].' </p>';
 
 echo '<table class="table table-bordered">
-    <tr>
-        <th class="col-8"><small>'.$lang['type'].'</small></th>
-         <th class="col-3"><small>'.$lang['units_character'].'</small></th>
-       <th class="col-1"></th>
-    </tr>';
+	<tr>
+        	<th class="col-3"><small>'.$lang['type'].'</small></th>
+                <th class="col-2"><small>'.$lang['decimal_places'].'</small></th>
+                <th class="col-2"><small>'.$lang['operator'].'</small></th>
+                <th class="col-2"><small>'.$lang['factor'].'</small></th>
+         	<th class="col-2"><small>'.$lang['units_character'].'</small></th>
+       		<th class="col-1"></th>
+    	</tr>';
 
 $query = "SELECT * FROM sensor_type where `purge`=0;";
 $results = $conn->query($query);
@@ -5582,6 +5649,9 @@ while ($row = mysqli_fetch_assoc($results)) {
     echo '
         <tr>
             <td>'.$row["type"].'</td>
+            <td>'.$row["decimal_places"].'</td>
+            <td>'.$row["operator"].'</td>
+            <td>'.$row["factor"].'</td>
             <td>'.$row["units"].'</td>
             <td><button class="btn warning btn-danger btn-xs" onclick="delete_sensor_type('.$row["id"].');" data-confirm="'.$content_msg.'"><span class="bi bi-trash-fill black"></span></button> </a></td>
         </tr>';
@@ -5609,6 +5679,21 @@ echo '<p class="text-muted">'.$lang['sensor_type_add_info_text'].'</p>
         <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
         <div class="form-group" class="control-label"><label>'.$lang['sensor_type'].'</label> <small class="text-muted">'.$lang['sensor_type_info'].'</small>
         <input class="form-control" type="text" id="sensor_type" name="sensor_type" value="" placeholder="'.$lang['sensor_type'].'">
+        <div class="help-block with-errors"></div></div>
+        <div class="form-group" class="control-label"><label>'.$lang['decimal_places'].'</label> <small class="text-muted">'.$lang['decimal_places_info'].'</small>
+        <input class="form-control" type="text" id="decimal_places" name="decimal_places" value="0" placeholder="'.$lang['decimal_places'].'">
+        <div class="help-block with-errors"></div></div>
+        <div class="form-group" class="control-label"><label>'.$lang['operator'].'</label> <small class="text-muted">'.$lang['operator_info'].'</small>
+                <select <input class="form-select" type="text" id="operator" name="operator" value="None" placeholder="None">
+                        <option selected value="None">None</option>
+                        <option value="+">+</option>
+                        <option value="-">-</option>
+                        <option value="*">*</option>
+                        <option value="/">/</option>
+                </select>
+        <div class="help-block with-errors"></div></div>
+        <div class="form-group" class="control-label"><label>'.$lang['factor'].'</label> <small class="text-muted">'.$lang['factor_info'].'</small>
+        <input class="form-control" type="text" id="factor" name="factor" value="0" placeholder="'.$lang['factor'].'">
         <div class="help-block with-errors"></div></div>
         <div class="form-group" class="control-label"><label>'.$lang['units_character'].'</label> <small class="text-muted">'.$lang['units_character_info'].'</small>
         <input class="form-control" type="text" id="sensor_units" name="sensor_units" value="" placeholder="'.$lang['sensor_units'].'">

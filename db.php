@@ -796,8 +796,16 @@ if($what=="sensor_type"){
         if($opp=="add"){
                 $sensor_type = $_GET['sensor_type'];
                 $sensor_units = $_GET['sensor_units'];
+                $decimal_places = $_GET['decimal_places'];
+                $operator = $_GET['operator'];
+                $factor = $_GET['factor'];
+                $query = "SELECT MAX(id) AS max_id FROM sensor_type";
+                $result = $conn->query($query);
+                $row = mysqli_fetch_assoc($result);
+                $next_id= $row['max_id'] + 1;
                 //Add record to sensor_type table
-                $query = "INSERT INTO `sensor_type`(`sync`, `purge`, `type`, `units`) VALUES ('0', '0', '{$sensor_type}', '{$sensor_units}')";
+                $query = "INSERT INTO `sensor_type`(`id`, `sync`, `purge`, `type`, `decimal_places`, `operator`, `factor`, `units`)
+			VALUES ('{$next_id}', '0', '0', '{$sensor_type}', '{$decimal_places}', '{$operator}', '{$factor}', '{$sensor_units}')";
                 if($conn->query($query)){
                         header('Content-type: application/json');
                         echo json_encode(array('Success'=>'Success','Query'=>$query));
@@ -2857,6 +2865,24 @@ if($what=="set_summer_dates"){
                 header('Content-type: application/json');
                 echo json_encode(array('Message'=>'Database query failed.\r\nQuery=' . $query));
                 return;
+        }
+}
+
+//Notifications
+if($what=="notifications"){
+        if($opp=="delete"){
+                //Delete from notice
+                $query = "DELETE FROM notice WHERE id = '".$wid."';";
+                $conn->query($query);
+                if($conn->query($query)){
+                        header('Content-type: application/json');
+                        echo json_encode(array('Success'=>'Success','Query'=>$query));
+                        return;
+                }else{
+                        header('Content-type: application/json');
+                        echo json_encode(array('Message'=>'Database query failed.\r\nQuery=' . $query));
+                        return;
+                }
         }
 }
 ?>

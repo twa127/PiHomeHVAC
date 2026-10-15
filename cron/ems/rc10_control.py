@@ -70,6 +70,7 @@ last_ems_write_error = ''
 run_22 = 0
 current_state_time = time.time()
 previous_state_time = '(NO Data)'
+minute_timer_dict = {}
 
 # Logging exceptions to log file
 logfile = "/var/www/logs/main.log"
@@ -122,7 +123,7 @@ def update_maxair_sensor_state (conn, node_id, sensor_id, val_2) :
     if val_2 != current_val_2 :
         # update 'current_val_2'
         try :
-            query = ("UPDATE `sensors` SET `current_val_2` = " + str(val_2) + " WHERE `id` = " + str(sensor_id) + ";")
+            query = "UPDATE `sensors` SET `current_val_2` = " + str(val_2) + " `last_seen` = CURRENT_TIMESTAMP() WHERE `id` = " + str(sensor_id) + ";"
             cnx.execute(query)
             conn.commit()
         except mdb.Error as e:
@@ -139,6 +140,8 @@ def update_maxair_sensor_state (conn, node_id, sensor_id, val_2) :
 
 # Update MaxAir Database Sensors
 def update_maxair_sensors (conn, node_id, sensor_id, val_1, val_2, msg_in, msg_in_val) :
+    global minute_timer_dict
+
     cnx = conn.cursor()
     # get 'current_val_1
     cnx.execute("SELECT * FROM `sensors` WHERE `id` = (%s) LIMIT 1;",
@@ -154,10 +157,19 @@ def update_maxair_sensors (conn, node_id, sensor_id, val_1, val_2, msg_in, msg_i
     graph_num = int(result[sensor_to_index["graph_num"]])
     timeout = int(result[sensor_to_index["timeout"]])
     resolution = int(result[sensor_to_index["resolution"]])
-    if val_1 != current_val_1 or val_2 != current_val_2 :
+
+    # update is required after a 1 minute timeout
+    if time.time() - minute_timer_dict[sensor_id] >= 60:
+        timeout_flag = True
+    else:
+        timeout_flag = False
+
+    # update on data change or timeout
+    if val_1 != current_val_1 or val_2 != current_val_2 or timeout_flag:
+        minute_timer_dict[sensor_id] = time.time() # reset the 1 minute timer on change
+        query = "UPDATE `sensors` SET `current_val_1` = " + str(val_1) + ", `current_val_2` = " + str(val_2) + ", `last_seen` = CURRENT_TIMESTAMP() WHERE `id` = " + str(sensor_id) + ";"
         # update 'current_val_1' and 'current_val_2'
         try :
-            query = ("UPDATE `sensors` SET `current_val_1` = " + str(val_1) + ", `current_val_2` = " + str(val_2) + " WHERE `id` = " + str(sensor_id) + ";")
             cnx.execute(query)
             conn.commit()
         except mdb.Error as e:
@@ -399,6 +411,7 @@ if cur.rowcount > 0 :
         )
         boiler_flow_node_id = int(result[node_to_index["node_id"]])
         boiler_flow_sensor = True
+        minute_timer_dict[boiler_flow_id] = time.time()
 
 # check if a 'Boiler Target' sensor exists in the database
 boiler_target_sensor = False
@@ -422,6 +435,7 @@ if cur.rowcount > 0 :
         )
         boiler_target_node_id = int(result[node_to_index["node_id"]])
         boiler_target_sensor = True
+        minute_timer_dict[boiler_target_id] = time.time()
 
 # check if a 'Water Flow' sensor exists in the database
 water_flow_sensor = False
@@ -445,6 +459,7 @@ if cur.rowcount > 0 :
         )
         water_flow_node_id = int(result[node_to_index["node_id"]])
         water_flow_sensor = True
+        minute_timer_dict[water_flow_id] = time.time()
 
 # check if a 'Water Target' sensor exists in the database
 water_target_sensor = False
@@ -468,6 +483,7 @@ if cur.rowcount > 0 :
         )
         water_target_node_id = int(result[node_to_index["node_id"]])
         water_target_sensor = True
+        minute_timer_dict[water_target_id] = time.time()
 
 # check if a 'Burner Power' sensor exists in the database
 burner_power_sensor = False
@@ -491,6 +507,7 @@ if cur.rowcount > 0 :
         )
         burner_power_node_id = int(result[node_to_index["node_id"]])
         burner_power_sensor = True
+        minute_timer_dict[burner_power_id] = time.time()
 
 # check if a 'Regulation' sensor exists in the database
 regulation_sensor = False
@@ -514,6 +531,7 @@ if cur.rowcount > 0 :
         )
         regulation_node_id = int(result[node_to_index["node_id"]])
         regulation_sensor = True
+        minute_timer_dict[regulation_id] = time.time()
 
 
 # Find the node and child ids for the dummy relays used to pass data back to the MaxAir database
@@ -564,6 +582,7 @@ if cur.rowcount > 0 :
         )
         rc10_node_id = int(result[node_to_index["node_id"]])
         rc10_sensor = True
+        minute_timer_dict[rc10_id] = time.time()
 
 # =================================== MAIN BOILER PROCESS ==================================
 print(bc.dtm + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + bc.ENDC + " - EMS BUS Control Started")

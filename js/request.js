@@ -548,6 +548,9 @@ var idata="w=zone_type&o=delete&wid="+wid;
 function add_sensor_type(){
 var idata="w=sensor_type&o=add&sensor_type="+document.getElementById("sensor_type").value;
     idata+="&sensor_units="+document.getElementById("sensor_units").value;
+    idata+="&decimal_places="+document.getElementById("decimal_places").value;
+    idata+="&operator="+document.getElementById("operator").value;
+    idata+="&factor="+document.getElementById("factor").value;
     idata+="&wid=0";
     $.get('db.php',idata)
     .done(function(odata){
@@ -1922,3 +1925,20 @@ function set_summer_start_end(){
     });
 }
 
+//Delete Notification
+function delete_notification(wid){
+var idata="w=notifications&o=delete&wid="+wid;
+    $.get('db.php',idata)
+    .done(function(odata){
+        if(odata.Success)
+            window.location="settings.php?s_id=1"
+        else
+            console.log(odata.Message);
+    })
+    .fail(function( jqXHR, textStatus, errorThrown ){
+        if(jqXHR==401 || jqXHR==403) return;
+        console.log("delete_notification: Error.\r\n\r\njqXHR: "+jqXHR+"\r\n\r\ntextStatus: "+textStatus+"\r\n\r\nerrorThrown:"+errorThrown);
+    })
+    .always(function() {
+    });
+}

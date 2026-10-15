@@ -60,22 +60,30 @@ function GetModal_Sensor_Graph($conn)
 	if ($version[0] >= 8){
 		if (str_starts_with($pieces[1], 'zavg_')) {
 			$z_id = substr($pieces[1],5);
-			$query = "SELECT `sensor_type_id`, z.name 
+			$query = "SELECT `sensor_type_id`, z.name, `st`.`type`, `st`.`units`
 				FROM `sensors`
 				JOIN zone z ON zone_id = z.id
+				JOIN `sensor_type` st ON `st`.`id` = `sensors`.`sensor_type_id`
 				WHERE z.id = {$z_id}
 				LIMIT 1;";
 	                $result = $conn->query($query);
         	        $row = mysqli_fetch_assoc($result);
                 	$name = $row['name']." Average";
+                        $type = $row['type'];
+                        $units = $row['units'];
 	                $nodes_id = $pieces[1];
         	        $child_id = 0;
                 	$type_id = $row['sensor_type_id'];
 		} else {
-		        $query="SELECT * FROM sensors WHERE id = {$pieces[1]} LIMIT 1;";
+                        $query = "SELECT `name`, `sensor_id`, `sensor_child_id`, `sensor_type_id`, `st`.`type`, `st`.`units`
+                                FROM `sensors`
+                                JOIN `sensor_type` st ON `st`.`id` = `sensors`.`sensor_type_id`
+                                WHERE `sensors`.`id` = {$pieces[1]} LIMIT 1;";
         		$result = $conn->query($query);
 		        $row = mysqli_fetch_assoc($result);
 			$name = $row['name'];
+                        $type = $row['type'];
+                        $units = $row['units'];
                 	$query="SELECT node_id FROM nodes WHERE id = {$row['sensor_id']} LIMIT 1;";
 	                $nresult = $conn->query($query);
         	        $nrow = mysqli_fetch_assoc($nresult);
@@ -86,22 +94,30 @@ function GetModal_Sensor_Graph($conn)
 	} else {
                 if (strpos($pieces[1], "zavg_") !== false) {
                         $z_id = substr($pieces[1],5);
-                        $query = "SELECT `sensor_type_id`, z.name
+                        $query = "SELECT `sensor_type_id`, z.name, `st`.`type`, `st`.`units`
                                 FROM `sensors`
                                 JOIN zone z ON zone_id = z.id
+                                JOIN `sensor_type` st ON `st`.`id` = `sensors`.`sensor_type_id`
                                 WHERE z.id = {$z_id}
                                 LIMIT 1;";
                         $result = $conn->query($query);
                         $row = mysqli_fetch_assoc($result);
                         $name = $row['name']." Average";
+                        $type = $row['type'];
+                        $units = $row['units'];
                         $nodes_id = $pieces[1];
                         $child_id = 0;
                         $type_id = $row['sensor_type_id'];
                 } else {
-                        $query="SELECT * FROM sensors WHERE id = {$pieces[1]} LIMIT 1;";
+                        $query = "SELECT `name`, `sensor_id`, `sensor_child_id`, `sensor_type_id`, `st`.`type`, `st`.`units`
+                                FROM `sensors`
+                                JOIN `sensor_type` st ON `st`.`id` = `sensors`.`sensor_type_id`
+                                WHERE `sensors`.`id` = {$pieces[1]} LIMIT 1;";
                         $result = $conn->query($query);
                         $row = mysqli_fetch_assoc($result);
                         $name = $row['name'];
+                        $type = $row['type'];
+                        $units = $row['units'];
                         $query="SELECT node_id FROM nodes WHERE id = {$row['sensor_id']} LIMIT 1;";
                         $nresult = $conn->query($query);
                         $nrow = mysqli_fetch_assoc($nresult);
@@ -110,16 +126,7 @@ function GetModal_Sensor_Graph($conn)
                         $type_id = $row['sensor_type_id'];
                 }
 	}
-	if ($type_id == 1) {
-                $title = $lang['temperature'];
-        } elseif ($type_id == 2) {
-                $title = $lang['humidity'];
-        } elseif ($type_id == 5) {
-                $title = $lang['pressure'];
-        } elseif ($type_id == 7) {
-                $title = $lang['gas'];
-        }
-        $title = $title.' '.$lang['graph'].' - '.$name;
+        $title = $type.' '.$lang['graph'].' - '.$name;
         if ($pieces[2] == 0) {
                 $query="SELECT * from messages_in_view_24h  where node_id = '{$nodes_id}' AND child_id = {$child_id} ORDER BY id ASC;";
                 $ajax_modal = "ajax.php?Ajax=GetModal_Sensor_Graph,".$pieces[1].",1";
@@ -149,17 +156,7 @@ function GetModal_Sensor_Graph($conn)
         <script type="text/javascript" src="js/plugins/plotly/d3.min.js"></script>
 	<script>
 
-        <?php if($type_id == 1) { ?>
-                var ytitle = 'Temperature';
-        <?php } elseif ($type_id == 2) { ?>
-                var ytitle = 'Humidity';
-        <?php } elseif ($type_id == 5) { ?>
-                var ytitle = 'Pressure';
-        <?php } elseif ($type_id == 7) { ?>
-                var ytitle = 'Gas';
-        <?php } else { ?>
-                var ytitle = '';
-        <?php } ?>
+	var ytitle = <?php echo json_encode($type); ?> + " " + <?php echo json_encode($units); ?>;
         var xValues = [...<?php echo $js_array_x ?>];
         var yValues = [...<?php echo $js_array_y ?>];
 

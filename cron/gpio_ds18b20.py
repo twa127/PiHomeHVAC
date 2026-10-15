@@ -5,6 +5,7 @@ import configparser
 from datetime import datetime
 import math
 import subprocess
+import traceback
 
 class bc:
     hed = "\033[0;36;40m"
@@ -29,7 +30,7 @@ print("***********************************************************")
 print("*   PiHome DS18B20 Temperature Sensors Data to MySQL DB   *")
 print("* Use this script if you have DS18B20 Temperature sensors *")
 print("* Connected directly on Raspberry Pi GPIO.                *")
-print("*                                  Build Date: 24/03/2026 *")
+print("*                                  Build Date: 10/10/2026 *")
 print("*                                    Have Fun - PiHome.eu *")
 print("***********************************************************")
 print(" " + bc.ENDC)
@@ -88,7 +89,8 @@ def insertDB(IDs, temperature):
         cur = con.cursor()
         for i in range(0, len(temperature)):
             # Check if Sensors Already Exit in Nodes Table, if no then add Sensors into Nodes Table otherwise just update Temperature Readings.
-            cur.execute("SELECT COUNT(*) FROM `nodes` where node_id = (%s)", [IDs[i]])
+            qry_str = "SELECT COUNT(*) FROM `nodes` where node_id = '{}';".format(IDs[i])
+            cur.execute(qry_str)
             row = cur.fetchone()
             row = int(row[0])
             if row == 0:
@@ -101,31 +103,45 @@ def insertDB(IDs, temperature):
                     IDs[i],
                     bc.ENDC,
                 )
-                cur.execute(
-                    "INSERT INTO nodes(`sync`, `purge`, `type`, `node_id`, `max_child_id`, `sub_type`, `name`, `last_seen`, `notice_interval`, `min_value`, `status`, `ms_version`, `sketch_version`, `repeater`) VALUES( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                    (
-                        0,
-                        0,
-                        "GPIOSensor",
-                        IDs[i],
-                        "0",
-                        "0",
-                        "Temperature Sensor",
-                        time.strftime("%Y-%m-%d %H:%M:%S"),
-                        0,
-                        0,
-                        "Active",
-                        0,
-                        0,
-                        0,
-                    ),
-                )
-                con.commit()
+                try:
+                    cur.execute(
+                        """INSERT INTO nodes(`sync`, `purge`, `type`, `node_id`, `max_child_id`, `sub_type`, `name`, `last_seen`, `notice_interval`, `min_value`, `status`,
+                           `ms_version`, `sketch_version`, `repeater`)
+                           VALUES( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                        (
+                            0,
+                            0,
+                            "GPIOSensor",
+                            IDs[i],
+                            "0",
+                            "0",
+                            "Temperature Sensor",
+                            time.strftime("%Y-%m-%d %H:%M:%S"),
+                            0,
+                            0,
+                            "Active",
+                            0,
+                            0,
+                            0,
+                        ),
+                    )
+                    con.commit()
+                except mdb.Error as e:
+                    if e.args[0] == 1020:
+                        pass
+                    else:
+                        print("DB Error %d: %s" % (e.args[0], e.args[1]))
+                        print(traceback.format_exc())
+                        logging.error(e)
+                        logging.info(traceback.format_exc())
+                        conn.close()
+                        print(infomsg)
+                        sys.exit(1)
             # Check if this sensor has a correction factor
-            cur.execute(
-                "SELECT sensors.sensor_id, sensors.mode, sensors.timeout, sensors.correction_factor, sensors.resolution FROM sensors, `nodes` WHERE (sensors.sensor_id = nodes.`id`) AND  nodes.node_id = (%s) LIMIT 1;",
-                [IDs[i]],
-            )
+            qry_str ="""SELECT sensors.sensor_id, sensors.mode, sensors.timeout, sensors.correction_factor, sensors.resolution
+                        FROM sensors, `nodes`
+                        WHERE (sensors.sensor_id = nodes.`id`) AND  nodes.node_id = '{}' LIMIT 1;""".format(IDs[i])
+            cur.execute(qry_str)
             results = cur.fetchone()
             if cur.rowcount > 0:
                 sensor_to_index = dict(
@@ -135,10 +151,21 @@ def insertDB(IDs, temperature):
                 temp = temperature[i] + correction_factor
                 # If DS18B20 Sensor record exist: Update Nodes Table with Last seen status.
                 if row == 1:
-                    cur.execute(
-                        "UPDATE `nodes` SET `last_seen`=%s WHERE node_id = %s", [time.strftime("%Y-%m-%d %H:%M:%S"), IDs[i]]
-                    )
-                    con.commit()
+                    try:
+                        qry_str = "UPDATE `nodes` SET `last_seen`= '{}' WHERE node_id = '{}';".format(time.strftime("%Y-%m-%d %H:%M:%S"), IDs[i])
+                        cur.execute(qry_str)
+                        con.commit()
+                    except mdb.Error as e:
+                        if e.args[0] == 1020:
+                            pass
+                        else:
+                            print("DB Error %d: %s" % (e.args[0], e.args[1]))
+                            print(traceback.format_exc())
+                            logging.error(e)
+                            logging.info(traceback.format_exc())
+                            conn.close()
+                            print(infomsg)
+                            sys.exit(1)
                 print(
                     bc.dtm + time.ctime() + bc.ENDC + " - Sensors ID" + bc.grn,
                     IDs[i],
@@ -156,30 +183,52 @@ def insertDB(IDs, temperature):
                 last_message_payload = 0
                 resolution = float(results[sensor_to_index["resolution"]])
                 # Update last reading for this sensor
-                cur.execute(
-                    "UPDATE `sensors` SET `current_val_1` = %s, `last_seen` = %s WHERE sensor_id = %s AND sensor_child_id = 0",
-                    [payload, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), sensor_id],
-                )
-                con.commit()
+                try:
+                    cur.execute(
+                        "UPDATE `sensors` SET `current_val_1` = %s, `last_seen` = %s WHERE sensor_id = %s AND sensor_child_id = 0",
+                        [payload, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), sensor_id],
+                    )
+                    con.commit()
+                except mdb.Error as e:
+                    if e.args[0] == 1020:
+                        pass
+                    else:
+                        print("DB Error %d: %s" % (e.args[0], e.args[1]))
+                        print(traceback.format_exc())
+                        logging.error(e)
+                        logging.info(traceback.format_exc())
+                        conn.close()
+                        print(infomsg)
+                        sys.exit(1)
 
                 #update the gateway_logs entry
                 if time.time() - hour_timer <= 60*60:
                     gpio_recv += 1
-                    cur.execute(
-                        "UPDATE gateway_logs SET gpio_recv = %s ORDER BY id DESC LIMIT 1;",
-                        (gpio_recv, ),
-                    )
-                    con.commit()
+                    try:
+                        cur.execute(
+                            "UPDATE gateway_logs SET gpio_recv = %s ORDER BY id DESC LIMIT 1;",
+                            (gpio_recv, ),
+                        )
+                        con.commit()
+                    except mdb.Error as e:
+                        if e.args[0] == 1020:
+                            pass
+                        else:
+                            print("DB Error %d: %s" % (e.args[0], e.args[1]))
+                            print(traceback.format_exc())
+                            logging.error(e)
+                            logging.info(traceback.format_exc())
+                            conn.close()
+                            print(infomsg)
+                            sys.exit(1)
                 else:
                     gpio_recv = 0
                     hour_timer = time.time()
 
                 if mode == 1:
                     # Get previous data for this sensorr
-                    cur.execute(
-                        'SELECT datetime, payload FROM messages_in WHERE node_id = %s AND child_id = %s ORDER BY id DESC LIMIT 1;',
-                        (IDs[i], 0),
-                    )
+                    qry_str = "SELECT datetime, payload FROM messages_in WHERE node_id = '{}' AND child_id = {} ORDER BY id DESC LIMIT 1;".format(IDs[i], 0)
+                    cur.execute(qry_str)
                     results = cur.fetchone()
                     if cur.rowcount > 0:
                         message_to_index = dict(
@@ -191,25 +240,37 @@ def insertDB(IDs, temperature):
                 if mode == 0 or (cur.rowcount == 0 or (cur.rowcount > 0 and ((payload < last_message_payload - resolution or payload > last_message_payload + resolution) or tdelta > sensor_timeout))):
                     if tdelta > sensor_timeout:
                         payload = last_message_payload
-                    cur.execute(
-                        "INSERT INTO messages_in(`sync`, `purge`, `node_id`, `child_id`, `sub_type`, `payload`, `datetime`) VALUES(%s,%s,%s,%s,%s,%s,%s)",
-                        (
-                            0,
-                            0,
-                            IDs[i],
-                            0,
-                            0,
-                            payload,
-                            time.strftime("%Y-%m-%d %H:%M:%S"),
-                        ),
-                    )
-                    con.commit()
+                    try:
+                        cur.execute(
+                            "INSERT INTO messages_in(`sync`, `purge`, `node_id`, `child_id`, `sub_type`, `payload`, `datetime`) VALUES(%s,%s,%s,%s,%s,%s,%s)",
+                            (
+                                0,
+                                0,
+                                IDs[i],
+                                0,
+                                0,
+                                payload,
+                                time.strftime("%Y-%m-%d %H:%M:%S"),
+                            ),
+                        )
+                        con.commit()
+                    except mdb.Error as e:
+                        if e.args[0] == 1020:
+                            pass
+                        else:
+                            print("DB Error %d: %s" % (e.args[0], e.args[1]))
+                            print(traceback.format_exc())
+                            logging.error(e)
+                            logging.info(traceback.format_exc())
+                            conn.close()
+                            print(infomsg)
+                            sys.exit(1)
                     # Check is sensor is attached to a zone which is being graphed
                     # cur.execute('SELECT * FROM `zone_view` where sensors_id = (%s) LIMIT 1;', [IDs[i]])
-                    cur.execute(
-                        "SELECT sensors.id, sensors.zone_id, nodes.node_id, sensors.sensor_child_id, sensors.name, sensors.graph_num FROM sensors, `nodes` WHERE (sensors.sensor_id = nodes.`id`) AND  nodes.node_id = (%s) AND sensors.graph_num > 0 LIMIT 1;",
-                        [IDs[i]],
-                    )
+                    qry_str = """SELECT sensors.id, sensors.zone_id, nodes.node_id, sensors.sensor_child_id, sensors.name, sensors.graph_num
+                                 FROM sensors, `nodes`
+                                 WHERE (sensors.sensor_id = nodes.`id`) AND  nodes.node_id = '{}' AND sensors.graph_num > 0 LIMIT 1;""".format(IDs[i])
+                    cur.execute(qry_str)
                     results = cur.fetchone()
                     if cur.rowcount > 0:
                         sensor_to_index = dict((d[0], i) for i, d in enumerate(cur.description))
@@ -232,23 +293,36 @@ def insertDB(IDs, temperature):
                             if zone_id == 0:
                                 category = 0
                                 type = "Sensor"
-                                cur.execute(
-                                    "INSERT INTO sensor_graphs(`sync`, `purge`, `zone_id`, `name`, `type`, `category`, `node_id`,`child_id`, `sub_type`, `payload`, `datetime`) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                                    (
-                                        0,
-                                        0,
-                                        sensor_id,
-                                        sensor_name,
-                                        type,
-                                        category,
-                                        IDs[i],
-                                        0,
-                                        0,
-                                        payload,
-                                        time.strftime("%Y-%m-%d %H:%M:%S"),
-                                    ),
-                                )
-                                con.commit()
+                                try:
+                                    cur.execute(
+                                        """INSERT INTO sensor_graphs(`sync`, `purge`, `zone_id`, `name`, `type`, `category`, `node_id`,`child_id`, `sub_type`, `payload`, `datetime`)
+                                           VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                                        (
+                                            0,
+                                            0,
+                                            sensor_id,
+                                            sensor_name,
+                                            type,
+                                            category,
+                                            IDs[i],
+                                            0,
+                                            0,
+                                            payload,
+                                            time.strftime("%Y-%m-%d %H:%M:%S"),
+                                        ),
+                                    )
+                                    con.commit()
+                                except mdb.Error as e:
+                                    if e.args[0] == 1020:
+                                        pass
+                                    else:
+                                        print("DB Error %d: %s" % (e.args[0], e.args[1]))
+                                        print(traceback.format_exc())
+                                        logging.error(e)
+                                        logging.info(traceback.format_exc())
+                                        conn.close()
+                                        print(infomsg)
+                                        sys.exit(1)
                             else:
                                 cur.execute(
                                     "SELECT * FROM `zone_view` where id = (%s) LIMIT 1;",
@@ -263,31 +337,56 @@ def insertDB(IDs, temperature):
                                     type = results[zone_view_to_index["type"]]
                                     category = int(results[zone_view_to_index["category"]])
                                     if category != 2:
-                                        cur.execute(
-                                            "INSERT INTO sensor_graphs(`sync`, `purge`, `zone_id`, `name`, `type`, `category`, `node_id`,`child_id`, `sub_type`, `payload`, `datetime`) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                                            (
-                                                0,
-                                                0,
-                                                sensor_id,
-                                                zone_name,
-                                                type,
-                                                category,
-                                                IDs[i],
-                                                0,
-                                                0,
-                                                payload,
-                                                time.strftime("%Y-%m-%d %H:%M:%S"),
-                                            ),
-                                        )
-                                        con.commit()
-                            cur.execute(
-                                "DELETE FROM sensor_graphs WHERE node_id = (%s) AND datetime < CURRENT_TIMESTAMP - INTERVAL 24 HOUR;",
-                                [IDs[i]],
-                            )
-                            con.commit()
+                                        try:
+                                            cur.execute(
+                                                """INSERT INTO sensor_graphs(`sync`, `purge`, `zone_id`, `name`, `type`, `category`, `node_id`,`child_id`, `sub_type`, `payload`,`datetime`)
+                                                   VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                                                (
+                                                    0,
+                                                    0,
+                                                    sensor_id,
+                                                    zone_name,
+                                                    type,
+                                                    category,
+                                                    IDs[i],
+                                                    0,
+                                                    0,
+                                                    payload,
+                                                    time.strftime("%Y-%m-%d %H:%M:%S"),
+                                                ),
+                                            )
+                                            con.commit()
+                                        except mdb.Error as e:
+                                            if e.args[0] == 1020:
+                                                pass
+                                            else:
+                                                print("DB Error %d: %s" % (e.args[0], e.args[1]))
+                                                print(traceback.format_exc())
+                                                logging.error(e)
+                                                logging.info(traceback.format_exc())
+                                                conn.close()
+                                                print(infomsg)
+                                                sys.exit(1)
+                            try:
+                                qry_str = "DELETE FROM sensor_graphs WHERE node_id = '{}' AND datetime < CURRENT_TIMESTAMP - INTERVAL 24 HOUR;".format(IDs[i])
+                                cur.execute(qry_str)
+                                con.commit()
+                            except mdb.Error as e:
+                                if e.args[0] == 1020:
+                                    pass
+                                else:
+                                    print("DB Error %d: %s" % (e.args[0], e.args[1]))
+                                    print(traceback.format_exc())
+                                    logging.error(e)
+                                    logging.info(traceback.format_exc())
+                                    conn.close()
+                                    print(infomsg)
+                                    sys.exit(1)
         con.close()
     except mdb.Error as e:
+        print(traceback.format_exc())
         logger.error(e)
+        logging.info(traceback.format_exc())
         print(bc.dtm + time.ctime() + bc.ENDC + " - DB Connection Closed: %s" % e)
 
     if os.path.exists("/tmp/gpio_ds18b20_running"):

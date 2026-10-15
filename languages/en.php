@@ -1182,6 +1182,18 @@ $lang['run_db_cleanup_at'] = "Execute Cleanup At:";
 $lang['setup_database_cleanup'] = "Database Clean-up";
 $lang['no_battery'] = "No Battery";
 $lang['mqtt_disconnect_24_hour'] = "MQTT Disconnects in Last 24 Hours";
+$lang['decimal_places'] = "Decimal Places";
+$lang['decimal_places_info'] = "set the number of decimal places in the displayed value.";
+$lang['operator'] = "Operator";
+$lang['operator_info'] = "mathematical operation to be performed on value, either /, *, + or -";
+$lang['factor'] = "Factor";
+$lang['factor_info'] = "value to be applied using the decalared operator.";
+$lang['database_cleanup'] = "Periodic Cleanup of Database Tables";
+$lang['notifications'] = "Notifications";
+$lang['notifications_text'] = "List of Warning Notifications which have not been cleared.";
+$lang['date_time'] = "Date/Time";
+$lang['setup_guide_tuya_bridge'] = "Setup Guide Tuya WiFi Switches";
+$lang['delete_notification'] = "Delete Notification";
 
 if (file_exists(__DIR__.'/lo.php')) { require_once(__DIR__.'/lo.php'); }
 ?>

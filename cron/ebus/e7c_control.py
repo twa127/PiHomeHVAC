@@ -27,7 +27,7 @@ print("********************************************************")
 print("*          EBus Set FlowTempDesired  Script            *")
 print("*                                                      *")
 print("*               Build Date: 24/04/2023                 *")
-print("*       Version 0.06 - Last Modified 08/08/2026        *")
+print("*       Version 0.07 - Last Modified 12/10/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -88,6 +88,7 @@ errorhistory_error = False
 boiler_errors = ""
 boiler_state = 0
 boiler_state_prev = 0
+minute_timer_dict = {}
 
 # Logging exceptions to log file
 logfile = "/var/www/logs/main.log"
@@ -158,7 +159,15 @@ def update_maxair (conn, node_id, sensor_id, val_1, val_2, msg_in, msg_in_val) :
     graph_num = int(result[sensor_to_index["graph_num"]])
     timeout = int(result[sensor_to_index["timeout"]])
     resolution = int(result[sensor_to_index["resolution"]])
-    if val_1 != current_val_1 or val_2 != current_val_2 :
+
+    # update is required after a 1 minute timeout
+    if time.time() - minute_timer_dict[sensor_id] >= 60:
+        timeout_flag = True
+    else:
+        timeout_flag = False
+
+    if val_1 != current_val_1 or val_2 != current_val_2 or timeout_flag:
+        minute_timer_dict[sensor_id] = time.time() # reset the 1 minute timer on change
         # update message_in table if flag is set
         if msg_in :
             try :
@@ -175,7 +184,7 @@ def update_maxair (conn, node_id, sensor_id, val_1, val_2, msg_in, msg_in_val) :
                 sys.exit(1)
         # update 'current_val_1' and 'current_val_2'
         try :
-            query = ("UPDATE `sensors` SET `current_val_1` = " + str(val_1) + ", `current_val_2` = " + str(val_2) + " WHERE `id` = " + str(sensor_id) + ";")
+            query = "UPDATE `sensors` SET `current_val_1` = " + str(val_1) + ", `current_val_2` = " + str(val_2) + ", `last_seen` = CURRENT_TIMESTAMP() WHERE `id` = " + str(sensor_id) + ";"
             cnx.execute(query)
             conn.commit()
         except mdb.Error as e:
@@ -302,6 +311,7 @@ if cur.rowcount > 0 :
         )
         state_node_id = int(result[node_to_index["node_id"]])
         state_sensor = True
+        minute_timer_dict[state_id] = time.time()
 
 # check if a 'Boiler Status' sensor exists in the database
 status_sensor = False
@@ -325,6 +335,7 @@ if cur.rowcount > 0 :
         )
         status_node_id = int(result[node_to_index["node_id"]])
         status_sensor = True
+        minute_timer_dict[status_id] = time.time()
 
 # check if a 'Boiler Flow' sensor exists in the database
 flow_sensor = False
@@ -348,6 +359,7 @@ if cur.rowcount > 0 :
         )
         flow_node_id = int(result[node_to_index["node_id"]])
         flow_sensor = True
+        minute_timer_dict[flow_id] = time.time()
 
 # check if a 'Boiler Return' sensor exists in the database
 return_sensor = False
@@ -371,6 +383,7 @@ if cur.rowcount > 0 :
         )
         return_node_id = int(result[node_to_index["node_id"]])
         return_sensor = True
+        minute_timer_dict[return_id] = time.time()
 
 # check if a 'Boiler Target' sensor exists in the database
 target_sensor = False
@@ -394,6 +407,7 @@ if cur.rowcount > 0 :
         )
         target_node_id = int(result[node_to_index["node_id"]])
         target_sensor = True
+        minute_timer_dict[target_id] = time.time()
 
 # check if a 'Regulation' sensor exists in the database
 regulation_sensor = False
@@ -417,6 +431,8 @@ if cur.rowcount > 0 :
         )
         regulation_node_id = int(result[node_to_index["node_id"]])
         regulation_sensor = True
+        minute_timer_dict[regulation_id] = time.time()
+
 cur.close()
 con.close()
 

@@ -251,10 +251,17 @@ if ($type <= 4 || $type == 38) {
 	//process standalone sensors
 	//---------------------------
 
-        $query = "SELECT sensors.id, sensors.name, sensors.sensor_child_id, sensors.sensor_type_id, sensors.current_val_1, sensors.current_val_2,
-        	nodes.node_id, nodes.last_seen, nodes.notice_interval
-                FROM sensors, nodes
-                WHERE sensors.id = {$id} AND nodes.id = sensors.sensor_id AND (sensors.id NOT IN (SELECT zone_sensor_id FROM zone_sensors)) AND sensors.show_it = 1 LIMIT 1;";
+//        $query = "SELECT sensors.id, sensors.name, sensors.sensor_child_id, sensors.sensor_type_id, sensors.current_val_1, sensors.current_val_2,
+//        	nodes.node_id, nodes.last_seen, nodes.notice_interval
+//                FROM sensors, nodes
+//                WHERE sensors.id = {$id} AND nodes.id = sensors.sensor_id AND (sensors.id NOT IN (SELECT zone_sensor_id FROM zone_sensors)) AND sensors.show_it = 1 LIMIT 1;";
+	$query = "SELECT s.id, s.name, s.sensor_child_id, s.sensor_type_id, s.current_val_1, s.current_val_2,
+		n.node_id, n.last_seen, notice_interval,
+		st.decimal_places, st.operator, st.factor
+		FROM sensors s
+		JOIN nodes n ON n.id = s.sensor_id
+		JOIN sensor_type st ON st.id = s.sensor_type_id
+		WHERE s.id = {$id} AND n.id = s.sensor_id AND (s.id NOT IN (SELECT zone_sensor_id FROM zone_sensors)) AND s.show_it = 1 LIMIT 1;";
 	$result = $conn->query($query);
 	$row = mysqli_fetch_assoc($result);
 	$sensor_id = $row['id'];
@@ -265,6 +272,9 @@ if ($type <= 4 || $type == 38) {
 	$node_notice = $row['notice_interval'];
 	$sensor_type_id = $row['sensor_type_id'];
 	$shcolor = "#00C853";
+        $dp = $row['decimal_places'];
+        $operator = $row['operator'];
+        $factor = $row['factor'];
 	if($node_notice > 0){
 		$now=strtotime(date('Y-m-d H:i:s'));
 	        $node_seen_time = strtotime($node_seen);
@@ -281,6 +291,25 @@ if ($type <= 4 || $type == 38) {
 //                        $query = "SELECT * FROM messages_in WHERE node_id = '{$node_id}' AND child_id = '{$sensor_child_id}' ORDER BY id desc LIMIT 1;";
 //                }
                 $sensor_r = $row['current_val_1'];
+		if(isset($operator) && isset($factor)) {
+			 switch ($operator) {
+				case "/":
+					$sensor_r = $sensor_r / $factor;
+					break;
+                                case "*":
+                                        $sensor_r = $sensor_r * $factor;
+                                        break;
+                                case "+":
+                                        $sensor_r = $sensor_r + $factor;
+                                        break;
+                                case "-":
+                                        $sensor_r = $sensor_r - $factor;
+                                        break;
+                                case "None":
+                                        $sensor_r = $sensor_r;
+                                        break;
+			}
+		}
         }
 //        $result = $conn->query($query);
 //        $sensor = mysqli_fetch_array($result);
@@ -310,7 +339,7 @@ if ($type <= 4 || $type == 38) {
                                 echo $sensor_message['message'];
                         } else {
                                 $unit = SensorUnits($conn,$sensor_type_id);
-                                echo number_format(DispSensor($conn,$sensor_r,$sensor_type_id),1).$unit;
+                                echo number_format(DispSensor($conn,$sensor_r,$sensor_type_id),$dp).$unit;
                         }
                         break;
                 case 7:
@@ -1268,7 +1297,7 @@ if ($type <= 4 || $type == 38) {
                 } else {
                         $gw_restarted_24 = '0';
                 }
-                $query = "SELECT IFNULL(SUM(mqtt_disconnect), 0) AS mqtt_disconnect_24 FROM gateway_logs WHERE pid_datetime >= NOW() - INTERVAL 24 HOUR;";
+                $query = "SELECT SUM(mqtt_disconnect) AS mqtt_disconnect_24 FROM gateway_logs WHERE pid_datetime >= NOW() - INTERVAL 24 HOUR;";
                 $result = $conn->query($query);
 		$row = mysqli_fetch_array($result);
 		$mqtt_disconnect_24 = $row['mqtt_disconnect_24'];
