@@ -27,7 +27,7 @@ print("********************************************************")
 print("*              System Controller Script                *")
 print("*                                                      *")
 print("*               Build Date: 10/02/2023                 *")
-print("*       Version 0.22 - Last Modified 10/09/2026        *")
+print("*       Version 0.23 - Last Modified 23/10/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -1218,6 +1218,9 @@ try:
                     sensors_dict[zone_id][zs_id ]["sensor_notice_interval"] = sensor[sensor_to_index["fail_timeout"]]
                     sensors_dict[zone_id][zs_id ]["node_last_seen"] = sensor[sensor_to_index["node_last_seen"]]
                     sensors_dict[zone_id][zs_id ]["node_notice_interval"] = sensor[sensor_to_index["notice_interval"]]
+                    # 23/10/2026 fix for Cooling zones (assumes that the type and maintain default setings are the same for all sensors, hence if multiple sensors, will be the last
+                    sensor_type_id = sensor[sensor_to_index["sensor_type_id"]]
+                    zone_maintain_default = sensor[sensor_to_index["default_m"]]
 
                 # create an array for the relays attached to this zone
                 cur.execute("""SELECT zone_relays.id AS zc_id, cid.node_id as relay_id, zr.relay_child_id, zr.on_trigger, zr.type AS relay_type_id, zone_relays.zone_relay_id,
