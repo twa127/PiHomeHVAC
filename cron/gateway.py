@@ -26,7 +26,7 @@ print("* MySensors Wifi/Ethernet/Serial Gateway Communication *")
 print("* Script to communicate with MySensors Nodes, for more *")
 print("* info please check MySensors API.                     *")
 print("*      Build Date: 18/09/2017                          *")
-print("*      Version 0.56 - Last Modified 07/10/2026         *")
+print("*      Version 0.57 - Last Modified 24/10/2026         *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -2249,7 +2249,7 @@ def set_relays(
                 con.commit()
             except mdb.Error as e:
                 # skip deadlock error (caused by something adding new data to the table)
-                if e.args[0] == 1020 or e.args[0] == 2014:
+                if e.args[0] == 1020 or e.args[0] == 2014 or e.args[0] == 1213:
                     pass
                 else:
                     print("DB Error %d: %s" % (e.args[0], e.args[1]))
