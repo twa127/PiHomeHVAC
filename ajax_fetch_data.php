@@ -82,6 +82,7 @@ if ($rowcount > 0) {
 }
 
 if ($type <= 4 || $type == 38) {
+	$target_type = settings($conn, 'target_t');
 	//---------------
 	//process  zones
 	//---------------
@@ -158,7 +159,7 @@ if ($type <= 4 || $type == 38) {
 		80 - sheduled
 		90 - away
 		100 - hysteresis
-		110 - Add-On 
+		110 - Add-On
 		120 - HVAC
         	130 - undertemperature
 	        140 - manual*/
@@ -200,34 +201,42 @@ if ($type <= 4 || $type == 38) {
 	//process return strings by type
 	//-------------------------------
 	switch ($type) {
-            case 1:
-                if ($zone_category != 2) {
-					if ($sensor_type_id != 3) {
-						if ($sensor_count > 1) { // add symbol to indicate that this is an average reading
-							echo number_format(DispSensor($conn,$zone_c,$sensor_type_id),1).$unit.$lang['mean'];
-						} else {
-                			echo number_format(DispSensor($conn,$zone_c,$sensor_type_id),1).$unit;
-						}
-            		} else {
-                		if ($add_on_active == 0) { echo 'OFF'; } else { echo 'ON'; }
+		case 1:
+			if ($zone_category != 2) {
+				if ($sensor_type_id != 3) {
+					if ($sensor_count > 1) { // add symbol to indicate that this is an average reading
+						echo number_format(DispSensor($conn,$zone_c,$sensor_type_id),1).$unit.$lang['mean'];
+					} else {
+                				echo number_format(DispSensor($conn,$zone_c,$sensor_type_id),1).$unit;
 					}
-                } else {
-                    echo '<i class="bi bi-power '.$add_on_colour.'" style="font-size: 1.4rem;">';
-                }
-                break;
-	        case 2:
+            			} else {
+                			if ($add_on_active == 0) { echo 'OFF'; } else { echo 'ON'; }
+				}
+                	} else {
+                   		 echo '<i class="bi bi-power '.$add_on_colour.'" style="font-size: 1.4rem;">';
+                	}
+                	break;
+		case 2:
         		echo '<i class="bi bi-circle-fill '.$rval['status'].'" style="font-size: 0.55rem;">';
                 	break;
-	        case 3:
-                        if ($sensor_type_id != 3) {
-                                if ($zone_weather_comp == 0 || strlen($rval['target']) == 0) {
-                                        echo $rval['target'];
-                                } else {
-                                        echo "[".$rval['target']."]";
-                                }
-                        }
-                        break;
-	        case 4:
+		case 3:
+			if ($sensor_type_id != 3 && $zone_category != 2 && $zone_mode/10 != 10) {
+				if ($zone_weather_comp == 0 || strlen($rval['target']) == 0) {
+					if ($target_type == 1 && $zone_mode != 0 && $zone_mode/10 != 3) {
+						echo $zone_temp_cut_in."-".$zone_temp_cut_out;
+					} else {
+						echo $rval['target'];
+					}
+				} else {
+					if ($target_type == 1 && $zone_mode != 0 && $zone_mode/10 != 3) {
+						echo  "[".$zone_temp_cut_in."-".$zone_temp_cut_out."]";
+					} else {
+						echo  "[".$rval['target']."]";
+					}
+				}
+			}
+			break;
+		case 4:
                         if($schedule == 2) {
                                 echo '<i class="bi bi-x-circle-fill  colorize-blue" style="font-size: 0.6rem;">';
                         } elseif($schedule == 3) {
@@ -240,7 +249,7 @@ if ($type <= 4 || $type == 38) {
                                 }
                         }
                         break;
-			// livetemp
+		// livetemp
 		case 38:
 			echo number_format(DispSensor($conn,$zone_c,$sensor_type_id),1).$unit;
 			break;

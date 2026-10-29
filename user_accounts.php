@@ -94,14 +94,14 @@ if (isset($_POST['submit'])) {
 		} else {
 			$account_enable = isset($_POST['account_enable']) ? $_POST['account_enable'] : 0;
 		}
-                $access_level = isset($_POST['access_level']) ? $_POST['access_level'] : 0;
+                $admin_account = isset($_POST['admin_account']) ? $_POST['admin_account'] : 0;
                 $fullname = $_POST['full_name'];
                 $username = $_POST['user_name'];
                 $email = $_POST['user_email'];
                 $persist = isset($_POST['persist']) ? $_POST['persist'] : 0;
 		$cpdate = $account_date = date("Y-m-d H:i:s");
 		if ((!isset($_POST['old_pass'])) || (empty($_POST['old_pass']))) {
-			$query = "UPDATE user SET account_enable = {$account_enable},fullname = '{$fullname}',username = '{$username}',email = '{$email}', account_date = '{$account_date}',access_level = {$access_level},persist = {$persist} WHERE id = '{$id}' LIMIT 1";
+			$query = "UPDATE user SET account_enable = {$account_enable},fullname = '{$fullname}',username = '{$username}',email = '{$email}', account_date = '{$account_date}',admin_account = {$admin_account},persist = {$persist} WHERE id = '{$id}' LIMIT 1";
 	                if ($conn->query($query)) {
         	                $message_success = "User account successfully edited!!!";
                 	        header("Refresh: 10; url=home.php");
@@ -128,7 +128,7 @@ if (isset($_POST['submit'])) {
         	                $error_message = 'Your Old Password is Incorrect!';
                 	} else {
                         	if ( !isset($error_message) && ($new_pass == $con_pass)) {
-                        		$query = "UPDATE user SET account_enable = {$account_enable},fullname = '{$fullname}',username = '{$username}',email = '{$email}', password = '{$new_pass}', cpdate = '{$cpdate}', account_date = '{$account_date}', access_level = {$access_level} WHERE id = '{$id}' LIMIT 1";
+                        		$query = "UPDATE user SET account_enable = {$account_enable},fullname = '{$fullname}',username = '{$username}',email = '{$email}', password = '{$new_pass}', cpdate = '{$cpdate}', account_date = '{$account_date}', admin_account = {$admin_account} WHERE id = '{$id}' LIMIT 1";
         	                        if ($conn->query($query)) {
                 	                        $message_success = "User account and Password successfully edited!!!";
                         	                header("Refresh: 10; url=home.php");
@@ -154,14 +154,14 @@ if (isset($_POST['submit'])) {
                         $error_message = $lang['conf_password_error2'];
                 }
 		$account_enable = isset($_POST['account_enable']) ? $_POST['account_enable'] : 0;
-                $access_level = isset($_POST['access_level']) ? $_POST['access_level'] : 0;
+                $admin_account = isset($_POST['admin_account']) ? $_POST['admin_account'] : 0;
 		$password = mysqli_real_escape_string($conn,(md5($_POST['new_pass'])));
                 $fullname = $_POST['full_name'];
                 $username = $_POST['user_name'];
 		$email = $_POST['user_email'];
                 $persist = isset($_POST['persist']) ? $_POST['persist'] : "0";
 		$cpdate = $account_date = date("Y-m-d H:i:s");
-		$query = "INSERT INTO `user`(`account_enable`, `fullname`, `username`, `email`, `password`, `cpdate`, `account_date`, `access_level`, `persist`) VALUES (".$account_enable.",'".$fullname."','".$username."','".$email."','".$password."','".$cpdate."','".$account_date."',".$access_level.",".$persist.");";
+		$query = "INSERT INTO `user`(`account_enable`, `fullname`, `username`, `email`, `password`, `cpdate`, `account_date`, `admin_account`, `persist`) VALUES (".$account_enable.",'".$fullname."','".$username."','".$email."','".$password."','".$cpdate."','".$account_date."',".$admin_account.",".$persist.");";
                 if ($conn->query($query)) {
                         $message_success = "New User account successfully added!!!";
                         header("Refresh: 10; url=home.php");
@@ -179,7 +179,7 @@ $fname = $row['fullname'];
 $uname = $row['username'];
 $email = $row['email'];
 $pword = $row['password'];
-$aaccount = $row['access_level'];
+$aaccount = $row['admin_account'];
 $persist = $row['persist'];
 ?>
 <?php include("header.php"); ?>
@@ -190,17 +190,7 @@ $persist = $row['persist'];
                 <div class="col-lg-12">
 		        <div class="card border-<?php echo theme($conn, $theme, 'color'); ?>">
         		        <div class="card-header <?php echo theme($conn, $theme, 'text_color'); ?> card-header-<?php echo theme($conn, $theme, 'color'); ?>">
-					<div class="d-flex justify-content-between">
-						<div><?php echo $title; ?></div>
-                				<div class="dropdown float-right">
-                        				<a class="" data-bs-toggle="dropdown" href="#">
-                                				<i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
-                        				</a>
-                        				<ul class="dropdown-menu dropdown-menu-<?php echo theme($conn, settings($conn, 'theme'), 'color') ?>">
-                                				<li><a class="dropdown-item" href="pdf_download.php?file=setup_user_accounts.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp<?php echo $lang['setup_user_accounts'] ?></a></li>
-                        				</ul>
-                				</div>
-					</div>
+                	        	<?php echo $title; ?>
                         	</div>
 	                        <!-- /.card-header -->
         	      		<div class="card-body">
@@ -223,26 +213,18 @@ $persist = $row['persist'];
 							</div>
 							<div class="col-3">
                 	                        		<div class="form-check">
-									<input class="form-check-input form-check-input-<?php echo theme($conn, settings($conn, 'theme'), 'color'); ?>" type="checkbox" value="1" id="checkbox2" name="persist" <?php if($persist == 1 && $mode != 2) { echo 'checked'; } ?> <?php if($_SESSION['access'] > 0) { echo 'disabled'; } ?> >
+									<input class="form-check-input form-check-input-<?php echo theme($conn, settings($conn, 'theme'), 'color'); ?>" type="checkbox" value="1" id="checkbox1" name="admin_account" <?php if($aaccount == 1 && $mode != 2) { echo 'checked'; } ?> <?php if($_SESSION['admin'] == 0) { echo 'disabled'; } ?> >
+									<label class="form-check-label" for="checkbox1"> <?php echo $lang['admin_account']; ?> </label> <br><small class="text-muted"><?php echo $lang['admin_account_info'];?></small>
+                                        	        		<div class="help-block with-errors"></div>
+                                        			</div>
+							</div>
+							<div class="col-3">
+                	                        		<div class="form-check">
+									<input class="form-check-input form-check-input-<?php echo theme($conn, settings($conn, 'theme'), 'color'); ?>" type="checkbox" value="1" id="checkbox2" name="persist" <?php if($persist == 1 && $mode != 2) { echo 'checked'; } ?> <?php if($_SESSION['admin'] == 0) { echo 'disabled'; } ?> >
 									<label class="form-check-label" for="checkbox2"> <?php echo $lang['persist']; ?> </label> <br><small class="text-muted"><?php echo $lang['persist_info'];?></small>
                                         	        		<div class="help-block with-errors"></div>
                                         			</div>
 							</div>
-							<?php if (strpos($uname, "admin") === false) { ?>
-                                                        	<div class="col-1">
-                                                        		<select id="access_level" name="access_level" class="form-control select2" autocomplete="off">
-                                                                		<?php for ($x = 1; $x <= 2; $x++) {
-                                                                        		echo '<option value="'.$x.'" ' . ($x==$aaccount ? 'selected' : '') . '>'.$x.'</option>';
-	                                                                        } ?>
-        	                                                        </select>
-                	                                                <div class="help-block with-errors"></div>
-                        	                                </div>
-                                	                        <div class="col-3">
-                                        	                        <div class="form-group"><label><?php echo $lang['access_level'];?><br><small class="text-muted"><?php echo $lang['access_level_info'];?></small></label>
-                                                	                <div class="help-block with-errors"></div>
-                                                        	        </div>
-                                                       		 </div>
-							<?php } ?>
 						</div>
 						<!-- /.row -->
 						<br>
@@ -275,7 +257,7 @@ $persist = $row['persist'];
         		        		<input class="form-control" type="password" class="form-control" placeholder="Confirm New Password" value="" id="con_pass" name="con_pass" data-bs-error="Confirm New Password is Required" autocomplete="off" <?php echo $req; ?>>
                 				<div class="help-block with-errors"></div>
 					</div>
-					<a href="home.php"><button type="button" class="btn btn-primary-<?php echo theme($conn, $theme, 'color'); ?> btn-sm"><?php echo $lang['cancel']; ?></button></a>
+					<a href="home.php" type="button" class="btn btn-primary-<?php echo theme($conn, $theme, 'color'); ?> btn-sm"><?php echo $lang['cancel']; ?></a>
 	        	        	<input type="submit" name="submit" value="<?php echo $lang['save']; ?>" class="btn btn-bm-<?php echo theme($conn, $theme, 'color'); ?> btn-sm">
 
         	        		</form>

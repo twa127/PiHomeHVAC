@@ -375,6 +375,12 @@ if ($settings_id == 1) {
                                 		<h3 class="degre" style="margin-top:5px;"><img src="images/<?php echo $icon; ?>" border="0"></h3>
                                 		<h3 class="status"><small class="statuscircle"><i class="bi bi-circle-fill '.$lt_status.'" style="font-size: 0.55rem;"></i></small></h3>
                                                 </button>
+
+                                                <button class="btn btn-bm-<?php echo theme($conn, $theme, 'color'); ?> btn-circle <?php echo $button_style; ?> mainbtn animated fadeIn" data-bs-toggle="modal" data-bs-target="#temp_target_type">
+                                                <h3 class="buttontop"><small><?php echo $lang['target_type']; ?></small></h3>
+                                                <h3 class="degre" ><i class="bi bi-bullseye red" style="font-size: 1.5rem;"></i></h3>
+                                                <h3 class="status"></small></h3>
+                                                </button>
                         		<?php } ?>
 			                <?php if ($settings_id == 2) { ?>
                                                 <button class="btn btn-bm-<?php echo theme($conn, $theme, 'color'); ?> btn-circle <?php echo $button_style; ?> mainbtn animated fadeIn" data-href="#" data-bs-toggle="modal" data-bs-target="#theme">

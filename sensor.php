@@ -30,15 +30,9 @@ if(isset($_GET['id'])) {
 	$id = $_GET['id'];
 } else {
 	$id = 0;
-        $frost_count = 1;
 }
-
-$uri = $_SERVER['QUERY_STRING'];
-if (strpos($uri, "id=") !== false) { $link = "settings.php?s_id=7"; } else { $link = "home.php"; }
-
 //Form submit
 if (isset($_POST['submit'])) {
-        $frost_zones = array();
         $pre_post = isset($_POST['pre_post']) ? $_POST['pre_post'] : "0";
         $index_id = $_POST['index_id'];
 	$name = $_POST['name'];
@@ -53,11 +47,9 @@ if (isset($_POST['submit'])) {
         $sync = '0';
         $purge= '0';
 	$frost_temp = $_POST['frost_temp'];
-	$fail_timeout = $_POST['fail_timeout'];
+	if ($frost_temp == 0) { $frost_controller = 0; } else { $frost_controller = $_POST['frost_controller']; }
         $show_it = $_POST['show_it'];
-        $min_max_graph = $_POST['min_max_graph'];
         $graph_num = $_POST['graph_num'];
-        $message_in = $_POST['message_in'];
 	$mode = $_POST['mode'];
         $timeout = $_POST['timeout'];
         $resolution = $_POST['resolution'];
@@ -65,17 +57,9 @@ if (isset($_POST['submit'])) {
 	//Add or Edit Sensor record to sensors Table
 
         if ($id==0){
-                $query = "INSERT INTO `sensors` (`id`, `sync`, `purge`, `zone_id`, `sensor_id`, `sensor_child_id`, `correction_factor`, `sensor_type_id`, `index_id`, `pre_post`,
-                           `name`, `graph_num`, `show_it`, `min_max_graph`, `message_in`, `frost_temp`, `frost_controller`, `fail_timeout`, `mode`, `timeout`, `resolution`, `current_val_1`,
-			   `current_val_2`, `user_display`)
-                           VALUES ('{$id}', '{$sync}', '{$purge}', '0', '{$sensor_id}', '{$sensor_child_id}', '{$correction_factor}', '{$sensor_type_id}', '{$index_id}',
-                           '{$pre_post}', '{$name}', '0', '1', '0', 1, '{$frost_temp}', 0, '{$fail_timeout}', '{$mode}', '{$timeout}', '{$resolution}', 0, 0, 0);";
+                $query = "INSERT INTO `sensors` (`id`, `sync`, `purge`, `zone_id`, `sensor_id`, `sensor_child_id`, `correction_factor`, `sensor_type_id`, `index_id`, `pre_post`, `name`, `graph_num`, `show_it`, `frost_temp`, `frost_controller`, `mode`, `timeout`, `resolution`) VALUES ('{$id}', '{$sync}', '{$purge}', '0', '{$sensor_id}', '{$sensor_child_id}', '{$correction_factor}', '{$sensor_type_id}', '{$index_id}', '{$pre_post}', '{$name}', '0', '1', '{$frost_temp}', '{$frost_controller}', '{$mode}', '{$timeout}', '{$resolution}');";
         } else {
-                $query = "UPDATE `sensors` SET `sync` = '{$sync}',`purge` = '{$purge}',`sensor_id` = '{$sensor_id}',`sensor_child_id` = '{$sensor_child_id}',
-                           `correction_factor` = '{$correction_factor}',`sensor_type_id` = '{$sensor_type_id}',`index_id` = '{$index_id}',`pre_post` = '{$pre_post}',
-                           `name` = '{$name}',`graph_num` = '{$graph_num}',`show_it` = '{$show_it}',`min_max_graph` = '{$min_max_graph}',`message_in` = '{$message_in}',
-			   `frost_temp` = '{$frost_temp}',`frost_controller` = 0, `fail_timeout` = '{$fail_timeout}',
-                           `mode` = '{$mode}', `timeout` = '{$timeout}', `resolution` = '{$resolution}' WHERE `id` = {$id};";
+                $query = "UPDATE `sensors` SET `sync` = '{$sync}',`purge` = '{$purge}',`sensor_id` = '{$sensor_id}',`sensor_child_id` = '{$sensor_child_id}',`correction_factor` = '{$correction_factor}',`sensor_type_id` = '{$sensor_type_id}',`index_id` = '{$index_id}',`pre_post` = '{$pre_post}',`name` = '{$name}',`graph_num` = '{$graph_num}',`show_it` = '{$show_it}',`frost_temp` = '{$frost_temp}',`frost_controller` = '{$frost_controller}', `mode` = '{$mode}', `timeout` = '{$timeout}', `resolution` = '{$resolution}' WHERE `id` = {$id};";
         }
 	$result = $conn->query($query);
         $temp_id = mysqli_insert_id($conn);
@@ -88,33 +72,10 @@ if (isset($_POST['submit'])) {
 	} else {
 		$error = "<p>".$lang['sensor_record_fail']." </p> <p>" .mysqli_error($conn). "</p>";
 	}
-
-
-        foreach($_POST['selected_frost_controler_id'] as $index => $value) {
-        	$frost_zones[] = array($value);
-        }
-        if ($id!=0){ //if in edit mode delete existing zone frost_sensor records for the current sensor
-        	$query = "DELETE FROM `frost_sensor_relays` WHERE `sensor_id` = '{$id}';";
-                $result = $conn->query($query);
-        }
-        //loop through zone controller for the current zone and replace zone_controllers and messages_out records to cope with individual deleted zone controllers
-	if ($frost_temp != 0) {
-	        for ($i = 0; $i < count($frost_zones); $i++)  {
-			$relay_id = $frost_zones[$i][0];
-        		$query = "INSERT INTO `frost_sensor_relays` (`sync`, `purge`, `sensor_id`, `relay_id`) VALUES ('{$sync}', '{$purge}', '{$id}', '{$relay_id}');";
-	                $result = $conn->query($query);
-		}
-	}
-
 	$message_success .= "<p>".$lang['do_not_refresh']."</p>";
-	header("Refresh: 10; url=home.php?page_name=onetouch");
-        // After update on all required tables, set $id to mysqli_insert_id.
-        if ($id==0) {
-                header("Refresh: 10; url=home.php?page_name=onetouch");
-                $id=$temp_id;
-        } else {
-                header("Refresh: 10; url=settings.php?s_id=7");
-        }
+	header("Refresh: 10; url=home.php");
+	// After update on all required tables, set $id to mysqli_insert_id.
+	if ($id==0){$id=$temp_id;}
 }
 ?>
 <!-- ### Visible Page ### -->
@@ -141,30 +102,6 @@ if (isset($_POST['submit'])) {
         $query = "SELECT id, type FROM sensor_type WHERE id = '{$row['sensor_type_id']}' LIMIT 1;";
         $result = $conn->query($query);
         $rowtype = mysqli_fetch_assoc($result);
-
-
-	if ($rowtype['id'] <> 4) {
-                $query = "SELECT sensors.id, fs.relay_id, r.name
-                        FROM sensors
-                        JOIN frost_sensor_relays fs ON sensors.id = fs.sensor_id
-                        JOIN relays r ON fs.relay_id = r.id
-                        WHERE sensors.id = {$id};";
-	        $fresults = $conn->query($query);
-		if ($fresults->num_rows > 0) {
-	        	$index = 0;
-		        while ($frow = mysqli_fetch_assoc($fresults)) {
-        			$frost_zones[$index] = array('sensor_id' =>$frow['id'], 'relay_id' =>$frow['relay_id'],'zone_controller_name' =>$frow['name']);
-                		$index = $index + 1;
-        		}
-        		$frost_count = $index;
-		} else {
-			$frost_count = 1;
-		}
-	} else {
-		$frost_count = 1;
-	}
-} else {
-        $frost_count = 1;
 }
 ?>
 
@@ -207,7 +144,7 @@ if (isset($_POST['submit'])) {
 
 						<!-- Sensor Type -->
 						<div class="form-group" class="control-label" style="display:block"><label><?php echo $lang['sensor_type']; ?></label> <small class="text-muted"><?php echo $lang['sensor_type_info'];?></small>
-							<select class="form-select" type="number" id="type" name="type" onchange=enable_fields(this.options[this.selectedIndex].value,<?php echo $id; ?>)>
+							<select class="form-select" type="number" id="type" name="type" onchange=enable_fields(this.options[this.selectedIndex].value)>
 
 							<?php if(isset($rowtype['type'])) { 
 								echo '<option selected value='.$rowtype['id'].'>'.$rowtype['type'].'</option>'; 
@@ -225,19 +162,27 @@ if (isset($_POST['submit'])) {
 						</div>
 
                                                 <script language="javascript" type="text/javascript">
-                                                function enable_fields(value, record_id)
+                                                function enable_fields(value)
                                                 {
-							console.log(value, record_id);
-                                                        if (value == 2) {
+                                                        var valuetext = value;
+                                                        if (valuetext == 2) {
                                                                 document.getElementById("frost_temp").style.display = 'none';
                                                                 document.getElementById("frost_protection_label").style.visibility = 'hidden';
+                                                                document.getElementById("resolution").style.display = 'block';
+                                                                document.getElementById("resolution_label").style.visibility = 'visible';
+                                                                document.getElementById("timeout").style.display = 'block';
+                                                                document.getElementById("timeout_label").style.visibility = 'visible';
                                                                 document.getElementById("correction_factor").style.display = 'block';
                                                                 document.getElementById("correction_factor_label").style.visibility = 'visible';
                                                                 document.getElementById("mode").style.display = 'block';
                                                                 document.getElementById("mode_label").style.visibility = 'visible';
-                                                        } else if (value == 4) {
+                                                        } else if (valuetext == 4) {
                                                                 document.getElementById("frost_temp").style.display = 'none';
                                                                 document.getElementById("frost_protection_label").style.visibility = 'hidden';
+                                                                document.getElementById("resolution").style.display = 'none';
+                                                                document.getElementById("resolution_label").style.visibility = 'hidden';
+                                                                document.getElementById("timeout").style.display = 'none';
+                                                                document.getElementById("timeout_label").style.visibility = 'hidden';
                                                                 document.getElementById("correction_factor").style.display = 'none';
                                                                 document.getElementById("correction_factor_label").style.visibility = 'hidden';
                                                                 document.getElementById("mode").style.display = 'none';
@@ -245,31 +190,15 @@ if (isset($_POST['submit'])) {
                                                         } else {
                                                                 document.getElementById("frost_temp").style.display = 'block';
                                                                 document.getElementById("frost_protection_label").style.visibility = 'visible';
+                                                                document.getElementById("resolution").style.display = 'block';
+                                                                document.getElementById("resolution_label").style.visibility = 'visible';
+                                                                document.getElementById("timeout").style.display = 'block';
+                                                                document.getElementById("timeout_label").style.visibility = 'visible';
                                                                 document.getElementById("correction_factor").style.display = 'block';
                                                                 document.getElementById("correction_factor_label").style.visibility = 'visible';
                                                                 document.getElementById("mode").style.display = 'block';
                                                                 document.getElementById("mode_label").style.visibility = 'visible';
                                                         }
-                                                        if (record_id == 0) {
-                                                        	document.getElementById("resolution").style.display = 'none';
-                                                                document.getElementById("resolution_label").style.visibility = 'hidden';
-                                                                document.getElementById("timeout").style.display = 'none';
-                                                                document.getElementById("timeout_label").style.visibility = 'hidden';
-	                                                        set_mode("0");
-        	                                                document.getElementById("mode").value = 0;
-							} else {
-								if (document.getElementById("mode").value == 0 || value == 4) {
-                        	                                        document.getElementById("resolution").style.display = 'none';
-	                                                                document.getElementById("resolution_label").style.visibility = 'hidden';
-        	                                                        document.getElementById("timeout").style.display = 'none';
-                	                                                document.getElementById("timeout_label").style.visibility = 'hidden';
-								} else {
-                	                                                document.getElementById("resolution").style.display = 'block';
-                        	                                        document.getElementById("resolution_label").style.visibility = 'visible';
-                                                                        document.getElementById("timeout").style.display = 'block';
-                                                                        document.getElementById("timeout_label").style.visibility = 'visible';
-								}
-							}
                                                 }
                                                 </script>
 
@@ -325,8 +254,6 @@ if (isset($_POST['submit'])) {
 						<input type="hidden" id="selected_sensor_id" name="selected_sensor_id" value="<?php echo $rownode['node_id']?>"/>
 						<input type="hidden" id="graph_num" name="graph_num" value="<?php echo $row['graph_num']?>"/>
 						<input type="hidden" id="show_it" name="show_it" value="<?php echo $row['show_it']?>"/>
-                                                <input type="hidden" id="message_in" name="message_in" value="<?php echo $row['message_in']?>"/>
-                                                <input type="hidden" id="min_max_graph" name="min_max_graph" value="<?php echo $row['min_max_graph']?>"/>
 
 						<!-- Temperature Sensor Child ID -->
 						<div class="form-group" class="control-label" id="sensor_child_id_label" style="display:block"><label><?php echo $lang['sensor_child_id']; ?></label> <small class="text-muted"><?php echo $lang['sensor_child_id_info'];?></small>
@@ -371,7 +298,7 @@ if (isset($_POST['submit'])) {
                                                 <!-- Timout -->
 							<div class="form-group" class="control-label" id="timeout_label" style="display:block"><label><?php echo $lang['sensor_timeout']; ?></label> <small class="text-muted"><?php echo $lang['sensor_timeout_info'];?></small>
                                                         <select id="timeout" name="timeout" class="form-control select2" autocomplete="off">
-					                <?php for ($x = 10; $x <=  120; $x = $x + 10) {
+					                <?php for ($x = 0; $x <=  120; $x = $x + 10) {
                         					echo '<option value="'.$x.'" ' . ($x==$row['timeout'] ? 'selected' : '') . '>'.$x.'</option>';
                 					} ?>
                 					</select>
@@ -423,73 +350,35 @@ if (isset($_POST['submit'])) {
 						{
 							var t = document.getElementById("frost_temp").value;
         						if (t == 0) {
-        							//document.getElementById("frost_controller").style.display = 'none';
+        							document.getElementById("frost_controller").style.display = 'none';
                							document.getElementById("frost_controller_label").style.visibility = 'hidden';
 							} else {
-                                                                //document.getElementById("frost_controller").style.display = 'block';
+                                                                document.getElementById("frost_controller").style.display = 'block';
                                                                 document.getElementById("frost_controller_label").style.visibility = 'visible';
 							}
 						}
 						</script>
-
 						<!-- Frost Controller -->
-						<input type="hidden" id="frost_count" name="frost_count" value="<?php echo $frost_count ?>"/>
-						<div class="frost_id_wrapper">
-							<?php for ($i = 0; $i < $frost_count; $i++) { ?>
-								<div class="wrap" id>
-									<div class="form-group"  id="frost_controller_label" style="display:block"><label><?php echo $lang['frost_controller']; ?></label> <small class="text-muted"><?php echo $lang['frost_controller_text'];?></small>
-                                                                                <input type="hidden" id="selected_frost_controler_id[]" name="selected_frost_controler_id[]" value="<?php echo $frost_zones[$i]['relay_id']?>"/>
-                                                                                <div class="entry input-group col-12" id="frost_cnt_id - <?php echo $i ?>">
-	                                                        			<select id="frost_contr_id<?php echo $i ?>" onchange="ControllerIDList(this.options[this.selectedIndex].value)" name="frost_contr_id<?php echo $i ?>" class="form-select" data-bs-error="<?php echo $lang['zone_controller_id_error']; ?>" autocomplete="off">
-												<?php if(isset($frost_zones[$i]["zone_controller_name"])) { echo '<option selected >'.$frost_zones[$i]["zone_controller_name"].'</option>'; } ?>
-												<?php  $query = "SELECT id, name, type FROM relays WHERE type = 0 OR type = 5 ORDER BY id ASC;";
-                                                                                                $result = $conn->query($query);
-                                                                                                echo "<option></option>";
-                                                                                                while ($datarw=mysqli_fetch_array($result)) {
-                                                                                                        echo "<option value=".$datarw['id'].">".$datarw['name']."</option>";
-                                                                                                } ?>
-         	                                                			</select>
-                	                                                                        <div class="help-block with-errors"></div>
-                        	                                                                <span class="input-group-btn">
-                                	                                                                <?php if ($i == 0) {
-														echo '<button class="btn btn-outline add_frost_controller_button" type="button" data-bs-toggle="tooltip" title="'.$lang['add_controller'].'"><img src="./images/add-icon.png"/></button>';
-                                                	                                                } else {
-														echo '<button class="btn btn-outline remove_frost_controller_button" type="button" data-bs-toggle="tooltip" title="'.$lang['remove_controller'].'"><img src="./images/remove-icon.png"/></button>';
-                                                                	                                } ?>
-                                                                                        </span>
-										</div>
-									</div>
-								</div>
-							<?php } ?>
-						</div>
-
-                                                <script language="javascript" type="text/javascript">
-                                                function ControllerIDList(value)
-                                                {
-                                                        var valuetext = value;
-                                                        var indtext = document.getElementById("frost_count").value - 1;
-
-                                                        var e = document.getElementById("frost_contr_id".concat(indtext));
-                                                        var selected_frost_controler_id = e.options[e.selectedIndex].value;
-                                                        var f = document.getElementsByName('selected_frost_controler_id[]');
-                                                        f[indtext].value = selected_frost_controler_id;
-                                                }
-                                                </script>
-
-                                                <!-- Sensor Fail Timout -->
-                                                        <div class="form-group" class="control-label" id="fail_timeout_label" style="display:block"><label><?php echo $lang['fail_timeout'];?></label> <small class="text-muted"><?php echo $lang['fail_timeout_info'];?></small>
-                                                        <select id="fail_timeout" name="fail_timeout" class="form-control select2" autocomplete="off">
-                                                        <?php for ($x = 0; $x <=  120; $x = $x + 10) {
-                                                                echo '<option value="'.$x.'" ' . ($x==$row['fail_timeout'] ? 'selected' : '') . '>'.$x.'</option>';
-                                                        } ?>
+						<div class="form-group"  id="frost_controller_label" style="display:block"><label><?php echo $lang['frost_controller']; ?></label> <small class="text-muted"><?php echo $lang['frost_controller_text'];?></small>
+                                                        <select class="form-select" type="number" id="frost_controller" name="frost_controller" >
+                                                                <?php if(isset($rowcontroller['id'])) {
+                                                                        echo '<option selected value='.$rowcontroller['id'].'>'.$rowcontroller['name'].'</option>';
+                                                        		$query = "SELECT id, name, type FROM relays WHERE type <> 1 AND id <> ".$rowcontroller['id']." ORDER BY id ASC;";
+                                                                } else {
+                                                                        $query = "SELECT id, name, type FROM relays WHERE type <> 1 ORDER BY id ASC;";
+                                                                }
+                                                                $result = $conn->query($query);
+                                                                while ($datarw=mysqli_fetch_array($result)) {
+                                                                        echo "<option value=".$datarw['id'].">".$datarw['name']."</option>";
+                                                                } ?>
                                                         </select>
-                                                        <div class="help-block with-errors"></div>
-                                                </div>
+							<div class="help-block with-errors"></div>
+						</div>
 
 						<br>
 						<!-- Buttons -->
 						<input type="submit" name="submit" value="<?php echo $lang['submit']; ?>" class="btn btn-bm-<?php echo theme($conn, $theme, 'color'); ?> btn-sm">
-						<a href="<?php echo $link; ?>"><button type="button" class="btn btn-primary-<?php echo theme($conn, $theme, 'color'); ?> btn-sm"><?php echo $lang['cancel']; ?></button></a>
+						<a href="home.php" type="button" class="btn btn-primary-<?php echo theme($conn, $theme, 'color'); ?> btn-sm"><?php echo $lang['cancel']; ?></a>
 					</form>
 				</div>
                 		<!-- /.card-body -->
@@ -500,25 +389,20 @@ if (isset($_POST['submit'])) {
      						'enable_frost("'.$row['frost_temp'].'");',
      						'</script>'
 						;
+                                        	echo '<script type="text/javascript">',
+	                                        'enable_fields("'.$rowtype['id'].'");',
+        	                                '</script>'
+                	                        ;
 						if ($id != 0) {
 	                                                echo '<script type="text/javascript">',
-        	                                        'enable_fields("'.$rowtype['id'].',',$id.'");',
+        	                                        'enable_fields("'.$rowtype['id'].'");',
                 	                                '</script>'
                         	                        ;
 							echo '<script type="text/javascript">',
 						     	'set_mode("'.$row['mode'].'");',
      							'</script>'
 							;
-                                                } else {
-                                                        echo '<script type="text/javascript">',
-                                                        'enable_fields("2,'.$id.'");',
-                                                        '</script>'
-                                                        ;
-                                                        echo '<script type="text/javascript">',
-                                                        'set_mode("0");',
-                                                        '</script>'
-                                                        ;
-                                                }
+						}
 						ShowWeather($conn);
 						?>
 					</div>
@@ -534,4 +418,3 @@ if (isset($_POST['submit'])) {
 <!-- /#container -->
 <?php }  ?>
 <?php include("footer.php");  ?>
-

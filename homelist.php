@@ -380,11 +380,19 @@ if (strpos($_SESSION['username'], "admin") !== false) { //admin account, display
 			                        //Left small circular icon/color status
 						echo '<small class="statuscircle" id="zs1_'.$zone_id.'"><i class="bi bi-circle-fill '.$rval['status'].'" style="font-size: 0.55rem;"></i></small>';
 		        	                //Middle target temp
-                                                if ($sensor_type_id != 3) {
+                                                if ($sensor_type_id != 3 && $zone_category != 2 && $zone_mode/10 != 10) {
                                                         if ($zone_weather_comp == 0) {
-                                                                echo '<small class="statusdegree" id="zs2_'.$zone_id.'">' . $rval['target'] .'</small>';
+			                                        if ($target_type == 1 && $zone_mode != 0 && $zone_mode/10 != 3) {
+                        			                        echo '<small class="statusdegree" id="zs2_'.$zone_id.'">' .$zone_temp_cut_in."-".$zone_temp_cut_out.'</small>';
+                                        			} else {
+                                                                	echo '<small class="statusdegree" id="zs2_'.$zone_id.'">' . $rval['target'] .'</small>';
+								}
                                                         } elseif (strlen($rval['target']) != 0) {
-                                                                echo '<small class="statusdegree" id="zs2_'.$zone_id.'">[' . $rval['target'] .']</small>';
+								if ($target_type == 1 && $zone_mode != 0 && $zone_mode/10 != 3) {
+                                                                        echo '<small class="statusdegree" id="zs2_'.$zone_id.'">[' .$zone_temp_cut_in."-".$zone_temp_cut_out.']</small>';
+								} else {
+                                                                	echo '<small class="statusdegree" id="zs2_'.$zone_id.'">[' . $rval['target'] .']</small>';
+								}
                                                         }
                                                 }
 		                        	//Right icon for what/why

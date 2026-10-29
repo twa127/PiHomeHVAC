@@ -55,7 +55,7 @@ if (isset($_POST['submit'])) {
 		$error = "<p>".$lang['theme_record_fail']." </p> <p>" .mysqli_error($conn). "</p>";
 	}
 	$message_success .= "<p>".$lang['do_not_refresh']."</p>";
-	header("Refresh: 10; url=home.php?page_name=onetouch");
+	header("Refresh: 10; url=home.php");
 	// After update on all required tables, set $id to mysqli_insert_id.
 	if ($id==0){$id=$temp_id;}
 }
@@ -143,7 +143,7 @@ if (isset($_POST['submit'])) {
 
 						<!-- Buttons -->
 						<input type="submit" name="submit" value="<?php echo $lang['submit']; ?>" class="btn btn-bm-<?php echo theme($conn, $theme, 'color'); ?> btn-sm">
-						<a href="home.php"><button type="button" class="btn btn-primary-<?php echo theme($conn, $theme, 'color'); ?> btn-sm"><?php echo $lang['cancel']; ?></button></a>
+						<a href="home.php" type="button" class="btn btn-primary-<?php echo theme($conn, $theme, 'color'); ?> btn-sm"><?php echo $lang['cancel']; ?></a>
 					</form>
 					<!-- /.form -->
 				</div>
@@ -166,4 +166,3 @@ if (isset($_POST['submit'])) {
 <!-- /#container -->
 <?php }  ?>
 <?php include("footer.php");  ?>
-

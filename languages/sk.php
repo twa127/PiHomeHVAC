@@ -1186,6 +1186,10 @@ $lang['notifications_text'] = "List of Warning Notifications which have not been
 $lang['date_time'] = "Date/Time";
 $lang['setup_guide_tuya_bridge'] = "Setup Guide Tuya WiFi Switches";
 $lang['delete_notification'] = "Delete Notification";
+$lang['target_type'] = "Target Type";
+$lang['target_type_text'] = "Set the Target Temperature Type, either the RAW Target Temperature OR the Cut-In/Cut-Out dual Temperatures";
+$lang['raw_target'] = "RAW Target";
+$lang['cuts_target'] = "Cut-In/Cut-Out Target";
 
 if (file_exists(__DIR__.'/lo.php')) { require_once(__DIR__.'/lo.php'); }
 ?>
