@@ -1,6 +1,6 @@
 # MaxAir - Smart Thermostat
 
-### Note: Now at Version 3.23
+### Note: Now at Version 3.24
 
 The previous version, PiHome, was centered around the creation of zones, this version is more centered around devices.
 
@@ -95,6 +95,9 @@ Version 3.22 New Features, Hot Water Weather Compensation - Override the schedul
 Version 3.23 New Features, 'Return to Home Page' – if the system is left displaying any Settings menu screen, the Schedule list screen or the One Touch screen for longer than a configurable timeout period, then the display will return to the Home Screen. The timeout can be configured from the 'Settings/system Maintenance/Page Refresh' menu option, selecting a value of '0' will disable the timeout. The default is 60 second timeout. 'Temperature Delta' – new menu option 'Settings/System Status/Temp Delta', to display the Max, Min and Delta values by either Zone or Sensor over the preceding one or twenty four hour time interval and 'Disable schedules during summer months' – disable selected schedules during a set period of time, popup to define the period and a 'OneTouch' button to enable/disable the feature.
 Additional APIs - see documentaion.
 Update – Improve database update synchronisation.
+
+Version 3.24 Bug Fix and New Features, bug fix where some on-screen butons do not function e.g. 'Cancel' button in the 'Add Sensor', 'Add Relay', 'Add MQTT dev', 'Add Zone' and 'Add Theme', also the 'Edit' button in the 'Sensor Limits' popup screen and the 'Edit', 'Add User' buttons in the 'User Accounts' popup screen.
+New Feature, 'Settings/System Configuration/Target Temp', to allow selection of the data displayed in the lower left corner of the home screen tiles, can either be the 'Target' temperature value or the 'Cut-In' – 'Cut-Out' dual temperature values. 
 
 ## Setup:
 
