@@ -187,6 +187,26 @@ function update_units(){
     });
 }
 
+//update target type
+function update_target_type(){
+    var idata="w=target_type&o=update";
+    idata+="&val="+$("#new_target_type").val();
+    idata+="&wid=0";
+    $.get('db.php',idata)
+    .done(function(odata){
+        if(odata.Success)
+            window.location="settings.php?s_id=3"
+        else
+            console.log(odata.Message);
+    })
+    .fail(function( jqXHR, textStatus, errorThrown ){
+        if(jqXHR==401 || jqXHR==403) return;
+        console.log("update_target_type: Error.\r\n\r\njqXHR: "+jqXHR+"\r\n\r\ntextStatus: "+textStatus+"\r\n\r\nerrorThrown:"+errorThrown);
+    })
+    .always(function() {
+    });
+}
+
 //update system mode
 function update_system_mode(){
     var idata="w=system_mode&o=update";
@@ -1938,26 +1958,6 @@ var idata="w=notifications&o=delete&wid="+wid;
     .fail(function( jqXHR, textStatus, errorThrown ){
         if(jqXHR==401 || jqXHR==403) return;
         console.log("delete_notification: Error.\r\n\r\njqXHR: "+jqXHR+"\r\n\r\ntextStatus: "+textStatus+"\r\n\r\nerrorThrown:"+errorThrown);
-    })
-    .always(function() {
-    });
-}
-
-//update Target Temperature Type
-function update_target_type(){
-    var idata="w=target_type&o=update";
-    idata+="&val="+$("#new_target_type").val();
-    idata+="&wid=0";
-    $.get('db.php',idata)
-    .done(function(odata){
-        if(odata.Success)
-            window.location="settings.php?s_id=3"
-        else
-            console.log(odata.Message);
-    })
-    .fail(function( jqXHR, textStatus, errorThrown ){
-        if(jqXHR==401 || jqXHR==403) return;
-        console.log("update_target_type: Error.\r\n\r\njqXHR: "+jqXHR+"\r\n\r\ntextStatus: "+textStatus+"\r\n\r\nerrorThrown:"+errorThrown);
     })
     .always(function() {
     });
