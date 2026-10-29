@@ -19,6 +19,16 @@
 *************************************************************************"
 */
 $theme = settings($conn, 'theme');
+$rval = os_info();
+if (array_key_exists('ID', $rval)) {
+        if (strpos($rval["ID"], "debian") !== false || strpos($rval["ID"], "ubuntu") !== false) {
+                $web_user_name = "www-data";
+        } elseif (strpos($rval["ID"], "archarm") !== false) {
+                $web_user_name = "http";
+        }
+} else {
+        $web_user_name = "www-data";;
+}
 
 if ($model_num == 1) {
 // show frost protection
@@ -39,7 +49,11 @@ echo '<div class="modal fade" id="show_frost" tabindex="-1" role="dialog" aria-l
             </div>
             <div class="modal-body">
                 <p class="text-muted">'.$lang['frost_ptotection_info'].'</p>';
-                $query = "SELECT sensors.sensor_id, sensors.sensor_child_id, sensors.name AS sensor_name, sensors.frost_temp, relays.name AS controller_name FROM sensors, relays WHERE (sensors.frost_controller = relays.id) AND frost_temp <> 0;";
+                $query = "SELECT `sensors`.`id`, `sensors`.`name` AS `sensor_name`, `sensors`.`frost_temp`, `sensors`.`current_val_1`, `zcs`.`mode`
+                        FROM `sensors`
+                        JOIN `zone_sensors` `zs` ON `sensors`.`id` = `zs`.`zone_sensor_id`
+                        JOIN `zone_current_state` `zcs` ON `zs`.`zone_id` = `zcs`.`zone_id`
+                        WHERE `frost_temp` <> 0;";
                 $results = $conn->query($query);
                 echo '<table class="table table-bordered">
                         <tr>
@@ -49,21 +63,28 @@ echo '<div class="modal fade" id="show_frost" tabindex="-1" role="dialog" aria-l
                                 <th style="text-align:center; vertical-align:middle;" class="col-1"><small>'.$lang['status'].'</small></th>
                         </tr>';
                         while ($row = mysqli_fetch_assoc($results)) {
-                                $query = "SELECT node_id FROM nodes WHERE id = ".$row['sensor_id']." LIMIT 1;";
-                                $result = $conn->query($query);
-                                $frost_sensor_node = mysqli_fetch_array($result);
-                                $frost_sensor_node_id = $frost_sensor_node['node_id'];
-                                //query to get temperature from messages_in_view_24h table view
-                        	$query = "SELECT * FROM messages_in_view_24h WHERE node_id = '".$frost_sensor_node_id."' AND child_id = ".$row['sensor_child_id']." LIMIT 1;";
-                                $result = $conn->query($query);
-                                $msg_in = mysqli_fetch_array($result);
-                                $frost_sensor_c = $msg_in['payload'];
-                                if ($frost_sensor_c <= $row["frost_temp"]) { $scolor = "red"; } else { $scolor = "blue"; }
+                                $frost_sensor_c = $row['current_val_1'];
+				if (intval($row["mode"]/10) == 2) { $scolor = "red"; } else { $scolor = "blue"; }
+				$query = "SELECT `r`.`name`, `r`.`state`
+					FROM `frost_sensor_relays`
+					JOIN `relays` `r` ON `r`.`id` = `frost_sensor_relays`.`relay_id`
+					WHERE `frost_sensor_relays`.`sensor_id` = {$row['id']}
+					ORDER By `r`.`id`;";
+				$cresults = $conn->query($query);
+				$index = 0;
+				while ($crow = mysqli_fetch_assoc($cresults)) {
+					if ($index == 0) {
+						$controller_name = $crow["name"];
+					} else {
+						$controller_name = $controller_name."\n".$crow["name"];
+					}
+					$index++;
+				}
                                 echo '
                                 <tr>
                                         <td>'.$row["sensor_name"].'</td>
                                         <td style="text-align:center; vertical-align:middle;">'.$row["frost_temp"].'</td>
-                                        <td>'.$row["controller_name"].'</td>
+                                        <td>'.nl2br ($controller_name).'</td>
                                         <td style="text-align:center; vertical-align:middle;"><class="statuscircle"><i class="bi bi-circle-fill '.$scolor.'" style="font-size: 0.55rem;"></i></td>
                                 </tr>';
                         }
@@ -89,7 +110,7 @@ echo '
                                 <div class="form-group" class="control-label"><label>'.$lang['jobs_name'].'</label> <small class="text-muted">'.$lang['last_job_log_info'].'</small>
                                         <select class="form-select" type="text" id="job_name" name="job_name" onchange=last_job_log(this.options[this.selectedIndex].value)>';
                                         //get list of heat relays to display
-                                        $query = "SELECT id, job_name, output FROM jobs;";
+                                        $query = "SELECT id, job_name, output FROM jobs WHERE enabled = 1;";
                                         $result = $conn->query($query);
                                         if ($result){
                                                 while ($jrow=mysqli_fetch_array($result)) {
@@ -174,104 +195,105 @@ echo '<div class="modal" id="documentation" tabindex="-1">
 </div>';
 
 //OS version model
-//$osversion = exec ("cat /etc/os-release");
-//$lines=file('/etc/os-release');
-$lines=array();
-$fp=fopen('/etc/os-release', 'r');
-while ($fp && !feof($fp)){
-    $line=fgets($fp);
-    //process line however you like
-    $line=trim($line);
-    //add to array
-    $lines[]=$line;
-}
-fclose($fp);
+$rval = os_info();
 echo '
 <div class="modal fade" id="os_version" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
-			<button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
-                <h5 class="modal-title">'.$lang['os_version'].'</h5>
-            </div>
-            <div class="modal-body">
-			   <div class="list-group">
-				<a href="#" class="list-group-item"><img src="images/linux.svg" width="20" height="20" alt="">&nbsp'.$lines[1].'</a>
-				<a href="#" class="list-group-item"><img src="images/linux.svg" width="20" height="20" alt="">&nbsp'.$lines[3].'</a>
-				</div>
-           </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
-            </div>
-        </div>
-    </div>
-</div>';
-
-//MaxAir Versions
-echo '
-<div class="modal fade" id="maxair_versions" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
         <div class="modal-dialog">
                 <div class="modal-content">
                         <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
                                 <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
-                                <h5 class="modal-title">'.$lang['maxair_versions'].'</h5>
+                                <h5 class="modal-title">'.$lang['os_version'].'</h5>
+                        </div>
+                        <div class="modal-body">
+                                <div class="list-group">
+                                        <a href="#" class="list-group-item"><img src="images/linux.svg" width="20" height="20" alt="">&nbspNAME - '.$rval["NAME"].'</a>';
+					if (array_key_exists("VERSION",$rval)) {
+                                        	echo '<a href="#" class="list-group-item"><img src="images/linux.svg" width="20" height="20" alt="">&nbspVERSION - '.$rval["VERSION"].'</a>';
+					} elseif (array_key_exists("BUILD_ID",$rval)) {
+                                                echo '<a href="#" class="list-group-item"><img src="images/linux.svg" width="20" height="20" alt="">&nbspBUILD ID - '.$rval["BUILD_ID"].'</a>';
+					}
+                                        echo '<a href="#" class="list-group-item"><img src="images/linux.svg" width="20" height="20" alt="">&nbspDISTRIBUTION - '.$rval["ID"].'</a>
+                                </div>
+                        </div>
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        </div>
+                </div>
+        </div>
+</div>';
+
+//About MaxAir
+echo '
+<div class="modal fade" id="about_maxair" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['about_maxair'].'</h5>
                         </div>
                         <div class="modal-body">';
-                                $file1 = file('/var/www/st_inc/db_config.ini');
-                                $pieces =  explode(' ', $file1[count($file1) - 4]);
-                                $code_v_installed = array_pop($pieces);
-                                $pieces =  explode(' ', $file1[count($file1) - 3]);
-                                $code_b_installed = array_pop($pieces);
-                                $pieces =  explode(' ', $file1[count($file1) - 2]);
-                                $db_v_installed = array_pop($pieces);
-                                $pieces =  explode(' ', $file1[count($file1) - 1]);
-                                $db_b_installed = array_pop($pieces);
-
+				// the db_config.ini file has already been parsed so values are available as system variables
+				// get and parse the db_config.ini file from GitHub
                                 $query = "SELECT name FROM repository WHERE status = 1 LIMIT 1;";
                                 $result = $conn->query($query);
                                 $row = mysqli_fetch_assoc($result);
-                                $file2 = file('https://raw.githubusercontent.com/'.$row['name'].'/master/st_inc/db_config.ini');
-                                $pieces =  explode(' ', $file2[count($file2) - 4]);
-                                $code_v_github = array_pop($pieces);
-                                $pieces =  explode(' ', $file2[count($file2) - 3]);
-                                $code_b_github = array_pop($pieces);
-                                $pieces =  explode(' ', $file2[count($file2) - 2]);
-                                $db_v_github = array_pop($pieces);
-                                $pieces =  explode(' ', $file2[count($file2) - 1]);
-                                $db_b_github = array_pop($pieces);
+                                $url = 'https://raw.githubusercontent.com/'.$row['name'].'/master/st_inc/db_config.ini';
+                                $file_headers = @get_headers($url);
+                                if(!$file_headers || $file_headers[0] == 'HTTP/1.1 404 Not Found') {
+                                } else {
+					// parse the GitHub db_config.ini file
+	                                $db_config_array = parse_ini_string(file_get_contents($url));
+                                	//get latest Bootstrap version number
+                                        $url = 'https://getbootstrap.com/docs/versions/';
+                                        $result = file_get_contents($url);
+                                        if (strlen($result) > 0) {
+                                                $search = 'Last update was ';
+                                                $start = stripos($result, $search);
+                                                if ($start !== false) {
+                                                        $start = $start + strlen($search) + 1;
+                                                        $end = stripos($result, '.</p>', $offset = $start);
+                                                        $length = $end - $start;
+                                                        $bootstrap_ver = substr($result, $start, $length);
+                                                } else {
+                                                        $bootstrap_ver = "Not Found";
+                                                }
+                                        } else {
+                                                $bootstrap_ver = "Not Found";
+                                        }
+                                }
 
                                 echo '<p class="text-muted"> '.$lang['maxair_versions_text'].' <br>'.$lang['repository'].' - https://github.com/'.$row['name'].'.git</p>
                                 <table class="table table-bordered">
                                         <tr>
-                                                <th class="col-8"></th>
+                                                <th class="col-8 "not_mapped_style" style="text-align:center">'.$lang['title'].'<br>'.$lang['copyright'].'</th>
                                                 <th class="col-2" "not_mapped_style" style="text-align:center">'.$lang['maxair_update_installed'].'</th>
                                                 <th class="col-2" "not_mapped_style" style="text-align:center">'.$lang['maxair_update_github'].'</th>
                                         </tr>
 
                                         <tr>
                                                 <td style="font-weight:bold">'.$lang['maxair_update_code_v'].'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$code_v_installed.'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$code_v_github.'</td>
+                                                <td style="text-align:center; vertical-align:middle;">'.$version.'</td>
+                                                <td style="text-align:center; vertical-align:middle;">'.$db_config_array["version"].'</td>
                                         </tr>
                                         <tr>
                                                 <td style="font-weight:bold">'.$lang['maxair_update_code_b'].'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$code_b_installed.'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$code_b_github.'</td>
+                                                <td style="text-align:center; vertical-align:middle;">'.$build.'</td>
+                                                <td style="text-align:center; vertical-align:middle;">'.$db_config_array["build"].'</td>
                                         </tr>
                                         <tr>
                                                 <td style="font-weight:bold">'.$lang['maxair_update_db_v'].'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$db_v_installed.'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$db_v_github.'</td>
+                                                <td style="text-align:center; vertical-align:middle;">'.$db_version.'</td>
+                                                <td style="text-align:center; vertical-align:middle;">'.$db_config_array["db_version"].'</td>
                                         </tr>
                                         <tr>
                                                 <td style="font-weight:bold">'.$lang['maxair_update_db_b'].'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$db_b_installed.'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$db_b_github.'</td>
+                                                <td style="text-align:center; vertical-align:middle;">'.$db_build.'</td>
+                                                <td style="text-align:center; vertical-align:middle;">'.$db_config_array["db_build"].'</td>
                                         </tr>
                                         <tr>
                                                 <td style="font-weight:bold">'.$lang['bs_ver'].'</td>
                                                 <td id="bs_local" style="text-align:center; vertical-align:middle;"></td>
-                                                <td style="text-align:center; vertical-align:middle;"></td>
+                                                <td style="text-align:center; vertical-align:middle;">'.$bootstrap_ver.'</td>
                                         </tr>';
 
                                 echo '</table>
@@ -284,79 +306,57 @@ echo '
 </div>';
 
 //wifi model
-$rxwifidata = exec ("cat /sys/class/net/wlan0/statistics/rx_bytes");
-$txwifidata = exec ("cat /sys/class/net/wlan0/statistics/tx_bytes");
-$rxwifidata = $rxwifidata/1024; // convert to kb
-$rxwifidata = $rxwifidata/1024; // convert to mb
+if (is_dir("/sys/class/net/wlan0")) {
+        $rxwifidata = exec ("cat /sys/class/net/wlan0/statistics/rx_bytes");
+        $txwifidata = exec ("cat /sys/class/net/wlan0/statistics/tx_bytes");
+        $rxwifidata = $rxwifidata/1024; // convert to kb
+        $rxwifidata = $rxwifidata/1024; // convert to mb
 
-$txwifidata = $txwifidata/1024; // convert to kb
-$txwifidata = $txwifidata/1024; // convert to mb
-$wifimac = exec ("cat /sys/class/net/wlan0/address");
-//$wifipeed = exec ("cat /sys/class/net/wlan0/speed");
-//$wifipeed = exec("iwconfig wlan0 | grep -i --color quality");
-$wifistatus = exec ("cat /sys/class/net/wlan0/operstate");
-echo '
-<div class="modal fade" id="wifi_setup" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
-			<button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
-                <h5 class="modal-title">'.$lang['wifi_settings'].'</h5>
-            </div>
-            <div class="modal-body">
-			<p class="text-muted"> '.$lang['wifi_settings_text'].' </p>
-<div class="list-group">
-<a href="#" class="list-group-item">
-	<div class="d-flex justify-content-between">
-		<span>
-			<i class="bi bi-reception-4 green"></i> '.$lang['status'].':
-		</span>
-		<span>'.$wifistatus.'</span>
-	</div>
-</a>
-<a href="#" class="list-group-item">
-        <div class="d-flex justify-content-between">
-                <span>
-			<i class="bi bi-reception-4 green"></i> '.$lang['mac'].':
-		</span>
-		<span>'.$wifimac.'</span>
-	</div>
-</a>
-<a href="#" class="list-group-item">
-        <div class="d-flex justify-content-between">
-                <span>
-			<i class="bi bi-reception-4 green"></i> '.$lang['download'].':
-		</span>
-		<span>'.number_format($rxwifidata,0).' MB</span>
-	</div>
-</a>
-<a href="#" class="list-group-item">
-        <div class="d-flex justify-content-between">
-                <span>
-			<i class="bi bi-reception-4 green"></i> '.$lang['upload'].':
-		</span>
-		<span>'.number_format($txwifidata,0).' MB</span>
-	</div>
-</a>
-</div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
-            </div>
-        </div>
-    </div>
-</div>';
+        $txwifidata = $txwifidata/1024; // convert to kb
+        $txwifidata = $txwifidata/1024; // convert to mb
+        $wifimac = exec ("cat /sys/class/net/wlan0/address");
+        //$wifipeed = exec ("cat /sys/class/net/wlan0/speed");
+        //$wifipeed = exec("iwconfig wlan0 | grep -i --color quality");
+        $wifistatus = exec ("cat /sys/class/net/wlan0/operstate");
+        echo '
+        <div class="modal fade" id="wifi_setup" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                        <div class="modal-content">
+                                <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                        <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                        <h5 class="modal-title">'.$lang['wifi_settings'].'</h5>
+                                </div>
+                                <div class="modal-body">
+                                        <p class="text-muted"> '.$lang['wifi_settings_text'].' </p>
+                                        <div class="list-group" id="wifi_status"></div>
+                                </div>
+                                <div class="modal-footer">
+                                        <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                                </div>
+                        </div>
+                </div>
+        </div>';
+} else {
+        echo '
+        <div class="modal fade" id="wifi_setup" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                        <div class="modal-content">
+                                <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                        <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                        <h5 class="modal-title">'.$lang['wifi_settings'].'</h5>
+                                </div>
+                                <div class="modal-body">
+                                        <p class="text-muted"> '.$lang['wifi_not_found'].' </p>
+                                </div>
+                                <div class="modal-footer">
+                                        <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                                </div>
+                        </div>
+                </div>
+        </div>';
+}
 
 //ethernet model
-$rxdata = exec ("cat /sys/class/net/eth0/statistics/rx_bytes");
-$txdata = exec ("cat /sys/class/net/eth0/statistics/tx_bytes");
-$rxdata = $rxdata/1024; // convert to kb
-$rxdata = $rxdata/1024; // convert to mb
-$txdata = $txdata/1024; // convert to kb
-$txdata = $txdata/1024; // convert to mb
-$nicmac = exec ("cat /sys/class/net/eth0/address");
-$nicpeed = exec ("cat /sys/class/net/eth0/speed");
-$nicactive = exec ("cat /sys/class/net/eth0/operstate");
 echo '
 <div class="modal fade" id="eth_setup" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -366,54 +366,32 @@ echo '
                 <h5 class="modal-title">'.$lang['ethernet_settings'].'</h5>
             </div>
             <div class="modal-body">
-			   <div class="list-group">
-				<a href="#" class="list-group-item">
-				        <div class="d-flex justify-content-between">
-                				<span>
-							<i class="bi bi-diagram-2-fill green"></i>&nbsp'.$lang['status'].':
-						</span>
-						<span>'.$nicactive.'</span>
-					</div>
-				</a>
-				<a href="#" class="list-group-item">
-                                        <div class="d-flex justify-content-between">
-                                                <span>
-							<i class="bi bi-diagram-2-fill green"></i>&nbsp'.$lang['speed'].':
-						</span>
-						<span>'.$nicpeed.'Mb</span>
-					</div>
-				</a>
-				<a href="#" class="list-group-item">
-                                        <div class="d-flex justify-content-between">
-                                                <span>
-							<i class="bi bi-diagram-2-fill green"></i>&nbsp'.$lang['mac'].':
-						</span>
-						<span>'.$nicmac.'</span>
-					</div>
-				</a>
-				<a href="#" class="list-group-item">
-                                        <div class="d-flex justify-content-between">
-                                                <span>
-							<i class="bi bi-diagram-2-fill green"></i>&nbsp'.$lang['download'].':
-						</span>
-						<span>'.number_format($rxdata,0).' MB</span>
-					</div>
-				</a> 
-				<a href="#" class="list-group-item">
-                                        <div class="d-flex justify-content-between">
-                                                <span>
-							<i class="bi bi-diagram-2-fill green"></i>&nbsp'.$lang['upload'].':
-						</span>
-						<span>'.number_format($txdata,0).' MB</span>
-					</div>
-				</a>
-				</div>
+			   <div class="list-group" id="eth_status"></div>
            </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
             </div>
         </div>
     </div>
+</div>';
+
+// Scripts status model
+echo '<div class="modal" id="status_scripts" tabindex="-1">
+	<div class="modal-dialog">
+        	<div class="modal-content">
+            		<div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                		<button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                		<h5 class="modal-title">'.$lang['scripts_status'].'</h5>
+            		</div>
+            		<div class="modal-body">
+                		<p class="text-muted">'.$lang['scripts_status_text'].'</p>
+                                <div id="gw_sc_scripts"></div>
+            		</div>
+                	<div class="modal-footer">
+                        	<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+            		</div>
+        	</div>
+    	</div>
 </div>';
 
 //Big Thank you
@@ -445,6 +423,449 @@ echo '</div></div>
         </div>
     </div>
 </div>';
+
+//Controller Zone Logs Modal
+echo '
+<div class="modal fade" id="sc_z_logs" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+        	<div class="modal-content">
+            		<div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                        	<button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                		<h5 class="modal-title">'.$lang['controller_zone_logs'].'</h5>
+            		</div>
+            		<div class="modal-body">
+                                <p class="text-muted"> '.$lang['controller_zone_logs_text'].' </p>
+                                <table class="table table-bordered">
+                                        <thead>
+                                                <tr>
+                                                        <th class="col-2"><small>'.$lang['zone_name'].'</small></th>
+                                                        <th class="col-2"><small>'.$lang['start_datetime'].'</small></th>
+                                                        <th class="col-2"><small>'.$lang['start_cause'].'</small></th>
+                                                        <th class="col-2"><small>'.$lang['stop_datetime'].'</small></th>
+                                                        <th class="col-2"><small>'.$lang['stop_cause'].'</small></th>
+                                                        <th class="col-2"><small>'.$lang['expected_end_date_time'].'</small></th>
+                                                </tr>
+                                        </thead>
+                                        <tbody id="controller_zone_logs"></tbody>
+                                </table>
+			</div>
+            		<div class="modal-footer">
+                		<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+            		</div>
+        	</div>
+    	</div>
+</div>';
+
+//System Uptime Modal
+echo '
+<div class="modal fade" id="s_uptime" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['system_uptime'].'</h5>
+                        </div>
+                        <div class="modal-body">';
+                                $uptime = (exec ("cat /proc/uptime"));
+                                $uptime=substr($uptime, 0, strrpos($uptime, ' '));
+                                echo '<div id="system_uptime">
+                                	<p class="text-muted"> '.$lang["system_uptime_text"].' </p>
+                			        &nbsp'.secondsToWords($uptime) . '<br/><br/>
+
+	                        		<div class="list-group">
+		        	                        <span class="list-group-item" style="overflow:hidden;"><pre>';
+                			                        $rval=my_exec("df -h");
+                        			                echo $rval['stdout'];
+		                                	echo '</pre></span>
+
+	        		                        <span class="list-group-item" style="overflow:hidden;"><pre>';
+        	                		                $rval=my_exec("free -h");
+                	                        		echo $rval['stdout'];
+		                        	        echo '</pre></span>
+                		        	</div>
+				</div>
+                        </div>
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        </div>
+                </div>
+        </div>
+</div>';
+
+// CPU Temperature History Modal
+echo '
+<div class="modal fade" id="cpu_temp_history" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['cpu_temperature'].'</h5>
+                        </div>
+                        <div class="modal-body">';
+                                $query = "select * from messages_in where node_id = '0' order by datetime desc limit 5";
+                                $results = $conn->query($query);
+                                echo '<p class="text-muted"> '.$lang['cpu_temperature_text'].' </p>
+		                <div id="cpu_temps">
+                		        <div class="list-group">';
+                                		while ($row = mysqli_fetch_assoc($results)) {
+		                                        echo '<div class="list-group-item">
+                		                                <div class="d-flex justify-content-between">
+                                		                        <span>
+                                                		                <i class="bi bi-cpu-fill"></i> '.$row['datetime'].'
+		                                                        </span>
+                		                                        <span class="text-muted small"><em>'.number_format(DispSensor($conn,$row['payload'],1),1).'&deg;</em></span>
+                                		                </div>
+		                                        </div>';
+                		                }
+	                       		echo '</div>
+        	        	</div>
+                        </div>
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        </div>
+                </div>
+        </div>
+</div>';
+
+// status sensors model
+echo '<div class="modal" id="status_sensors" tabindex="-1">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['temperature_sensor'].'</h5>
+                        </div>
+                        <div class="modal-body">
+                                <p class="text-muted" id="status_sensors_text">'.$lang['please_wait_text'].'</p>
+				<div class="list-group" id="sensor_temps">
+				</div>
+	                        <!-- /.list-group -->
+                        </div>
+                        <!-- /.modal-body -->
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        </div>
+                </div>
+                <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->';
+?>
+<script language="javascript" type="text/javascript">
+function sensor_last24h(id, name, node_id, child_id)
+{
+        var myId = id;
+        var myName = name;
+	var myNodeId = node_id;
+	var myChildId = child_id;
+
+	$("#s_hist_id").val(myId);
+        $("#s_hist_name").val(myName);
+
+        var title1 = "<?php echo $lang['sensor_last24h'] ?>"
+        var title2 = "<?php echo $lang['for_sensor_id'] ?>" + myNodeId + '\xa0(' + myChildId + '), ' + myName;
+        $('#sensorhistory_title1').text(title1);
+        $('#sensorhistory_title2').text(title2);
+        $('#sensorhistory_text1').text('<?php echo $lang["please_wait_text"] ?>');
+        $('#sensorhistory_value1').text("");
+        $('#sensorhistory_text2').text("");
+        $('#sensorhistory_value2').text("");
+	$('#status_sensors').modal('hide');
+        $('#sensors_history').modal('show');
+}
+</script>
+
+<?php
+
+// Sensors  model
+echo '<div class="modal" id="sensors_history" tabindex="-1">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title"><div id="sensorhistory_title1"></div><div id="sensorhistory_title2"></div></h5>
+                        </div>
+                        <div class="modal-body">
+                                <p class="text-muted">
+					<div class="row align-items-center" style="margin-top: -1.5rem">
+						<div class="col-md-10" id="sensorhistory_text1"></div>
+						<div class="col-md-2 text-center" style="font-size: 15px;" id="sensorhistory_value1"></div>
+					</div>
+					<div class="row align-items-center" style="margin-bottom: -1rem">
+                                        	<div class="col-md-10" id="sensorhistory_text2"></div>
+                                                <div class="col-md-2 text-center" style="font-size: 15px;" id="sensorhistory_value2"></div>
+                                        </div>
+                                </p>
+				<input type="hidden" id="s_hist_id" name="s_hist_id" value="0">
+                                <input type="hidden" id="s_hist_name" name="s_hist_name" value="0">
+ 	                        <table class="table table-fixed">
+        	                        <thead>
+                	                        <tr>
+                                	                <th style="text-align:center; vertical-align:middle;" class="col-6"><small>'.$lang['reading_timestamp'].'</small></th>
+                                        	        <th style="text-align:center; vertical-align:middle;" class="col-6"><small>'.$lang['value'].'</small></th>
+	                                        </tr>
+        	                        </thead>
+					<tbody id= "result"></tbody>
+                        	</table>
+                        </div>
+                        <!-- /.modal-body -->
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" id="button_history_hide">'.$lang['close'].'</button>
+                        </div>
+                </div>
+                <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->';
+?>
+<script language="javascript" type="text/javascript">
+$("#button_history_hide").on("click", function(){
+	$("#sensors_history").modal("show");
+	$('#sensors_history').on("hidden.bs.modal", function (e) {
+		$("#status_sensors").modal("show");
+	})
+	$("#sensors_history").modal("hide");
+});
+</script>
+<?php
+
+//Temperature Delta Model
+echo '<div class="modal fade" id="temp_delta" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['temperature_delta'].'</h5>
+                        </div>
+                        <div class="modal-body">
+                                <p class="text-muted">'.$lang['temperature_delta_text'].'</p>
+                                <input type="hidden" id="zone_sensor" name="zone_sensor" value="0">
+                                <input type="hidden" id="1h_24h" name="1h_24h" value="1">
+                                <table class="table table-bordered">
+                                        <thead>
+                                                <tr>
+                                                        <th class="col-md-3" id = "temp_delta_table_h1"><small>'.$lang['zone'].'&nbsp'.$lang['name'].'</small></th>
+                                                        <th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['min'].'</small></th>
+                                                        <th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['max'].'</small></th>
+                                                        <th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['delta'].'</small></th>
+                                                </tr>
+                                        </thead>
+                                        <tbody id= "temp_delta_table"></tbody>
+                                </table>
+                        </div>
+                        <div class="modal-footer">';
+                                echo '<button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" id="button_1h_24h">'.$lang['24_hours'].'</button>';
+                                echo '<button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" id="button_zone_sensor">By '.$lang['sensor'].'</button>';
+                                echo '<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        </div>
+                </div>
+        </div>
+</div>
+<!-- /.modal -->';
+?>
+<script language="javascript" type="text/javascript">
+$("#button_zone_sensor").on("click", function(){
+        var sensor_txt = 'By ' + '<?php echo $lang["sensor"] ?>';
+        var zone_txt = 'By ' + '<?php echo $lang["zone"] ?>';
+
+        if(document.getElementById("zone_sensor").value == 1) {
+                document.getElementById("zone_sensor").value = 0;
+                $(this).text(sensor_txt);
+        } else {
+                document.getElementById("zone_sensor").value = 1;
+                $(this).text(zone_txt);
+        }
+});
+
+$("#button_1h_24h").on("click", function(){
+        var h1_txt = '<?php echo $lang["1_hour"] ?>';
+        var h24_txt = '<?php echo $lang["24_hours"] ?>';
+
+        if(document.getElementById("1h_24h").value == 1) {
+                document.getElementById("1h_24h").value = 24;
+                $(this).text(h1_txt);
+        } else {
+                document.getElementById("1h_24h").value = 1;
+                $(this).text(h24_txt);
+        }
+});
+</script>
+<?php
+
+// zone state model
+echo '<div class="modal" id="zones_states" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['zone_state'].'</h5>
+                        </div>
+                        <div class="modal-body">
+                                <p class="text-muted">'.$lang['zone_state_text'].'</p>
+                                <table class="table table-fixed">
+                                        <thead>
+                                                <tr>
+                                                        <th style="text-align:center;" class="col-1"><small>'.$lang['zone_name'].'</small></th>
+                                                        <th style="text-align:center;" class="col-3"><small>'.$lang['zone_mode'].'</small></th>
+                                                        <th style="text-align:center;" class="col-1"><small>'.$lang['zone_active'].'</small></th>
+                                                        <th style="text-align:center;" class="col-1"><small>'.$lang['active_schedule'].'</small></th>
+                                                        <th style="text-align:center;" class="col-1"><small>'.$lang['sensor_reading'].'</small></th>
+                                                        <th style="text-align:center;" class="col-1"><small>'.$lang['target_temp'].'</small></th>
+                                                        <th style="text-align:center;" class="col-1"><small>'.$lang['cut_in_temp'].'</small></th>
+                                                        <th style="text-align:center;" class="col-1"><small>'.$lang['cut_out_temp'].'</small></th>
+                                                        <th style="text-align:center;" class="col-1"><small>'.$lang['zone_fault'].'</small></th>
+                                                        <th style="text-align:center;" class="col-1"><small>'.$lang['sensor_fault'].'</small></th>
+                                                </tr>
+                                        </thead>
+                                        <tbody id="z_states"></tbody>
+                                </table>
+                        </div>
+                        <!-- /.modal-body -->
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        </div>
+                </div>
+                <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->';
+
+// Relays Status Model
+echo '<div class="modal" id="status_relays" tabindex="-1">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+				<button type="button" class="close" data-bs-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">'.$lang['close'].'</span></button>
+				<h4 class="modal-title">'.$lang['relays_status'].'</h4>
+			</div>
+			<div class="modal-body">
+                                <p class="text-muted">'.$lang['relays_status_text'].'</p>
+                                <table class="table table-fixed">
+                                        <thead>
+                                                <tr>
+                                                        <th class="col-6"><small>'.$lang['relay_name'].'</small></th>
+                                                        <th class="col-2" style="text-align:center; vertical-align:middle;" class="col-2"><small>'.$lang['state'].'</small></th>
+                                                 </tr>
+                                        </thead>
+                                        <tbody id= "relay_states"></tbody>
+                                </table>
+			</div>
+                        <!-- /.modal-body -->
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        </div>
+                </div>
+                <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->';
+?>
+<script language="javascript" type="text/javascript">
+function relay_log(id, name, relay_id)
+{
+        var myId = id;
+        var myName = name;
+        var myRelayId = relay_id;
+
+        $("#r_hist_id").val(myId);
+        $("#r_hist_name").val(myName);
+
+        var title1 = "<?php echo $lang['log_for_relay'] ?>"
+        var title2 = myName;
+        $('#relay_log_title1').text(title1);
+        $('#relay_log_title2').text(title2);
+        $('#relay_log_text1').text('<?php echo $lang["please_wait_text"] ?>');
+        $('#status_relays').modal('hide');
+        $('#relays_history').modal('show');
+}
+</script>
+
+<?php
+// Relay Log  model
+echo '<div class="modal" id="relays_history" tabindex="-1">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title"><div id="relay_log_title1"></div><div id="relay_log_title2"></div></h5>
+                        </div>
+                        <div class="modal-body">
+                                <p class="text-muted" id="relay_log_text1"></p>
+                                <input type="hidden" id="r_hist_id" name="r_hist_id" value="0">
+                                <input type="hidden" id="r_hist_name" name="r_hist_name" value="0">
+                                <table class="table table-fixed">
+                                        <thead>
+                                                <tr>
+                                                        <th style="text-align:center; vertical-align:middle;" class="col-6"><small>'.$lang['relay_log_timestamp'].'</small></th>
+                                                        <th style="text-align:center; vertical-align:middle;" class="col-2"><small>'.$lang['state'].'</small></th>
+                                                        <th style="text-align:center; vertical-align:middle;" class="col-4"><small>'.$lang['zone_mode'].'</small></th>
+                                                 </tr>
+                                        </thead>
+                                        <tbody id= "relay_log_result"></tbody>
+                                </table>
+                        </div>
+                        <!-- /.modal-body -->
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" id="button_relay_log_hide">'.$lang['close'].'</button>
+                        </div>
+                </div>
+                <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->';
+?>
+<script language="javascript" type="text/javascript">
+$("#button_relay_log_hide").on("click", function(){
+        $("#relays_history").modal("show");
+        $('#relays_history').on("hidden.bs.modal", function (e) {
+                $("#status_relays").modal("show");
+        })
+        $("#relays_history").modal("hide");
+});
+</script>
+<?php
+
+//Notifications Model
+echo '<div class="modal fade" id="notifications" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['notifications'].'</h5>
+                        </div>
+                        <div class="modal-body">
+                                <p class="text-muted">'.$lang['notifications_text'].'</p>
+                                <table class="table table-bordered">
+                                        <thead>
+                                                <tr>
+                                                        <th class="col-md-4"><small>'.$lang['date_time'].'</small></th>
+                                                        <th class="col-md-7" style="text-align:center;"><small>'.$lang['message'].'</small></th>
+					                <th class="col-1"></th>
+                                                </tr>
+                                        </thead>';
+                                        $query = "SELECT * FROM notice ORDER BY id ASC;";
+                                        $results = $conn->query($query);
+                                        while ($row = mysqli_fetch_assoc($results)) {
+                                                echo '<tr>
+                                                        <td>'.$row["datetime"].'</td>
+                                                        <td>'.$row["message"].'</td>
+							<td><button class="btn warning btn-danger btn-xs" onclick="delete_notification('.$row["id"].');" data-confirm="'.$lang['delete_notification'].'"><span class="bi bi-trash-fill black"></span></button> </a></td>';
+						echo '</tr>';
+					}
+                                echo '</table>
+                        </div>
+                        <div class="modal-footer">';
+                                echo '<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        </div>
+                </div>
+        </div>
+</div>
+<!-- /.modal -->';
 }
 
 if ($model_num == 2) {
@@ -749,11 +1170,11 @@ echo '
 					}
 
 					//check the default update and backup folder and find any .zip (update) or .gz (backup) files and add to array
-					$files = glob('/var/www/MySQL_Database/database_backups/'.chr(42).'.zip');
+					$files = glob('/var/www/MySQL_Database/database_backups/'.'*.zip');
 					foreach ($files as $file) {
 					    $fileList[filemtime($file)] = $file;;
 					}
-					$files = glob('/var/www/MySQL_Database/database_backups/'.chr(42).'.gz');
+					$files = glob('/var/www/MySQL_Database/database_backups/'.'*.gz');
 					foreach ($files as $file) {
 					    $fileList[filemtime($file)] = $file;
 					}
@@ -762,7 +1183,7 @@ echo '
 					ksort($fileList);
 					$fileList = array_reverse($fileList, TRUE);
 					foreach ($fileList as $file) {
-						echo '<button type="button" class="warning list-group-item list-group-item-action" style="font-size: 0.6rem;" onclick="restore_db(`'.$file.'`);" data-confirm="'.$lang['restore_db_warning'].'">'.$file.'</button>';
+						echo '<button type="button" class="warning list-group-item list-group-item-action" style="font-size: 0.6rem;" onclick="restore_db(`'.$file.'`);" data-confirm="'.$lang['restore_db_warning'].$lang["restore_db_delay"].'">'.$file.'</button>';
 					}
 				echo '</ul>
 			</div>
@@ -774,7 +1195,9 @@ echo '
 </div>';
 
 //Setup Auto Image
-if (file_exists("/usr/local/bin/image-backup") && !file_exists('/etc/armbian-release')) {
+$query = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'maxair' AND table_name = 'auto_image';";
+$result = $conn->query($query);
+if (mysqli_num_rows($result) != 0) {
 	echo '<div class="modal fade" id="auto_image" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 		<div class="modal-dialog">
         		<div class="modal-content">
@@ -840,11 +1263,11 @@ if (file_exists("/usr/local/bin/image-backup") && !file_exists('/etc/armbian-rel
                                 	        		<div class="help-block with-errors"></div>
 		                                	</div>
         		                        	<div class="col-4">
-								<select class="form-select" type="text" id="fval2" name="fval2" onchange=set_frequency(this.options[this.selectedIndex].value)>
+								<select class="form-select" type="text" id="fval2" name="fval2" onchange=set_ai_frequency(this.options[this.selectedIndex].value)>
         	        		                        	<option value="DAY" ' . ($f[1]=='DAY' ? 'selected' : '') . '>'.$lang['DAY'].'</option>
 		                        		                <option value="WEEK" ' . ($f[1]=='WEEK' ? 'selected' : '') . '>'.$lang['WEEK'].'</option>
 								</select>
-								<input type="hidden" id="set_f" name="set_f" value="'.$f[1].'">
+								<input type="hidden" id="set_ai_f" name="set_ai_f" value="'.$f[1].'">
 								<div class="help-block with-errors"></div>
 							</div>
 						</div>
@@ -856,11 +1279,11 @@ if (file_exists("/usr/local/bin/image-backup") && !file_exists('/etc/armbian-rel
 	                                	        	<div class="help-block with-errors"></div>
 		                                	</div>
 	        		                        <div class="col-4">
-        	        		                        <select class="form-select" type="text" id="rval2" name="rval2" onchange=set_rotation(this.options[this.selectedIndex].value)>
+        	        		                        <select class="form-select" type="text" id="rval2" name="rval2" onchange=set_ai_rotation(this.options[this.selectedIndex].value)>
                 	        		                        <option value="DAY" ' . ($r[1]=='DAY' ? 'selected' : '') . '>'.$lang['DAY'].'</option>
                         	        		                <option value="WEEK" ' . ($r[1]=='WEEK' ? 'selected' : '') . '>'.$lang['WEEK'].'</option>
                                 	        		</select>
-                                        	        	<input type="hidden" id="set_r" name="set_r" value="'.$r[1].'">
+                                        	        	<input type="hidden" id="set_ai_r" name="set_ai_r" value="'.$r[1].'">
 			                                	<div class="help-block with-errors"></div>
 		        	                        </div>
 			                        </div>
@@ -890,7 +1313,15 @@ echo '
         	<div class="modal-content">
             		<div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
                         	<button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
-                			<h5 class="modal-title">'.$lang['user_accounts'].'</h5>
+                		<h5 class="modal-title">'.$lang['user_accounts'].'</h5>
+		                <div class="dropdown float-right">
+                			<a class="" data-bs-toggle="dropdown" href="#">
+                                		<i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
+                                	</a>
+                                	<ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
+                                        	<li><a class="dropdown-item" href="pdf_download.php?file=setup_user_accounts.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_user_accounts'].'</a></li>
+                                	</ul>
+                        	</div>
             		</div>
             		<div class="modal-body">
                         	<p class="text-muted"> '.$lang['user_accounts_text'].' </p>';
@@ -910,7 +1341,7 @@ echo '
 							<div class="d-flex justify-content-between">
         							<div href="settings.php?uid='.$row['id'].'  class="list-group-item"> <i class="bi bi-person-fill blue" style="font-size: 1.2rem;"></i> '.$username.'</div>
                 						<div class="text-muted small">
-									<a href="user_accounts.php?uid='.$row["id"].'" style="text-decoration: none;" class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-xs login"><span class="bi bi-pencil"></span>&nbsp</a>';
+									<a href="user_accounts.php?uid='.$row["id"].'" style="text-decoration: none;"><button class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-xs login"><span class="bi bi-pencil"></span></button>&nbsp</a>';
                 								if ($_SESSION['user_id'] != $row['id']) {
 											echo ' class="first btn btn-danger btn-xs" onclick="del_user('.$row["id"].');" data-confirm="'.$content_msg.'"><span class="bi bi-trash-fill black"></span></a>';
                 								} else {
@@ -973,13 +1404,38 @@ echo '
 						</div>
                                         	<p class="text-muted">Install ReWrite for Apache Web Server</p>
 					</div>';
+
+                                        $installpath = "/var/www/add_on/tinytuya/install.sh";
+                                        $installname = "Install tinytuya";
+					$output = shell_exec("pip3 list|grep tinytuya|awk '{print $1}'");
+					if (str_contains($output, 'tinytuya')) {
+						$installed = 1;
+						$prompt = $lang['Already Installed'];
+					} else {
+						$installed = 0;
+						$prompt = 'Install'; }
+                                        echo '<div class="list-group-item">
+                                                <div class="d-flex justify-content-between">
+                                                        <div>
+                                                                <i class="bi bi-terminal-fill green" style="font-size: 2rem;"></i> '.$installname.'
+                                                        </div>
+                                                        <div>';
+								if ($installed == 0) {
+                                                                	echo '<span class="text-muted small"><button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm"
+                                                                	onclick="install_software(`'.$installpath.'`)">'.$prompt.'</button></span>';
+								} else {
+									echo '<span class="text"><p> '.$lang['already_installed'].'</p></span>';
+								}
+                                                        echo '</div>
+                                                </div>
+                                                <p class="text-muted">Install tinytuya for tuya_bridge.py</p>
+                                        </div>';
+
                                         $path = '/var/www/add_on';
                                         $dir = new DirectoryIterator($path);
-					// check if running on Armbian, if so do not allow install of Image Tools
-					if (file_exists('/etc/armbian-release')) { $rpi = false; } else { $rpi = true; }
                                         foreach ($dir as $fileinfo) {
 						$installed = 0;
-                                                if ($fileinfo->isDir() && !$fileinfo->isDot()) {
+                                                if ($fileinfo->isDir() && !$fileinfo->isDot() && strpos($fileinfo->getFilename(), 'tinytuya') === FALSE) {
                                                         $installpath = $path."/".$fileinfo->getFilename()."/install.sh";
                                                         if (file_exists($installpath)) {
                                                                 $contents = file_get_contents($installpath);
@@ -1012,26 +1468,24 @@ echo '
                                                                 } else {
                                                                         $instaleed = 2;
                                                                 }
-								if ($rpi || (!$rpi && strpos($name, 'Install Image Tools') === false)) {
-	                                                                echo '<div class="list-group-item">
-										<div class="d-flex justify-content-between">
-											<div>
-                        	                                        			<i class="bi bi-terminal-fill green" style="font-size: 2rem;"></i> '.$name.'
-											</div>
-											<div>';
-                                             				                	if ($installed == 0) {
-                                                        	        		        	echo '<span class="text-muted small"><button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm"
-		                                                	                        	onclick="install_software(`'.$installpath.'`)">'.$lang['install'].'</button></span>';
-		                                                        	        	} elseif ($installed == 1) {
-                		                                                	        	echo '<span class="text"><p> '.$lang['already_installed'].'</p></span>';
-                                                                				} else {
-                                                                        				echo '<span class="text"><p> '.$lang['no_installer'].'</p></span>';
-	                                                                			}
-											echo '</div>
-										</div>
-                        	                                        	<p class="text-muted">'.$description.'</p>
-									</div>';
-								}
+                                                                echo '<div class="list-group-item">
+                                                                        <div class="d-flex justify-content-between">
+                                                                                <div>
+                                                                                        <i class="bi bi-terminal-fill green" style="font-size: 2rem;"></i> '.$name.'
+                                                                                </div>
+                                                                                <div>';
+                                                                                        if ($installed == 0) {
+                                                                				echo '<span class="text-muted small"><button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm"
+                                                                                                onclick="install_software(`'.$installpath.'`)">'.$lang['install'].'</button></span>';
+                                                                                        } elseif ($installed == 1) {
+                                                                                                echo '<span class="text"><p> '.$lang['already_installed'].'</p></span>';
+                                                                                        } else {
+                                                                                                echo '<span class="text"><p> '.$lang['no_installer'].'</p></span>';
+                                                                                        }
+                                                                                echo '</div>
+                                                                        </div>
+                                                                        <p class="text-muted">'.$description.'</p>
+                                                                </div>';
                                                         }
                                                 }
                                         }
@@ -1052,56 +1506,101 @@ echo '
 
 //Setup Database Cleanup intervals
 echo '<div class="modal fade" id="db_cleanup" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
-                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
-                <h5 class="modal-title">'.$lang['db_cleanup'].'</h5>
-            </div>
-            <div class="modal-body">
-                <p class="text-muted">'.$lang['db_cleanup_text'].'</p>
-                <table class="table table-bordered">
-                        <tr>
-                                <th class="col-2 text-center"><small>'.$lang['table_name'].'</small></th>
-                                <th class="col-1 text-center"><small>'.$lang['db_cleanup_value'].'</small></th>
-                                <th class="col-2 text-center"><small>'.$lang['db_cleanup_period'].'</small></th>
-                        </tr>';
-                        $query = "SELECT * FROM db_cleanup LIMIT 1;";
-                        $result = $conn->query($query);
-                        $db_row = mysqli_fetch_assoc($result);
-                        $query = "SELECT column_name
-                                FROM INFORMATION_SCHEMA.COLUMNS
-                                WHERE TABLE_SCHEMA = 'maxair' AND table_name = 'db_cleanup' AND ordinal_position > 3
-                                ORDER BY ordinal_position;";
-                        $results = $conn->query($query);
-                        $x = 0;
-                        while ($row = mysqli_fetch_assoc($results)) {
-                                $col_name = $row["column_name"];
-                                $per_int = $db_row[$col_name];
-                                $pieces = explode(" ", $per_int);
-                                $period = $pieces[0];
-                                $interval = $pieces[1];
-                                echo '<tr>
-                                        <td>'.$row["column_name"].'</td>
-                			<td><input id="period'.$x.'" type="text" class="float-left text" style="border: none" name="period'.$x.'"  size="3" value="'.$period.'" placeholder="Period" required></td>
-                                        <td><select class="form-select" type="text" id="ival'.$x.'" name="ival'.$x.'" onchange=set_interval('.$x.')>
-                                                <option value="HOUR" ' . ($interval=='HOUR' ? 'selected' : '') . '>'.$lang['HOUR'].'</option>
-                                                <option value="DAY" ' . ($interval=='DAY' ? 'selected' : '') . '>'.$lang['DAY'].'</option>
-                                                <option value="WEEK" ' . ($interval=='WEEK' ? 'selected' : '') . '>'.$lang['WEEK'].'</option>
-                                                <option value="MONTH" ' . ($interval=='MONTH' ? 'selected' : '') . '>'.$lang['MONTH'].'</option>
-                                        </select></td>
-                                        <input type="hidden" id="set_interval'.$x.'" name="set_interval_type" value="'.$interval.'">
-                                </tr>';
-                                $x = $x + 1;
-                        }
-                echo '</table>
-            </div>
-                <div class="modal-footer">
-                        <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
-                        <input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="set_db_cleanup()">
-            </div>
-        </div>
-    </div>
+	<div class="modal-dialog">
+        	<div class="modal-content">
+            		<div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                		<button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                		<h5 class="modal-title">'.$lang['db_cleanup'].'</h5>
+		                <div class="dropdown float-right">
+        		                <a class="" data-bs-toggle="dropdown" href="#">
+                		                <i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
+                        		</a>
+                        		<ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
+                                		<li><a class="dropdown-item" href="pdf_download.php?file=database_cleanup.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_database_cleanup'].'</a></li>
+                         		</ul>
+				</div>
+                	</div>
+            		<div class="modal-body">
+	    			<p class="text-muted">'.$lang['db_cleanup_text'].'</p>';
+            			$query = "SELECT * FROM db_cleanup LIMIT 1;";
+                		$result = $conn->query($query);
+                		$db_row = mysqli_fetch_assoc($result);
+                		$enabled = $db_row['status'];
+                		$start_time = $db_row['start_time'];
+                		$result = $db_row['result'];
+                		$last_run = $db_row['last_run'];
+                		if ($result == 1) {
+                    			$last_result = "bi bi-check-lg green";
+				} else {
+                    			$last_result = "bi bi-x-lg red";
+				}
+                		echo '<div class="row mb-2">
+                			<div class="col-5">
+        					<div class="form-group" class="control-label">
+                					<div class="form-check">';
+                        					if ($enabled == '1' || $enabled == 1){
+        								echo '<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" value="1" id="checkbox8" name="status" checked>';
+                        					} else {
+        								echo '<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" value="1" id="checkbox8" name="status">';
+                        					}
+                        					echo '<label class="form-check-label" for="checkbox8">'.$lang['enable_db_cleanup'].'</label>
+                					</div>
+        					</div>
+					</div>
+                        		<div class="col-3">
+                                		<div class="control-label align-items-end"><label>'.$lang['run_db_cleanup_at'].'</label></div>
+                        		</div>
+					<div class="col-4">
+		                		<div class="form-group">
+                		        		<input class="form-control" type="time" id="start_time" name="start_time" value="'.$start_time.'" placeholder="Start Time" required>
+                				</div>
+					</div>
+				</div>
+                		<br>
+                		<table class="table table-bordered">
+                        		<tr>
+                                		<th class="col-2 text-center"><small>'.$lang['table_name'].'</small></th>
+                                		<th class="col-1 text-center"><small>'.$lang['db_cleanup_value'].'</small></th>
+                                		<th class="col-2 text-center"><small>'.$lang['db_cleanup_period'].'</small></th>
+                        		</tr>';
+                       			$query = "SELECT column_name
+                                		FROM INFORMATION_SCHEMA.COLUMNS
+                                		WHERE TABLE_SCHEMA = 'maxair' AND table_name = 'db_cleanup' AND ordinal_position > 7
+                                		ORDER BY ordinal_position;";
+                        		$results = $conn->query($query);
+                        		$x = 0;
+                        		while ($row = mysqli_fetch_assoc($results)) {
+                                		$col_name = $row["column_name"];
+                                		$per_int = $db_row[$col_name];
+                                		$pieces = explode(" ", $per_int);
+                                		$period = $pieces[0];
+                                		$interval = $pieces[1];
+                                		echo '<tr>
+                                        		<td>'.$row["column_name"].'</td>
+                					<td><input id="period'.$x.'" type="text" class="float-left text" style="border: none" name="period'.$x.'"  size="3" value="'.$period.'" placeholder="Period" required></td>
+                                        		<td><select class="form-select" type="text" id="ival'.$x.'" name="ival'.$x.'" onchange=set_interval('.$x.')>
+                                                		<option value="HOUR" ' . ($interval=='HOUR' ? 'selected' : '') . '>'.$lang['HOUR'].'</option>
+                                                		<option value="DAY" ' . ($interval=='DAY' ? 'selected' : '') . '>'.$lang['DAY'].'</option>
+                                                		<option value="WEEK" ' . ($interval=='WEEK' ? 'selected' : '') . '>'.$lang['WEEK'].'</option>
+                                                		<option value="MONTH" ' . ($interval=='MONTH' ? 'selected' : '') . '>'.$lang['MONTH'].'</option>
+                                        		</select></td>
+                                        		<input type="hidden" id="set_interval'.$x.'" name="set_interval_type" value="'.$interval.'">
+                                		</tr>';
+                                		$x = $x + 1;
+                        		}
+                		echo '</table>
+            		</div>
+            		<div class="modal-footer justify-content-between">
+                		<div>
+                    			<span class="text-muted">Last Run: '.$last_run.' <i class="'.$last_result.'" style="font-size: 1.5rem; -webkit-text-stroke: 1px;"></i></span>
+                		</div>
+                		<div class="actions">
+                        		<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        		<input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="set_db_cleanup()">
+				</div>
+            		</div>
+        	</div>
+    	</div>
 </div>';
 
 //set max cpu temperature
@@ -1164,13 +1663,22 @@ echo '<div class="modal fade" id="change_refresh" tabindex="-1" role="dialog" ar
             </div>
             <div class="modal-body">
                 <p class="text-muted">'.$lang['change_refresh_text'].'</p>';
-                $query = "SELECT page_refresh FROM system LIMIT 1;";
+                $query = "SELECT page_refresh, page_timeout FROM system LIMIT 1;";
                 $result = $conn->query($query);
                 $row = mysqli_fetch_array($result);
-                echo '<div class="form-group" class="control-label"><label>'.$lang['seconds'].'</label> <small class="text-muted"> </small>
+                echo '<div class="form-group" class="control-label"><label>'.$lang['page_refresh_seconds'].'</label> <small class="text-muted"> </small>
                 <select class="form-select" type="text" id="new_refresh" name="new_refresh" >';
                 for ($x = 1; $x <=  15; $x++) {
                         echo '<option value="'.$x.'" ' . ($x==$row['page_refresh'] ? 'selected' : '') . '>'.$x.'</option>';
+                }
+                echo '</select>
+                        <div class="help-block with-errors"></div>
+                </div>
+                <br><p class="text-muted">'.$lang['change_timeout_text'].'</p>
+                <div class="form-group" class="control-label"><label>'.$lang['page_timeout_seconds'].'</label> <small class="text-muted"> </small>
+                <select class="form-select" type="text" id="new_timeout" name="new_timeout" >';
+                for ($x = 0; $x <=  600; $x = $x + 60) {
+                        echo '<option value="'.$x.'" ' . ($x==$row['page_timeout'] ? 'selected' : '') . '>'.$x.'</option>';
                 }
                 echo '</select>
                         <div class="help-block with-errors"></div>
@@ -1209,13 +1717,274 @@ function sw_install_close()
 function set_frequency(f)
 {
  document.getElementById("set_f").value = f;
-// console.log(f);
+//console.log(f);
 }
 
 function set_rotation(r)
 {
  document.getElementById("set_r").value = r;
 // console.log(r);
+}
+
+function set_ai_frequency(f)
+{
+ document.getElementById("set_ai_f").value = f;
+//console.log(f);
+}
+
+function set_ai_rotation(r)
+{
+ document.getElementById("set_ai_r").value = r;
+// console.log(r);
+}
+</script>
+<?php
+
+//Services
+echo '<div class="modal fade" id="show_services" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    	<div class="modal-dialog">
+        	<div class="modal-content">
+            		<div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                        	<button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                		<h5 class="modal-title">'.$lang['services'].'</h5>
+            		</div>
+            		<div class="modal-body">
+                		<p class="text-muted">'.$lang['services_text'].'</p>';
+    				$SArr=[['name'=>'Apache','service'=>'apache2.service'],
+           				['name'=>'MySQL','service'=>'mysql.service'],
+           				['name'=>'MariaDB','service'=>'mariadb.service'],
+           				['name'=>'PiHome JOBS','service'=>'pihome_jobs_schedule.service'],
+           				['name'=>'HomeAssistant Integration','service'=>'HA_integration.service'],
+	   				['name'=>'Amazon Echo','service'=>'pihome_amazon_echo.service'],
+           				['name'=>'Homebridge','service'=>'homebridge.service'],
+           				['name'=>'Autohotspot','service'=>'autohotspot.service']];
+    				echo '<div class="list-group">';
+    					$index = 0;
+    					foreach($SArr as $SArrKey=>$SArrVal) {
+    						$rval=my_exec("/bin/systemctl status " . $SArrVal['service']);
+                                                $sval=my_exec("/bin/journalctl -u " . $SArrVal['service'] . " -n 10 --no-pager");
+                                                $per='';
+                                                similar_text($sval['stderr'],'Hint: You are currently not seeing messages from other users and the system. Users in the \'systemd-journal\' group can see all messages. Pass -q to turn off this notice. No journal files were opened due to insufficient permissions.',$per);
+                                                if($per>80) {
+                                                        $sval['stdout']=$web_user_name.' cannot access journalctl.<br/><br/>If you would like it to be able to, run<br/><code>sudo usermod -a -G systemd-journal '.$web_user_name.'</code><br/>and then reboot the RPi.';
+						}
+        					echo '<span class="list-group-item">
+							<div class="d-flex justify-content-start">';
+        							echo $SArrVal['name'];
+							echo '</div>
+							<div class="d-flex justify-content-between">
+        							<span class="text-muted small">
+									<div id="service_'.$index++.'">';
+			        						if($rval['stdout']=='') {
+											$stat = 'Error: ' . $rval['stderr'];
+            										echo $stat;
+        									} else {
+            										$stat='Status: Unknown';
+            										$rval['stdout']=explode(PHP_EOL,$rval['stdout']);
+            										foreach($rval['stdout'] as $line) {
+                										if(strstr($line,'Loaded:')) {
+                    											if(strstr($line,'disabled;')) {
+                        											$stat='Status: Disabled';
+                       				 								break;
+                    											}
+                										}
+                										if(strstr($line,'Active:')) {
+                    											if(strstr($line,'active (running)')) {
+                        											$stat=trim($line);
+                        											break;
+                    											} else if(strstr($line,'(dead)')) {
+                        											$stat='Status: Dead';
+                        											break;
+                    											}
+                										}
+            										}
+            										echo $stat;
+        									}
+									echo '</div>
+        							</span>
+        							<span class="text-muted small" style="width:200px;text-align:right;" data-bs-toggle="tooltip" title="'.$lang['services_info'].'">
+                                         				<button class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-xs" onclick="service_info(`'.$SArrVal['name'].'`,`'.$SArrVal['service'].'`,`'.$stat.'`,`'.$sval['stdout'].'`);"><span class="bi bi-info-circle"></span></button>
+        							</span>
+        						</div>
+						</span>';
+    					}
+    				echo '</div>
+	                        <!-- /.list-group -->
+            		</div>
+                        <!-- /.modal-body -->
+			<div class="modal-footer">
+                		<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+            		</div>
+        	</div>
+                <!-- /.modal-content -->
+    	</div>
+        <!-- /.modal-dialogue -->
+</div>
+<!-- /.modal -->';
+?>
+<script>
+function service_info(name, service, status, journal)
+{
+	var myName = name;
+        var myService = service;
+	var myStatus = status;
+	var myJournal = journal;
+
+//	console.log(myName);
+//	console.log(myService);
+//	console.log(myStatus);
+
+	document.getElementById('serv_status').setAttribute('name','serv_status_' + myService);
+	document.getElementById("serv_name").innerHTML = myName;
+        document.getElementById("serv_status").innerHTML = myStatus
+	if (myService.includes("pihome.") || myService.includes("pihome_") || myService.includes("homebridge") || myService.includes("autohotspot") || myService.includes("HA_Integration")) {
+		document.getElementById("serv_buttons").style.setProperty('display', 'block');
+		document.getElementById('button_serv_start').setAttribute('onclick','service_action(`' + myService + '`,28)');
+		document.getElementById('button_serv_stop').setAttribute('onclick','service_action(`' + myService + '`,29)');
+		document.getElementById('button_serv_enable').setAttribute('onclick','service_action(`' + myService + '`,30)');
+		document.getElementById('button_serv_disable').setAttribute('onclick','service_action(`' + myService + '`,31)');
+	} else {
+		document.getElementById("serv_buttons").style.setProperty('display', 'none');
+	}
+
+        document.getElementById("serv_journal").innerHTML = myJournal;
+	if (myService.includes("echo.service")) {
+                document.getElementById("serv_echo").style.setProperty('display', 'block');
+	} else {
+		document.getElementById("serv_echo").style.setProperty('display', 'none');
+	}
+        $('#serv_status').load("ajax_fetch_data.php?id=" + myService + "&type=32").fadeIn("slow");
+
+        $('#show_services').modal('hide');
+        $('#service_info').modal('show');
+
+}
+</script>
+<?php
+
+//Service Info
+echo '<div class="modal fade" id="service_info" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['services_info'].'</h5>
+                        </div>
+                        <div class="modal-body">
+					<div class="list-group">
+						<span class="list-group-item">
+							<div id="serv_name"></div>
+							<span class="text-muted small">
+								<div id="serv_status"></div>
+							</span>
+						</span>
+						<div style="display:none" id="serv_buttons">
+							<span class="list-group-item" style="height:55px;">&nbsp;
+                                        			<span class="float-right text-muted small">
+                							<button class="btn btn-warning-'.theme($conn, $theme, 'color').' btn-xs" id="button_serv_start" onclick="">'.$lang['start'].'</button>
+                							<button class="btn btn-warning-'.theme($conn, $theme, 'color').' btn-xs" id="button_serv_stop" onclick="">'.$lang['stop'].'</button>
+              								<button class="btn btn-warning-'.theme($conn, $theme, 'color').' btn-xs" id="button_serv_enable" onclick="">'.$lang['enable'].'</button>
+              								<button class="btn btn-warning-'.theme($conn, $theme, 'color').' btn-xs" id="button_serv_disable" onclick="">'.$lang['disable'].'</button>
+                                        			</span>
+                                			</span>
+						</div>
+						<span class="list-group-item" style="overflow:hidden;">&nbsp
+                                			Status: <i class="bi bi-bootstrap-reboot orange" style="font-size: 1.2rem;"></i><br/>
+                                			<span class="text-muted small">
+								<div id="serv_journal"></div>
+								<br/>
+                                			</span>
+                        			</span>
+						<div style="display:none" id="serv_echo">
+                                			<span class="list-group-item" style="overflow:hidden;">Install Service:
+                                        			<span class="float-right text-muted small">Edit /lib/systemd/system/pihome_amazon_echo.service<br/>
+                                        	        		<code>sudo nano /lib/systemd/system/pihome_amazon_echo.service</code>
+                                                			<br/>
+                                                			Put the following contents in the file:
+                                                			<br/>
+                                         		       		(make sure the -u is supplied to python
+                                                			<br/>
+                                                			to ensure the output is not buffered and delayed)<br/>
+                                                			<code>[Unit]
+                                                			<br/>
+                                                			Description=Amazon Echo Service<br/>
+                                               		 		After=multi-user.target<br/>
+                                                			<br/>
+                                                			[Service]
+                                                			<br/>
+                                                			Type=simple
+                                                			<br/>
+                                                			ExecStart=/usr/bin/python -u /var/www/add_on/amazon_echo/echo_pihome.py<br/>
+                                                			Restart=on-abort
+                                                			<br/>
+                                                			<br/>
+                                                			[Install]
+                                                			<br/>
+                                                			WantedBy=multi-user.target</code>
+                                                			<br/>
+                                                			Update the file permissions:
+                                                			<br/>
+                                                			<code>sudo chmod 644 /lib/systemd/system/pihome_amazon_echo.service</code>
+                                                			<br/>
+                                                			Update systemd:
+                                                			<br/>
+                                                			<code>sudo systemctl daemon-reload</code>
+                                                			<br/>
+                                                			<br/>
+                                                			For improved performance, lower SD card writes:
+                                                			<br/>
+                                                			Edit /etc/systemd/journald.conf
+                                                			<br/>
+                                                			<code>sudo nano /etc/systemd/journald.conf</code>
+                                                			<br/>
+                                                			Edit/Add the following:
+                                                			<br/>
+                                                			<code>Storage=volatile
+                                                			<br/>
+                                                			RuntimeMaxUse=50M</code>
+                                                			<br/>
+                                                			Then restart journald:
+                                                			<br/>
+                                                			<code>sudo systemctl restart systemd-journald</code>
+                                                			<br/>
+                                                			Refer to: <a href="www.freedesktop.org/software/systemd/man/journald.conf.html">www.freedesktop.org/software/systemd/man/journald.conf.html</a>
+                                                			<br/>
+                                        			</span>
+                                			</span>
+						</div>
+					</div>
+					<!-- /.list-group -->
+                        </div>
+                        <!-- /.modal-body -->
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" id="button_service_hide">'.$lang['close'].'</button>
+                        </div>
+                </div>
+                <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialogue -->
+</div>
+<!-- /.modal -->';
+?>
+<script language="javascript" type="text/javascript">
+$("#button_service_hide").on("click", function(){
+        $("#service_info").modal("show");
+        $('#service_info').on("hidden.bs.modal", function (e) {
+                $("#show_services").modal("show");
+        })
+        $("#service_info").modal("hide");
+});
+</script>
+
+<script>
+function service_action(service, type)
+{
+        var myService = service;
+        var myType = type;
+        var str = "ajax_fetch_data.php?id=" + myService + "&type=" + myType
+
+        $('#serv_status').load(str).fadeIn("slow");
+//	console.log(str);
 }
 </script>
 <?php
@@ -1312,46 +2081,69 @@ echo '
 </div>';
 
 //Graph model
-echo '
-<div class="modal fade" id="zone_graph" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
-                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
-                <h5 class="modal-title">'.$lang['graph_settings'].'</h5>
-                <div class="dropdown float-right">
-                        <a class="" data-bs-toggle="dropdown" href="#">
-                                <i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
-                                <li><a class="dropdown-item" href="pdf_download.php?file=displaying_temperature_sensors_graphs.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['displaying_temperature_sensors_graphs'].'</a></li>
-                        </ul>
-                </div>
-            </div>
-            <div class="modal-body">
-<p class="text-muted">'.$lang['graph_settings_text'].'</p>';
-$query = "SELECT * FROM sensors WHERE sensor_type_id = 1 ORDER BY name asc";
-$results = $conn->query($query);
-echo '  <table class="table table-bordered">
-    <tr>
-        <th class="col-10"><small>'.$lang['sensor_name'].'</small></th>
-        <th class="col-2"><small>'.$lang['graph_num'].'</small></th>
-    </tr>';
-while ($row = mysqli_fetch_assoc($results)) {
-    echo '
-        <tr>
-            <td>'.$row["name"].'</td>
-            <td><input id="graph_num'.$row["id"].'" type="text" class="float-left text" style="border: none" name="graph_num" size="3" value="'.$row["graph_num"].'" placeholder="Graph Number" required></td>
-        </tr>';
-}
-echo '
-</table></div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
-                <input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="setup_graph()">
-            </div>
-        </div>
-    </div>
+echo '<div class="modal fade" id="zone_graph" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+        	<div class="modal-content">
+            		<div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                		<button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                		<h5 class="modal-title">'.$lang['graph_settings'].'</h5>
+                		<div class="dropdown float-right">
+                        		<a class="" data-bs-toggle="dropdown" href="#">
+                                		<i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
+                        		</a>
+                        		<ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
+                                		<li><a class="dropdown-item" href="pdf_download.php?file=displaying_temperature_sensors_graphs.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['displaying_temperature_sensors_graphs'].'</a></li>
+                        		</ul>
+                		</div>
+            		</div>
+            		<div class="modal-body" id="zone_graph_body">
+				<p class="text-muted">'.$lang['graph_settings_text'].'</p>';
+				$query = "SELECT id, sensor_id, name, graph_num, min_max_graph, name AS sname
+					FROM sensors
+					WHERE sensor_type_id = 1
+                                        UNION
+                                        SELECT sensor_average.id, sensor_average.sensor_id, zone.name, sensor_average.graph_num, sensor_average.min_max_graph, zone.name AS sname
+                                        FROM sensor_average, zone
+                                        WHERE sensor_average.zone_id = zone.id
+					UNION
+					SELECT 0 AS id, '' AS sensor_id, 'Outside Temp' AS name, -1 AS graph_num, enable_archive AS min_max_graph, 'zzz' AS sname
+					FROM weather
+					ORDER BY sname ASC;";
+				$results = $conn->query($query);
+				echo '<table class="table table-bordered">
+    					<tr>
+        					<th class="col-8"><small>'.$lang['sensor_name'].'</small></th>
+        					<th class="col-2"><small>'.$lang['graph_num'].'</small></th>
+        					<th class="col-2"><small>'.$lang['min_max_graph'].'</small></th>
+    					</tr>';
+					while ($row = mysqli_fetch_assoc($results)) {
+                                                $s_name = $row["name"];
+						if (strpos($row['sensor_id'], "zavg_") !== false) { $s_name = $s_name." (Avg)"; }
+    						if ($row['min_max_graph'] == 1) { $enabled_check = 'checked'; } else { $enabled_check = ''; }
+    						echo '<tr>
+            						<td>'.$s_name.'</td>';
+							if ($row['graph_num'] == -1) {
+								echo '<td>N/A</td>';
+							} else {
+            							echo '<td><input id="graph_num'.$row["id"].'" type="text" class="float-left text" style="border: none" name="graph_num" size="3" value="'.$row["graph_num"].'" placeholder="Graph Number" required></td>';
+							}
+            						echo '<td style="text-align:center; vertical-align:middle;">';
+                						if ($row['graph_num'] != 0) {
+									echo '<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox_enable_graph'.$row['id'].'" name="enable_archive" value="1" '.$enabled_check.'>';
+								} else {
+									echo "N/A";
+								}
+            						echo '</td>
+        					</tr>';
+					}
+				echo '</table>
+			</div>
+            		<div class="modal-footer">
+                		<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                		<input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="setup_graph()">
+            		</div>
+        	</div>
+    	</div>
 </div>';
 
 //Sensor Limits model
@@ -1619,11 +2411,27 @@ echo '
         </select>
         <div class="help-block with-errors"></div></div>
 	<div class="form-group" class="control-label"><label>'.$lang['email_username'].' </label>
-	<input class="form-control" type="text" id="e_username" name="e_username" value="'.$erow['username'].'" placeholder="Username for e-mail Server">
-	<div class="help-block with-errors"></div></div>
-	<div class="form-group" class="control-label"><label>'.$lang['email_password'].' </label>
-	<input class="form-control" type="password" id="e_password" name="e_password" value="'.$erow['password'].'" placeholder="Password for e-mail Server">
-	<div class="help-block with-errors"></div></div>
+                <div class="input-group mb-3">
+                        <span class="input-group-text bg-'.theme($conn, $theme, 'color').'"><i class="bi bi-person-plus-fill text-white"></i></span>
+                        <input class="form-control" type="text" id="e_username" name="e_username" value="'.$erow['username'].'" placeholder="Username for e-mail Server">
+                </div>
+                <div class="help-block with-errors"></div>
+        </div>
+        <div class="form-group" class="control-label"><label>'.$lang['email_password'].' </label>
+                <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                                <span class="input-group-text bg-'.theme($conn, $theme, 'color').'" id="basic-addon1"><i class="bi bi-key-fill text-white"></i></span>
+                        </div>
+                        <input name="e_password" type="password" value="'.dec_passwd($erow['password']).'" class="input form-control" id="e_password" placeholder="password" required="true" aria-label="password" aria-describedby="basic-addon1" />
+                        <div class="input-group-append">
+                                <span class="input-group-text" onclick="e_password_show_hide();">
+                                        <i class="bi bi-eye-fill" id="show_eye"></i>
+                                        <i class="bi bi-eye-slash-fill d-none" id="hide_eye"></i>
+                                </span>
+                        </div>
+                </div>
+            <div class="help-block with-errors"></div>
+        </div>
 	<div class="form-group" class="control-label"><label>'.$lang['email_from_address'].' </label>
 	<input class="form-control" type="text" id="e_from_address" name="e_from_address" value="'.$erow['from'].'" placeholder="From e-mail" >
 	<div class="help-block with-errors"></div></div>
@@ -1639,6 +2447,26 @@ echo '</div>
         </div>
     </div>
 </div>';
+
+?>
+    <script>
+    function e_password_show_hide() {
+      var x = document.getElementById("e_password");
+      var show_eye = document.getElementById("show_eye");
+      var hide_eye = document.getElementById("hide_eye");
+      hide_eye.classList.remove("d-none");
+      if (x.type === "password") {
+        x.type = "text";
+        show_eye.style.display = "none";
+        hide_eye.style.display = "block";
+      } else {
+        x.type = "password";
+        show_eye.style.display = "block";
+        hide_eye.style.display = "none";
+      }
+    }
+    </script>
+<?php
 
 //Time Zone
 echo '
@@ -1786,10 +2614,46 @@ echo'
     </div>
 </div>';
 
+//Schedule Test Set False Time
+echo '<div class="modal fade" id="schedule_test" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                <h5 class="modal-title">'.$lang['schedule_test'].'</h5>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">'.$lang['schedule_test_text'].'</p>
+                <table class="table table-bordered">
+                        <tr>
+                                <th class="col-lg-2 text-center"><small>'.$lang['false_time'].'</small></th>
+                                <th class="col-lg-1 text-center"><small>'.$lang['enabled'].'</small></th>
+                        </tr>';
+//                        $query = "SELECT test_mode, test_run_time FROM system LIMIT 1;";
+		        $query = "SELECT `test_mode`, DATE_FORMAT(`test_run_time`, '%Y-%m-%d %H:%i') AS test_run_time FROM `system`;";
+                        $result = $conn->query($query);
+                        $row = mysqli_fetch_assoc($result);
+                        if ($row['test_mode'] == 3) { $enabled_check = 'checked'; } else { $enabled_check = ''; }
+                        echo '<tr>
+                                <td><input class="form-control" type="datetime-local" id="false_time" name="false_time" value="'.$row['test_run_time'].'" placeholder="Start Time" required></td>
+            			<td style="text-align:center; vertical-align:middle;">
+               				<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="test_time_enabled" name="test_time_enabled" value="1" '.$enabled_check.'>
+            			</td>
+                       </tr>
+                </table>
+            </div>
+                <div class="modal-footer">
+                        <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        <input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="set_false_time()">
+            </div>
+        </div>
+    </div>
+</div>';
+
 // Jobs Schedule modal
 echo '
 <div class="modal fade" id="jobs_schedule" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
                 <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
@@ -1805,7 +2669,7 @@ echo '
             </div>
             <div class="modal-body">
 <p class="text-muted"> '.$lang['schedule_jobs_info'].' </p>';
-$query = "SELECT id, job_name, script, enabled, log_it, time FROM jobs ORDER BY id asc";
+$query = "SELECT id, job_name, script, enabled, log_it, time FROM jobs WHERE job_name NOT LIKE 'shutdown_reboot' ORDER BY id asc";
 $results = $conn->query($query);
 echo '<br><table>
     <tr>
@@ -1841,6 +2705,46 @@ echo '</table></div>
                 <button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" data-bs-href="#" data-bs-toggle="modal" data-bs-target="#add_job">'.$lang['add_job'].'</button>
                 <input type="button" name="submit" value="'.$lang['apply'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="schedule_jobs()">
                 <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+            </div>
+        </div>
+    </div>
+</div>';
+
+//Set Summer Period by Dat
+echo '<div class="modal fade" id="set_summer" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                <h5 class="modal-title">'.$lang['set_summer_period'].'</h5>
+                <div class="dropdown float-right">
+                        <a class="" data-bs-toggle="dropdown" href="#">
+                                <i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
+                                <li><a class="dropdown-item" href="pdf_download.php?file=disable_schedule_in_summer.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_guide_disable_schedule_in_summer'].'</a></li>
+                         </ul>
+                </div>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">'.$lang['set_summer_period_text'].'</p>
+                <table class="table table-bordered">
+                        <tr>
+                                <th class="col-lg-2 text-center"><small>'.$lang['start_date'].'</small></th>
+                                <th class="col-lg-2 text-center"><small>'.$lang['end_date'].'</small></th>
+                        </tr>';
+                        $query = "SELECT `start_date`, `end_date` FROM `summer`;";
+                        $result = $conn->query($query);
+                        $row = mysqli_fetch_assoc($result);
+                        echo '<tr>
+                                <td><input class="form-control" type="date" id="start_date" name="start_date" value="'.$row['start_date'].'" placeholder="Start Date" required></td>
+                                <td><input class="form-control" type="date" id="end_date" name="end_date" value="'.$row['end_date'].'" placeholder="End Date" required></td>
+                       </tr>
+                </table>
+            </div>
+                <div class="modal-footer">
+                        <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        <input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="set_summer_start_end()">
             </div>
         </div>
     </div>
@@ -1895,6 +2799,14 @@ echo '<div class="modal fade" id="set_buttons" tabindex="-1" role="dialog" aria-
             <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
 		<button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
                 <h5 class="modal-title">'.$lang['set_buttons'].'</h5>
+                <div class="dropdown float-right">
+                	<a class="" data-bs-toggle="dropdown" href="#">
+                        	<i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
+                        	<li><a class="dropdown-item" href="pdf_download.php?file=setup_user_accounts.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_user_accounts'].'</a></li>
+                        </ul>
+                </div>
             </div>
             <div class="modal-body">
 		<p class="text-muted">'.$lang['set_buttons_text'].'</p>
@@ -1944,16 +2856,26 @@ echo '<div class="modal fade" id="display_graphs" tabindex="-1" role="dialog" ar
                         </tr>';
 			$myArr = [];
 			array_push($myArr, $lang['graph_temperature'], $lang['graph_humidity'], $lang['graph_addon_usage'], $lang['graph_saving'], $lang['graph_system_controller_usage'], $lang['graph_battery_usage']);
+                        // only display min_max selection if archiving has been enabled
+                        $query = "SELECT archive_enable FROM graphs LIMIT 1;";
+                        $result = $conn->query($query);
+                        $row = mysqli_fetch_assoc($result);
+                        if ($row["archive_enable"] != 0) {
+                                array_push($myArr, $lang['graph_min_max']);
+                                $graph_cnt = 6;
+                        } else {
+                                $graph_cnt = 5;
+                        }
                         $query = "SELECT mask FROM graphs LIMIT 1;";
                         $result = $conn->query($query);
 			$row = mysqli_fetch_assoc($result);
 			$m = 1;
-                        for ($x = 0; $x <=  5; $x++) {
+                        for ($x = 0; $x <= $graph_cnt; $x++) {
                         	if ($row['mask'] & $m) { $enabled_check = 'checked'; } else { $enabled_check = ''; }
                                 echo '<tr>
                                         <td>'.$myArr[$x].'</td>
             				<td style="text-align:center; vertical-align:middle;">
-               					<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox_graph'.$x.'" name="enabled" value="1" '.$enabled_check.'>
+						<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox_graph'.$x.'" name="enabled" value="1" '.$enabled_check.'>
             				</td>
                                 </tr>';
 				$m = $m << 1;
@@ -1983,6 +2905,7 @@ function set_button_text(id)
 }
 </script>
 <?php
+
 //Add Theme
 echo '<div class="modal fade" id="add_theme" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -2022,11 +2945,14 @@ echo '<div class="modal fade" id="add_theme" tabindex="-1" role="dialog" aria-la
 					if ($row["tile_size"] == 0) { $tile_size = explode(' ', $lang['standard_button'])[0]; } else { $tile_size = explode(' ', $lang['wide_button'])[0]; }
 					echo '<td class="text-capitalize" style="text-align:center; vertical-align:middle;">'.$tile_size.'</td>
 	    				<td style="text-align:center; vertical-align:middle;"><a href="theme.php?id='.$row["id"].'" class="btn btn-bm-'.theme($conn, settings($conn, 'theme'), 'color').' btn-xs"><i class="bi bi-pencil"></i></a>&nbsp;&nbsp';
-					echo '<a href="javascript:delete_theme('.$row["id"].');" style="text-decoration: none;"><button class="btn btn-danger btn-xs" data-bs-toggle="popover" data-title="'.$lang['confirmation'].'" data-bs-content="'.$lang['confirm_del_sensor_4'].'"><span class="bi bi-trash-fill black"></span></button> </a></td>'; 
+                                        echo '<button class="btn warning btn-danger btn-xs" onclick="delete_theme('.$row["id"].');" data-confirm="'.$lang['confirm_del_theme'].'"><span class="bi bi-trash-fill black"></span></button></td>';
+
+
         			echo '</tr>';
 			}
 		echo '</table>
 	    </div>
+	        <!-- /.modal-body -->
 		<div class="modal-footer">
                 	<button type="button" class="btn btn-primary-'.theme($conn, settings($conn, 'theme'), 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
                 	<a class="btn btn-bm-'.theme($conn, settings($conn, 'theme'), 'color').' login btn-sm" href="theme.php">'.$lang['add_theme'].'</a>
@@ -2034,6 +2960,819 @@ echo '<div class="modal fade" id="add_theme" tabindex="-1" role="dialog" aria-la
         </div>
     </div>
 </div>';
+
+//Open Weather Modal
+echo '<div class="modal fade" id="modal_openweather" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['openweather_settings'].'</h5>
+                        </div>
+                        <div class="modal-body">';
+                                $openweather_api = settings($conn,'openweather_api');
+                                $country = settings($conn,'country');
+    				$city = settings($conn,'city');
+                                $zip = settings($conn,'zip');
+				if($city != NULL) {
+					$city_checked = "checked";
+                                        $zip_checked = "";
+					$CityZip_label = "City";
+					$CityZip = 0;
+				} else {
+                                        $city_checked = "";
+                                        $zip_checked = "checked";
+                                        $CityZip_label = "Zip";
+                                        $CityZip = 1;
+				}
+                                echo '<input type="hidden" id="CityZip" name="CityZip" value="'.$CityZip.'"/>
+                                <input type="hidden" id="country_code" name="country_code" value="'.$country.'"/>
+                                <input type="hidden" id="city" name="city" value="'.$city.'"/>
+                                <input type="hidden" id="zip" name="zip" value="'.$zip.'"/>
+            			<p class="text-muted">'.$lang['openweather_text1'].' <a class="green" target="_blank" href="http://OpenWeatherMap.org">'.$lang['openweather_text2'].'</a> '.$lang['openweather_text3'].'
+            			<p>'.$lang['openweather_text4'].'
+	                        <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
+            				<div class="form-group">
+                				<label>Country</label>&nbsp;(ISO-3166-1: Alpha-2 Codes)
+                				<select class="form-control" id="sel_Country" name="sel_Country" onchange=set_country(this.options[this.selectedIndex].value)>
+                    					<option value="AF" ' . ($country=="AF" ? 'selected' : '') . '>Afghanistan</option>
+                    					<option value="AX" ' . ($country=="AX" ? 'selected' : '') . '>Åland Islands</option>
+                    					<option value="AL" ' . ($country=="AL" ? 'selected' : '') . '>Albania</option>
+					                <option value="DZ" ' . ($country=="DZ" ? 'selected' : '') . '>Algeria</option>
+                    					<option value="AS" ' . ($country=="AS" ? 'selected' : '') . '>American Samoa</option>
+                    					<option value="AD" ' . ($country=="AD" ? 'selected' : '') . '>Andorra</option>
+                    					<option value="AO" ' . ($country=="AO" ? 'selected' : '') . '>Angola</option>
+							<option value="AI" ' . ($country=="AI" ? 'selected' : '') . '>Anguilla</option>
+                    					<option value="AQ" ' . ($country=="AQ" ? 'selected' : '') . '>Antarctica</option>
+                    					<option value="AG" ' . ($country=="AG" ? 'selected' : '') . '>Antigua and Barbuda</option>
+                    					<option value="AR" ' . ($country=="AR" ? 'selected' : '') . '>Argentina</option>
+                    					<option value="AM" ' . ($country=="AM" ? 'selected' : '') . '>Armenia</option>
+                    					<option value="AW" ' . ($country=="AW" ? 'selected' : '') . '>Aruba</option>
+                    					<option value="AU" ' . ($country=="AU" ? 'selected' : '') . '>Australia</option>
+                    					<option value="AT" ' . ($country=="AT" ? 'selected' : '') . '>Austria</option>
+                    					<option value="AZ" ' . ($country=="AZ" ? 'selected' : '') . '>Azerbaijan</option>
+                    					<option value="BS" ' . ($country=="BS" ? 'selected' : '') . '>Bahamas</option>
+                    					<option value="BH" ' . ($country=="BH" ? 'selected' : '') . '>Bahrain</option>
+                    					<option value="BD" ' . ($country=="BD" ? 'selected' : '') . '>Bangladesh</option>
+                    					<option value="BB" ' . ($country=="BB" ? 'selected' : '') . '>Barbados</option>
+                    					<option value="BY" ' . ($country=="BY" ? 'selected' : '') . '>Belarus</option>
+                    					<option value="BE" ' . ($country=="BE" ? 'selected' : '') . '>Belgium</option>
+                    					<option value="BZ" ' . ($country=="BZ" ? 'selected' : '') . '>Belize</option>
+                    					<option value="BJ" ' . ($country=="BJ" ? 'selected' : '') . '>Benin</option>
+                    					<option value="BM" ' . ($country=="BM" ? 'selected' : '') . '>Bermuda</option>
+                    					<option value="BT" ' . ($country=="BT" ? 'selected' : '') . '>Bhutan</option>
+                    					<option value="BO" ' . ($country=="BO" ? 'selected' : '') . '>Bolivia, Plurinational State of</option>
+                    					<option value="BQ" ' . ($country=="BQ" ? 'selected' : '') . '>Bonaire, Sint Eustatius and Saba</option>
+                    					<option value="BA" ' . ($country=="BA" ? 'selected' : '') . '>Bosnia and Herzegovina</option>
+                    					<option value="BW" ' . ($country=="BW" ? 'selected' : '') . '>Botswana</option>
+                    					<option value="BV" ' . ($country=="BV" ? 'selected' : '') . '>Bouvet Island</option>
+                    					<option value="BR" ' . ($country=="BR" ? 'selected' : '') . '>Brazil</option>
+                    					<option value="IO" ' . ($country=="IO" ? 'selected' : '') . '>British Indian Ocean Territory</option>
+                    					<option value="BN" ' . ($country=="BN" ? 'selected' : '') . '>Brunei Darussalam</option>
+                    					<option value="BG" ' . ($country=="BG" ? 'selected' : '') . '>Bulgaria</option>
+                    					<option value="BF" ' . ($country=="BF" ? 'selected' : '') . '>Burkina Faso</option>
+                    					<option value="BI" ' . ($country=="BI" ? 'selected' : '') . '>Burundi</option>
+                    					<option value="KH" ' . ($country=="KH" ? 'selected' : '') . '>Cambodia</option>
+                    					<option value="CM" ' . ($country=="CM" ? 'selected' : '') . '>Cameroon</option>
+                    					<option value="CA" ' . ($country=="CA" ? 'selected' : '') . '>Canada</option>
+                    					<option value="CV" ' . ($country=="CV" ? 'selected' : '') . '>Cape Verde</option>
+                    					<option value="KY" ' . ($country=="KY" ? 'selected' : '') . '>Cayman Islands</option>
+                    					<option value="CF" ' . ($country=="CF" ? 'selected' : '') . '>Central African Republic</option>
+                    					<option value="TD" ' . ($country=="TD" ? 'selected' : '') . '>Chad</option>
+                    					<option value="CL" ' . ($country=="CL" ? 'selected' : '') . '>Chile</option>
+                    					<option value="CN" ' . ($country=="CN" ? 'selected' : '') . '>China</option>
+                    					<option value="CX" ' . ($country=="CX" ? 'selected' : '') . '>Christmas Island</option>
+                    					<option value="CC" ' . ($country=="CC" ? 'selected' : '') . '>Cocos (Keeling) Islands</option>
+                    					<option value="CO" ' . ($country=="CO" ? 'selected' : '') . '>Colombia</option>
+                    					<option value="KM" ' . ($country=="KM" ? 'selected' : '') . '>Comoros</option>
+                    					<option value="CG" ' . ($country=="CG" ? 'selected' : '') . '>Congo</option>
+                    					<option value="CD" ' . ($country=="CD" ? 'selected' : '') . '>Congo, the Democratic Republic of the</option>
+                    					<option value="CK" ' . ($country=="CK" ? 'selected' : '') . '>Cook Islands</option>
+                    					<option value="CR" ' . ($country=="CR" ? 'selected' : '') . '>Costa Rica</option>
+                    					<option value="CI" ' . ($country=="CI" ? 'selected' : '') . '>Côte d\'Ivoire</option>
+                    					<option value="HR" ' . ($country=="HR" ? 'selected' : '') . '>Croatia</option>
+                    					<option value="CU" ' . ($country=="CU" ? 'selected' : '') . '>Cuba</option>
+                    					<option value="CW" ' . ($country=="CW" ? 'selected' : '') . '>Curaçao</option>
+                                                        <option value="CY" ' . ($country=="CY" ? 'selected' : '') . '>Cyprus</option>
+                                                        <option value="CZ" ' . ($country=="CZ" ? 'selected' : '') . '>Czech Republic</option>
+                                                        <option value="DK" ' . ($country=="DK" ? 'selected' : '') . '>Denmark</option>
+                                                        <option value="DJ" ' . ($country=="DJ" ? 'selected' : '') . '>Djibouti</option>
+                                                        <option value="DM" ' . ($country=="DM" ? 'selected' : '') . '>Dominica</option>
+                                                        <option value="DO" ' . ($country=="DO" ? 'selected' : '') . '>Dominican Republic</option>
+                                                        <option value="EC" ' . ($country=="EC" ? 'selected' : '') . '>Ecuador</option>
+                                                        <option value="EG" ' . ($country=="EG" ? 'selected' : '') . '>Egypt</option>
+                                                        <option value="SV" ' . ($country=="SV" ? 'selected' : '') . '>El Salvador</option>
+                                                        <option value="GQ" ' . ($country=="GQ" ? 'selected' : '') . '>Equatorial Guinea</option>
+                                                        <option value="ER" ' . ($country=="ER" ? 'selected' : '') . '>Eritrea</option>
+                                                        <option value="EE" ' . ($country=="EE" ? 'selected' : '') . '>Estonia</option>
+                                                        <option value="ET" ' . ($country=="ET" ? 'selected' : '') . '>Ethiopia</option>
+                                                        <option value="FK" ' . ($country=="FR" ? 'selected' : '') . '>Falkland Islands (Malvinas)</option>
+                                                        <option value="FO" ' . ($country=="FO" ? 'selected' : '') . '>Faroe Islands</option>
+                                                        <option value="FJ" ' . ($country=="FJ" ? 'selected' : '') . '>Fiji</option>
+                                                        <option value="FI" ' . ($country=="FI" ? 'selected' : '') . '>Finland</option>
+                                                        <option value="FR" ' . ($country=="FR" ? 'selected' : '') . '>France</option>
+                                                        <option value="GF" ' . ($country=="GF" ? 'selected' : '') . '>French Guiana</option>
+                                                        <option value="PF" ' . ($country=="PF" ? 'selected' : '') . '>French Polynesia</option>
+                                                        <option value="TF" ' . ($country=="TF" ? 'selected' : '') . '>French Southern Territories</option>
+                                                        <option value="GA" ' . ($country=="GA" ? 'selected' : '') . '>Gabon</option>
+                                                        <option value="GM" ' . ($country=="GM" ? 'selected' : '') . '>Gambia</option>
+                                                        <option value="GE" ' . ($country=="GE" ? 'selected' : '') . '>Georgia</option>
+                                                        <option value="DE" ' . ($country=="DE" ? 'selected' : '') . '>Germany</option>
+                                                        <option value="GH" ' . ($country=="GH" ? 'selected' : '') . '>Ghana</option>
+                                                        <option value="GI" ' . ($country=="GI" ? 'selected' : '') . '>Gibraltar</option>
+                                                        <option value="GR" ' . ($country=="GR" ? 'selected' : '') . '>Greece</option>
+                                                        <option value="GL" ' . ($country=="GL" ? 'selected' : '') . '>Greenland</option>
+                                                        <option value="GD" ' . ($country=="GD" ? 'selected' : '') . '>Grenada</option>
+                                                        <option value="GP" ' . ($country=="GP" ? 'selected' : '') . '>Guadeloupe</option>
+                                                        <option value="GU" ' . ($country=="GU" ? 'selected' : '') . '>Guam</option>
+                                                        <option value="GT" ' . ($country=="GT" ? 'selected' : '') . '>Guatemala</option>
+                                                        <option value="GG" ' . ($country=="GG" ? 'selected' : '') . '>Guernsey</option>
+                                                        <option value="GN" ' . ($country=="GN" ? 'selected' : '') . '>Guinea</option>
+                                                        <option value="GW" ' . ($country=="GW" ? 'selected' : '') . '>Guinea-Bissau</option>
+                                                        <option value="GY" ' . ($country=="GY" ? 'selected' : '') . '>Guyana</option>
+                                                        <option value="HT" ' . ($country=="HT" ? 'selected' : '') . '>Haiti</option>
+                                                        <option value="HM" ' . ($country=="HM" ? 'selected' : '') . '>Heard Island and McDonald Islands</option>
+                                                        <option value="VA" ' . ($country=="VA" ? 'selected' : '') . '>Holy See (Vatican City State)</option>
+                                                        <option value="HN" ' . ($country=="HN" ? 'selected' : '') . '>Honduras</option>
+                                                        <option value="HK" ' . ($country=="HK" ? 'selected' : '') . '>Hong Kong</option>
+                                                        <option value="HU" ' . ($country=="HU" ? 'selected' : '') . '>Hungary</option>
+                                                        <option value="IS" ' . ($country=="IS" ? 'selected' : '') . '>Iceland</option>
+                                                        <option value="IN" ' . ($country=="IN" ? 'selected' : '') . '>India</option>
+                                                        <option value="ID" ' . ($country=="ID" ? 'selected' : '') . '>Indonesia</option>
+                                                        <option value="IR" ' . ($country=="IR" ? 'selected' : '') . '>Iran, Islamic Republic of</option>
+                                                        <option value="IQ" ' . ($country=="IQ" ? 'selected' : '') . '>Iraq</option>
+                                                        <option value="IE" ' . ($country=="IE" ? 'selected' : '') . '>Ireland</option>
+                                                        <option value="IM" ' . ($country=="IM" ? 'selected' : '') . '>Isle of Man</option>
+                                                        <option value="IL" ' . ($country=="IL" ? 'selected' : '') . '>Israel</option>
+                                                        <option value="IT" ' . ($country=="IT" ? 'selected' : '') . '>Italy</option>
+                                                        <option value="JM" ' . ($country=="JM" ? 'selected' : '') . '>Jamaica</option>
+                                                        <option value="JP" ' . ($country=="JP" ? 'selected' : '') . '>Japan</option>
+                                                        <option value="JE" ' . ($country=="JE" ? 'selected' : '') . '>Jersey</option>
+                                                        <option value="JO" ' . ($country=="JO" ? 'selected' : '') . '>Jordan</option>
+                                                        <option value="KZ" ' . ($country=="KZ" ? 'selected' : '') . '>Kazakhstan</option>
+                                                        <option value="KE" ' . ($country=="KE" ? 'selected' : '') . '>Kenya</option>
+                                                        <option value="KI" ' . ($country=="KI" ? 'selected' : '') . '>Kiribati</option>
+                                                        <option value="KP" ' . ($country=="KP" ? 'selected' : '') . '>Korea, Democratic People\'s Republic of</option>
+                                                        <option value="KR" ' . ($country=="KR" ? 'selected' : '') . '>Korea, Republic of</option>
+                                                        <option value="KW" ' . ($country=="KW" ? 'selected' : '') . '>Kuwait</option>
+                                                        <option value="KG" ' . ($country=="KG" ? 'selected' : '') . '>Kyrgyzstan</option>
+                                                        <option value="LA" ' . ($country=="LA" ? 'selected' : '') . '>Lao People\'s Democratic Republic</option>
+                                                        <option value="LV" ' . ($country=="LV" ? 'selected' : '') . '>Latvia</option>
+                                                        <option value="LB" ' . ($country=="LB" ? 'selected' : '') . '>Lebanon</option>
+                                                        <option value="LS" ' . ($country=="LS" ? 'selected' : '') . '>Lesotho</option>
+                                                        <option value="LR" ' . ($country=="LR" ? 'selected' : '') . '>Liberia</option>
+                                                        <option value="LY" ' . ($country=="LY" ? 'selected' : '') . '>Libya</option>
+                                                        <option value="LI" ' . ($country=="LI" ? 'selected' : '') . '>Liechtenstein</option>
+                                                        <option value="LT" ' . ($country=="LT" ? 'selected' : '') . '>Lithuania</option>
+                                                        <option value="LU" ' . ($country=="LU" ? 'selected' : '') . '>Luxembourg</option>
+                                                        <option value="MO" ' . ($country=="MO" ? 'selected' : '') . '>Macao</option>
+                                                        <option value="MK" ' . ($country=="MK" ? 'selected' : '') . '>Macedonia, the former Yugoslav Republic of</option>
+                                                        <option value="MG" ' . ($country=="MG" ? 'selected' : '') . '>Madagascar</option>
+                                                        <option value="MW" ' . ($country=="MW" ? 'selected' : '') . '>Malawi</option>
+                                                        <option value="MY" ' . ($country=="MY" ? 'selected' : '') . '>Malaysia</option>
+                                                        <option value="MV" ' . ($country=="MV" ? 'selected' : '') . '>Maldives</option>
+                                                        <option value="ML" ' . ($country=="ML" ? 'selected' : '') . '>Mali</option>
+                                                        <option value="MT" ' . ($country=="MT" ? 'selected' : '') . '>Malta</option>
+                                                        <option value="MH" ' . ($country=="MH" ? 'selected' : '') . '>Marshall Islands</option>
+                                                        <option value="MQ" ' . ($country=="MQ" ? 'selected' : '') . '>Martinique</option>
+                                                        <option value="MR" ' . ($country=="MR" ? 'selected' : '') . '>Mauritania</option>
+                                                        <option value="MU" ' . ($country=="MU" ? 'selected' : '') . '>Mauritius</option>
+                                                        <option value="YT" ' . ($country=="YT" ? 'selected' : '') . '>Mayotte</option>
+                                                        <option value="MX" ' . ($country=="MX" ? 'selected' : '') . '>Mexico</option>
+                                                        <option value="FM" ' . ($country=="FM" ? 'selected' : '') . '>Micronesia, Federated States of</option>
+                                                        <option value="MD" ' . ($country=="MD" ? 'selected' : '') . '>Moldova, Republic of</option>
+                                                        <option value="MC" ' . ($country=="MC" ? 'selected' : '') . '>Monaco</option>
+                                                        <option value="MN" ' . ($country=="MN" ? 'selected' : '') . '>Mongolia</option>
+                                                        <option value="ME" ' . ($country=="ME" ? 'selected' : '') . '>Montenegro</option>
+                                                        <option value="MS" ' . ($country=="MS" ? 'selected' : '') . '>Montserrat</option>
+                                                        <option value="MA" ' . ($country=="MA" ? 'selected' : '') . '>Morocco</option>
+                                                        <option value="MZ" ' . ($country=="MZ" ? 'selected' : '') . '>Mozambique</option>
+                                                        <option value="MM" ' . ($country=="MM" ? 'selected' : '') . '>Myanmar</option>
+                                                        <option value="NA" ' . ($country=="NA" ? 'selected' : '') . '>Namibia</option>
+                                                        <option value="NR" ' . ($country=="NR" ? 'selected' : '') . '>Nauru</option>
+                                                        <option value="NP" ' . ($country=="NP" ? 'selected' : '') . '>Nepal</option>
+                                                        <option value="NL" ' . ($country=="NL" ? 'selected' : '') . '>Netherlands</option>
+                                                        <option value="NC" ' . ($country=="NC" ? 'selected' : '') . '>New Caledonia</option>
+                                                        <option value="NZ" ' . ($country=="NZ" ? 'selected' : '') . '>New Zealand</option>
+                                                        <option value="NI" ' . ($country=="NI" ? 'selected' : '') . '>Nicaragua</option>
+                                                        <option value="NE" ' . ($country=="NE" ? 'selected' : '') . '>Niger</option>
+                                                        <option value="NG" ' . ($country=="NG" ? 'selected' : '') . '>Nigeria</option>
+                                                        <option value="NU" ' . ($country=="NU" ? 'selected' : '') . '>Niue</option>
+                                                        <option value="NF" ' . ($country=="NF" ? 'selected' : '') . '>Norfolk Island</option>
+                                                        <option value="MP" ' . ($country=="MP" ? 'selected' : '') . '>Northern Mariana Islands</option>
+                                                        <option value="NO" ' . ($country=="NO" ? 'selected' : '') . '>Norway</option>
+                                                        <option value="OM" ' . ($country=="OM" ? 'selected' : '') . '>Oman</option>
+                                                        <option value="PK" ' . ($country=="PK" ? 'selected' : '') . '>Pakistan</option>
+                                                        <option value="PW" ' . ($country=="PW" ? 'selected' : '') . '>Palau</option>
+                                                        <option value="PS" ' . ($country=="PS" ? 'selected' : '') . '>Palestinian Territory, Occupied</option>
+                                                        <option value="PA" ' . ($country=="PA" ? 'selected' : '') . '>Panama</option>
+                                                        <option value="PG" ' . ($country=="PG" ? 'selected' : '') . '>Papua New Guinea</option>
+                                                        <option value="PY" ' . ($country=="PY" ? 'selected' : '') . '>Paraguay</option>
+                                                        <option value="PE" ' . ($country=="PE" ? 'selected' : '') . '>Peru</option>
+                                                        <option value="PH" ' . ($country=="PH" ? 'selected' : '') . '>Philippines</option>
+                                                        <option value="PN" ' . ($country=="PN" ? 'selected' : '') . '>Pitcairn</option>
+                                                        <option value="PL" ' . ($country=="PL" ? 'selected' : '') . '>Poland</option>
+                                                        <option value="PT" ' . ($country=="PT" ? 'selected' : '') . '>Portugal</option>
+                                                        <option value="PR" ' . ($country=="PR" ? 'selected' : '') . '>Puerto Rico</option>
+                                                        <option value="QA" ' . ($country=="QA" ? 'selected' : '') . '>Qatar</option>
+                                                        <option value="RE" ' . ($country=="RE" ? 'selected' : '') . '>Réunion</option>
+                                                        <option value="RO" ' . ($country=="RO" ? 'selected' : '') . '>Romania</option>
+                                                        <option value="RU" ' . ($country=="RU" ? 'selected' : '') . '>Russian Federation</option>
+                                                        <option value="RW" ' . ($country=="RW" ? 'selected' : '') . '>Rwanda</option>
+                                                        <option value="BL" ' . ($country=="BL" ? 'selected' : '') . '>Saint Barthélemy</option>
+                                                        <option value="SH" ' . ($country=="SH" ? 'selected' : '') . '>Saint Helena, Ascension and Tristan da Cunha</option>
+                                                        <option value="KN" ' . ($country=="KN" ? 'selected' : '') . '>Saint Kitts and Nevis</option>
+                                                        <option value="LC" ' . ($country=="LC" ? 'selected' : '') . '>Saint Lucia</option>
+                                                        <option value="MF" ' . ($country=="MF" ? 'selected' : '') . '>Saint Martin (French part)</option>
+                                                        <option value="PM" ' . ($country=="PM" ? 'selected' : '') . '>Saint Pierre and Miquelon</option>
+                                                        <option value="VC" ' . ($country=="VC" ? 'selected' : '') . '>Saint Vincent and the Grenadines</option>
+                                                        <option value="WS" ' . ($country=="WS" ? 'selected' : '') . '>Samoa</option>
+                                                        <option value="SM" ' . ($country=="SM" ? 'selected' : '') . '>San Marino</option>
+                                                        <option value="ST" ' . ($country=="ST" ? 'selected' : '') . '>Sao Tome and Principe</option>
+                                                        <option value="SA" ' . ($country=="SA" ? 'selected' : '') . '>Saudi Arabia</option>
+                                                        <option value="SN" ' . ($country=="SN" ? 'selected' : '') . '>Senegal</option>
+                                                        <option value="RS" ' . ($country=="RS" ? 'selected' : '') . '>Serbia</option>
+                                                        <option value="SC" ' . ($country=="SC" ? 'selected' : '') . '>Seychelles</option>
+                                                        <option value="SL" ' . ($country=="SL" ? 'selected' : '') . '>Sierra Leone</option>
+                                                        <option value="SG" ' . ($country=="SG" ? 'selected' : '') . '>Singapore</option>
+                                                        <option value="SX" ' . ($country=="SX" ? 'selected' : '') . '>Sint Maarten (Dutch part)</option>
+                                                        <option value="SK" ' . ($country=="SK" ? 'selected' : '') . '>Slovakia</option>
+                                                        <option value="SI" ' . ($country=="SI" ? 'selected' : '') . '>Slovenia</option>
+                                                        <option value="SB" ' . ($country=="SB" ? 'selected' : '') . '>Solomon Islands</option>
+                                                        <option value="SO" ' . ($country=="SO" ? 'selected' : '') . '>Somalia</option>
+                                                        <option value="ZA" ' . ($country=="ZA" ? 'selected' : '') . '>South Africa</option>
+                                                        <option value="GS" ' . ($country=="GS" ? 'selected' : '') . '>South Georgia and the South Sandwich Islands</option>
+                                                        <option value="SS" ' . ($country=="SS" ? 'selected' : '') . '>South Sudan</option>
+                                                        <option value="ES" ' . ($country=="ES" ? 'selected' : '') . '>Spain</option>
+                                                        <option value="LK" ' . ($country=="LK" ? 'selected' : '') . '>Sri Lanka</option>
+                                                        <option value="SD" ' . ($country=="SD" ? 'selected' : '') . '>Sudan</option>
+                                                        <option value="SR" ' . ($country=="SR" ? 'selected' : '') . '>Suriname</option>
+                                                        <option value="SJ" ' . ($country=="SJ" ? 'selected' : '') . '>Svalbard and Jan Mayen</option>
+                                                        <option value="SZ" ' . ($country=="SZ" ? 'selected' : '') . '>Swaziland</option>
+                                                        <option value="SE" ' . ($country=="SE" ? 'selected' : '') . '>Sweden</option>
+                                                        <option value="CH" ' . ($country=="CH" ? 'selected' : '') . '>Switzerland</option>
+                                                        <option value="SY" ' . ($country=="SY" ? 'selected' : '') . '>Syrian Arab Republic</option>
+                                                        <option value="TW" ' . ($country=="TW" ? 'selected' : '') . '>Taiwan, Province of China</option>
+                                                        <option value="TJ" ' . ($country=="TJ" ? 'selected' : '') . '>Tajikistan</option>
+                                                        <option value="TZ" ' . ($country=="TZ" ? 'selected' : '') . '>Tanzania, United Republic of</option>
+                                                        <option value="TH" ' . ($country=="TH" ? 'selected' : '') . '>Thailand</option>
+                                                        <option value="TL" ' . ($country=="TL" ? 'selected' : '') . '>Timor-Leste</option>
+                                                        <option value="TG" ' . ($country=="TG" ? 'selected' : '') . '>Togo</option>
+                                                        <option value="TK" ' . ($country=="TK" ? 'selected' : '') . '>Tokelau</option>
+                                                        <option value="TO" ' . ($country=="TO" ? 'selected' : '') . '>Tonga</option>
+                                                        <option value="TT" ' . ($country=="TT" ? 'selected' : '') . '>Trinidad and Tobago</option>
+                                                        <option value="TN" ' . ($country=="TN" ? 'selected' : '') . '>Tunisia</option>
+                                                        <option value="TR" ' . ($country=="TR" ? 'selected' : '') . '>Turkey</option>
+                                                        <option value="TM" ' . ($country=="TM" ? 'selected' : '') . '>Turkmenistan</option>
+                                                        <option value="TC" ' . ($country=="TC" ? 'selected' : '') . '>Turks and Caicos Islands</option>
+                                                        <option value="TV" ' . ($country=="TV" ? 'selected' : '') . '>Tuvalu</option>
+                                                        <option value="UG" ' . ($country=="UG" ? 'selected' : '') . '>Uganda</option>
+                                                        <option value="UA" ' . ($country=="UA" ? 'selected' : '') . '>Ukraine</option>
+                                                        <option value="AE" ' . ($country=="AE" ? 'selected' : '') . '>United Arab Emirates</option>
+                                                        <option value="GB" ' . ($country=="GB" ? 'selected' : '') . '>United Kingdom</option>
+                                                        <option value="US" ' . ($country=="US" ? 'selected' : '') . '>United States</option>
+                                                        <option value="UM" ' . ($country=="UM" ? 'selected' : '') . '>United States Minor Outlying Islands</option>
+                                                        <option value="UY" ' . ($country=="UY" ? 'selected' : '') . '>Uruguay</option>
+                                                        <option value="UZ" ' . ($country=="UZ" ? 'selected' : '') . '>Uzbekistan</option>
+                                                        <option value="VU" ' . ($country=="VU" ? 'selected' : '') . '>Vanuatu</option>
+                                                        <option value="VE" ' . ($country=="VE" ? 'selected' : '') . '>Venezuela, Bolivarian Republic of</option>
+                                                        <option value="VN" ' . ($country=="VN" ? 'selected' : '') . '>Viet Nam</option>
+                                                        <option value="VG" ' . ($country=="VG" ? 'selected' : '') . '>Virgin Islands, British</option>
+                                                        <option value="VI" ' . ($country=="VI" ? 'selected' : '') . '>Virgin Islands, U.S.</option>
+                                                        <option value="WF" ' . ($country=="WF" ? 'selected' : '') . '>Wallis and Futuna</option>
+                                                        <option value="EH" ' . ($country=="EH" ? 'selected' : '') . '>Western Sahara</option>
+                                                        <option value="YE" ' . ($country=="YE" ? 'selected' : '') . '>Yemen</option>
+                                                        <option value="ZM" ' . ($country=="ZM" ? 'selected' : '') . '>Zambia</option>
+							<option value="ZW" ' . ($country=="ZW" ? 'selected' : '') . '>Zimbabwe</option>
+						</select>
+            				</div>
+            				<div class="form-group">
+                				<label>City or Zip</label>
+						<div class="form-check">
+  							<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="radio" name="rad_CityZip" id="rad_CityZip_City" value="City" onchange=rad_CityZip_Changed("City") '.$city_checked.'>
+  							<label class="form-check-label" for="rad_CityZip_City">
+    								City
+  							</label>
+						</div>
+						<div class="form-check">
+  							<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="radio" name="rad_CityZip" id="rad_CityZip_Zip" value="Zip" onchange=rad_CityZip_Changed("Zip") '.$zip_checked.'>
+  							<label class="form-check-label" for="rad_CityZip_Zip">
+    								Zip
+  							</label>
+						</div>
+
+            				</div>
+            				<div class="form-group">
+                				<label for="inp_City_Zip" id="label_City_Zip">'.$CityZip_label.'</label>';
+							if ($city_checked == "checked") {
+                						echo '<input type="text" class="form-control" name="inp_City_Zip" id="inp_City_Zip" value="'.$city.'">';
+							} else {
+                                                                echo '<input type="text" class="form-control" name="inp_City_Zip" id="inp_City_Zip" value="'.$zip.'">';
+							}
+            				echo '</div>
+            				<div class="form-group">
+						<label for="inp_APIKEY">API Key:</label>
+                				<input type="text" class="form-control" name="inp_APIKEY" id="inp_APIKEY" value="'.$openweather_api.'">
+            				</div>
+                        </div>
+		        <!-- /.modal-body -->
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        <input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="update_openweather()">
+                        </div>
+                </div>
+	        <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->';
+?>
+<script>
+function rad_CityZip_Changed(label_text){
+
+        document.getElementById("label_City_Zip").innerHTML = label_text;
+        if (label_text == "City") {
+                document.getElementById("inp_City_Zip").value = document.getElementById("city").value;
+        	document.getElementById("CityZip").value = 0;
+	} else {
+                document.getElementById("inp_City_Zip").value = document.getElementById("zip").value;
+                document.getElementById("CityZip").value = 1;
+	}
+}
+
+function set_country(value){
+
+	var valuetext = value;
+        document.getElementById("country_code").value = valuetext;
+}
+
+</script>
+<?php
+
+//MQTT Connection Modal
+echo '<div class="modal fade" id="mqtt_connection" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+        	<div class="modal-content">
+            		<div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                		<h5 class="modal-title">'.$lang['mqtt_connections'].'</h5>
+            			<div class="dropdown float-right">
+                			<a class="" data-bs-toggle="dropdown" href="#">
+                        			<i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
+                			</a>
+                			<ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
+                        			<li><a class="dropdown-item" href="pdf_download.php?file=setup_guide_mqtt.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_guide_mqtt'].'</a></li>
+                        			<li class="dropdown-divider"></li>
+                        			<li><a class="dropdown-item" href="pdf_download.php?file=setup_zigbee2mqtt.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_zigbee2mqtt'].'</a></li>
+                			</ul>
+             			</div>
+            		</div>
+            		<div class="modal-body">
+				<p class="text-muted">'.$lang['mqtt_connections_text'].'</p>';
+   				$query = "SELECT * FROM `mqtt` ORDER BY `name`;";
+    				$results = $conn->query($query);
+    				echo '<div class="list-group">';
+    					while ($row = mysqli_fetch_assoc($results)) {
+                                                $myArray[$row['id']] = $row;
+                                                //overwrite the raw password entry with the decoded value
+                                                $myArray[$row['id']]['password'] = dec_passwd($row['password']);
+        					echo '<span class="list-group-item">
+							<div class="d-flex justify-content-between">
+								<div>';
+        								echo $row['name'] . ($row['enabled'] ? '' : ' (Disabled)');
+								echo '</div>
+								<div>
+        								<span class="text-muted small" style="width:200px;text-align:right;">Username:&nbsp;' . $row['username'] . '</span>
+								</div>
+							</div>
+                					<div class="d-flex justify-content-between">
+								<div>
+									<span class="text-muted small">Type:&nbsp;';
+        									if($row['type']==0) echo 'Default, monitor.';
+        									else if($row['type']==1) echo 'Sonoff Tasmota.';
+        									else if($row['type']==2) echo 'MQTT Node.';
+        									else if($row['type']==3) echo 'Home Assistant.';
+        									else echo 'Unknown.';
+        								echo '</span>
+								</div>
+								<div>
+        								<span class="text-muted small" style="width:200px;text-align:right;">Password:&nbsp;' . dec_passwd($row['password']) . '</span>
+								</div>
+							</div>
+                					<div class="d-flex justify-content-between">
+                        					<div>
+        								<span class="text-muted small">' . $row['ip'] . '&nbsp;:&nbsp;' . $row['port'] . '</span>
+								</div>
+								<div>
+        								<span class="text-muted small" style="width:200px;text-align:right;">
+										<button class="btn btn-bm-'.theme($conn, settings($conn, 'theme'), 'color').' btn-xs" onclick="button_mqtt_connection(`'.$row['id'].'`);"><i class="bi bi-pencil"></i></button>
+                                                				<button class="btn warning btn-danger btn-xs" onclick="delete_mqtt_connection('.$row["id"].');" data-confirm="'.$lang['confirm_del_mqtt'].'"><span class="bi bi-trash-fill black"></span></button>
+        								</span>
+        							</div>
+							</div>
+						</span>';
+    					}
+    				echo '</div>
+			        <!-- /.list-group -->
+			</div>
+		        <!-- /.modal-body -->
+			<div class="modal-footer">
+                	        <button type="button" class="btn btn-primary-'.theme($conn, settings($conn, 'theme'), 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                                <button class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="button_mqtt_connection(0);">'.$lang['add_connection'].'</button>
+			</div>
+        	</div>
+	        <!-- /.modal-content -->
+    	</div>
+        <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->';
+?>
+<script language="javascript" type="text/javascript">
+function button_mqtt_connection(id)
+{
+	var myId = id;
+	if (myId == 0) {
+        	$("#conn_id").val(myId);
+                var myName = "";
+                var myIp = "";
+                var myPort = "";
+                var myUsername = "";
+                var myPassword = "";
+                var myEnabled = 1;
+                var myType = 0;
+		var title = "<?php echo $lang['add_connection']  ?>";
+                var title_text = "<?php echo $lang['add_connection_text']  ?>";
+	} else {
+                var title = "<?php echo $lang['edit_connection']  ?>";
+                var title_text = "<?php echo $lang['edit_connection_text']  ?>";
+	        var data = '<?php echo json_encode($myArray) ?>';
+        	if (data.length > 0) {
+                	var obj = JSON.parse(data);
+        	        var myName = obj[myId].name;
+	                var myIp = obj[myId].ip;
+                	var myPort = obj[myId].port;
+        	        var myUsername = obj[myId].username;
+	                var myPassword = obj[myId].password;
+                	var myEnabled = obj[myId].enabled;
+                	var myType = obj[myId].type;
+	        }
+	}
+
+        $("#conn_id").val(myId);
+        $("#inp_Name").val(myName);
+        $("#inp_Ip").val(myIp);
+        $("#inp_Port").val(myPort);
+        $("#inp_Username").val(myUsername);
+        $("#inp_Password").val(myPassword);
+        $("#sel_Enabled").val(myEnabled);
+        $("#inp_Enabled").val(myEnabled);
+        $("#sel_Type").val(myType);
+        $("#inp_Type").val(myType);
+	$('#mqtt_addedit').text(title);
+        $('#mqtt_addedit_text').text(title_text);
+
+        $('#mqtt_connection').modal('hide');
+        $('#add_mqtt_connection').modal('show');
+}
+</script>
+<?php
+
+//Add or Edit MQTT Connection
+echo '
+<div class="modal fade" id="add_mqtt_connection" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    	<div class="modal-dialog">
+        	<div class="modal-content">
+            		<div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                        	<button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                		<h5 id="mqtt_addedit" class="modal-title">'.$lang['add_edit_connection'].'</h5>
+            		</div>
+            		<div class="modal-body">';
+				echo '<p id="mqtt_addedit_text" class="text-muted"></p>
+				<form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
+			    	<input type="hidden" id="conn_id" name="conn_id" value="0" autocomplete="off" required>
+                                <input type="hidden" id="inp_Enabled" name="inp_Enabled" value="0" autocomplete="off" required>
+                                <input type="hidden" id="inp_Type" name="inp_Type" value="0" autocomplete="off" required>
+
+                                <div class="form-group">
+                                	<label>Name</label>
+                                        <input type="text" class="form-control" name="inp_Name" id="inp_Name" placeholder="Enter Broker Name">
+                                        <div class="help-block with-errors"></div>
+                                </div>
+                                <div class="form-group">
+                                        <label>IP</label>
+                                        <input type="text" class="form-control" name="inp_Ip" id="inp_Ip" placeholder="Enter Broker IP Address">
+                                        <div class="help-block with-errors"></div>
+                                </div>
+                                <div class="form-group">
+                                        <label>Port</label>
+                                        <input type="text" class="form-control" name="inp_Port" id="inp_Port" placeholder="Enter Broker Port">
+                                        <div class="help-block with-errors"></div>
+                                </div>
+                                <div class="form-group" class="control-label"><label>'.$lang['username'].' </label>
+                                        <div class="input-group mb-3">
+                                                <span class="input-group-text bg-'.theme($conn, $theme, 'color').'"><i class="bi bi-person-plus-fill text-white"></i></span>
+                                                <input class="form-control" type="text" id="inp_Username" name="inp_Username" placeholder="Username for MQTT Broker">
+                                        </div>
+                                        <div class="help-block with-errors"></div>
+                                </div>
+                                <div class="form-group" class="control-label"><label>'.$lang['password'].' </label>
+                                        <div class="input-group mb-3">
+                                                <div class="input-group-prepend">
+                                                        <span class="input-group-text bg-'.theme($conn, $theme, 'color').'" id="basic-addon1"><i class="bi bi-key-fill text-white"></i></span>
+                                                </div>
+                                                <input name="inp_Password" type="password" class="input form-control" id="inp_Password" placeholder="MQTT Broker Password" required="true" aria-label="password" aria-describedby="basic-addon1" />
+                                                        <div class="input-group-append">
+                                                                <span class="input-group-text" onclick="mqtt_password_show_hide();">
+                                                                        <i class="bi bi-eye-fill" id="show_eye"></i>
+                                                                        <i class="bi bi-eye-slash-fill d-none" id="hide_eye"></i>
+                                                                </span>
+                                                        </div>
+                                        </div>
+                                        <div class="help-block with-errors"></div>
+                                </div>
+                                <div class="form-group">
+                                        <label>Enabled</label>
+                                        <select class="form-control" id="sel_Enabled" name="sel_Enabled" onchange="set_enabled(this.options[this.selectedIndex].value)" >
+                                                <option value="0">'.$lang['disabled'].'</option>
+                                                <option value="1">'.$lang['enabled'].'</option>
+                                        </select>
+                                        <div class="help-block with-errors"></div>
+                                </div>
+                                <div class="form-group">
+                                        <label>Type</label>
+                                        <select class="form-control" id="sel_Type" name="sel_Type" onchange="set_type(this.options[this.selectedIndex].value)" >
+                                                <option value="0">Default - view all</option>
+                                                <option value="1">Sonoff - Tasmota</option>
+                                                <option value="2">MQTT Node</option>
+                                                <option value="3">Home Assistant integration</option>
+                                        </select>
+                                        <div class="help-block with-errors"></div>
+                                </div>
+                        </div>
+		        <!-- /.modal-body -->
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" id="button_mqtt_connection_hide">'.$lang['close'].'</button>
+                                <input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="add_update_mqtt_broker()">
+                        </div>
+                </div>
+	        <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->';
+?>
+<script language="javascript" type="text/javascript">
+$("#button_mqtt_connection_hide").on("click", function(){
+        $("#add_mqtt_connection").modal("show");
+        $('#add_mqtt_connection').on("hidden.bs.modal", function (e) {
+                $("#mqtt_connection").modal("show");
+        })
+        $("#add_mqtt_connection").modal("hide");
+});
+
+function set_enabled(value){
+        var valuetext = value;
+        document.getElementById("inp_Enabled").value = valuetext;
+}
+
+function set_type(value){
+        var valuetext = value;
+        document.getElementById("inp_Type").value = valuetext;
+}
+
+function mqtt_password_show_hide() {
+        var x = document.getElementById("inp_Password");
+        var show_eye = document.getElementById("show_eye");
+        var hide_eye = document.getElementById("hide_eye");
+        hide_eye.classList.remove("d-none");
+        if (x.type === "password") {
+                x.type = "text";
+                show_eye.style.display = "none";
+                hide_eye.style.display = "block";
+        } else {
+                x.type = "password";
+                show_eye.style.display = "block";
+                hide_eye.style.display = "none";
+        }
+}
+</script>
+<?php
+
+//enable graph archiving
+echo '<div class="modal fade" id="archive_graphs" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                <h5 class="modal-title">'.$lang['archive_graphs'].'</h5>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">'.$lang['archive_graphs_text'].'</p>';
+                $query = "SELECT * FROM graphs LIMIT 1;";
+                $result = $conn->query($query);
+		$row = mysqli_fetch_array($result);
+        	echo '<div class="form-group" class="control-label">
+                	<div class="form-check">';
+                        	if ($row['archive_enable'] == '1'){ $checked = "checked"; } else { $checked = "" ; }
+				echo '<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" value="1" id="checkbox6" name="archive_status" '. $checked .'>
+                        	<label class="form-check-label" for="checkbox6">'.$lang['enable_graph_archive'].'</label>
+                	</div>
+        	</div>
+		<div class="form-group" class="control-label"><label>'.$lang['archive_file_path'].'</label>
+			<input class="form-control" type="text" id="graph_archive_file" name="graph_archive_file" value="'.$row['archive_file'].'" placeholder="Full Path Name of Graph Archive File ">
+        		<div class="help-block with-errors"></div></div>
+            	</div>
+                <div class="modal-footer">
+                        <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        <input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="graph_archiving()">
+            </div>
+        </div>
+    </div>
+</div>';
+
+//Zone Current State Logs
+echo '<div class="modal fade" id="zone_current_state_logs" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                <h5 class="modal-title">'.$lang['zone_current_state_logs'].'</h5>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">'.$lang['enable_zone_current_state_logs_text'].'</p>
+                <table class="table table-bordered">
+                        <tr>
+                                <th class="col-lg-2 text-center"><small>'.$lang['zone'].'</small></th>
+                                <th class="col-lg-1 text-center"><small>'.$lang['enabled'].'</small></th>
+                        </tr>';
+                        $query = "SELECT zone_id, z.name, log_it
+                                  FROM zone_current_state
+                                  JOIN zone z ON zone_id = z.id
+                                  ORDER BY z.type_id, z.id ASC;";
+                        $results = $conn->query($query);
+                        while ($row = mysqli_fetch_assoc($results)) {
+                                if ($row['log_it']) { $enabled_check = 'checked'; } else { $enabled_check = ''; }
+                                echo '<tr>
+                                        <td>'.$row['name'].'</td>
+                                        <td style="text-align:center; vertical-align:middle;">
+                                                <input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox_zone_current_state'.$row['zone_id'].'" name="enabled" value="1" '.$enabled_check.'>
+                                        </td>
+                                </tr>';
+                        }
+                echo '</table>
+            </div>
+                <div class="modal-footer">
+                        <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        <input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="enable_zone_current_state_logs()">
+            </div>
+        </div>
+    </div>
+</div>';
+
+//Hot Water Compensation settings
+echo '
+<div class="modal fade" id="hw_compensation" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['hot_water_comp'].'</h5>
+                                <div class="dropdown float-right">
+                                        <a class="" data-bs-toggle="dropdown" href="#">
+                                                <i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
+                                        </a>
+                                        <ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
+                                        <li><a class="dropdown-item" href="pdf_download.php?file=setup_guide_hot_water_compensation.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_guide_hot_water_compensation'].'</a></li>
+                                        </ul>
+                                </div>
+                        </div>
+                        <div class="modal-body">';
+                                $query = "SELECT zone.id, zone.name, zone_sensors.default_c FROM zone, zone_sensors WHERE (zone_sensors.zone_id) = zone.id AND type_id =3;";
+                                $z_results = $conn->query($query);
+                                if ($z_results) {
+                                        $query = "SELECT hw_compensation.zone_id, hw_compensation.sensor_id, hw_compensation.hw_coefficient, hw_compensation.hw_threshold,
+                                                hw_compensation.enabled, zone_sensors.default_c
+                                                FROM hw_compensation, zone_sensors
+                                                WHERE zone_sensors.zone_id = hw_compensation.zone_id LIMIT 1;";
+                                        $result = $conn->query($query);
+                                        $hw_zone = 1;
+                                        $row = mysqli_fetch_array($result);
+                                        echo '<p class="text-muted">'.$lang['hw_comp_info_text'].'</p>
+                                        <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
+                                        <div class="form-group" class="control-label">
+                                                <div class="form-check">';
+                                                        if ($row['enabled'] == '1'){
+                                                                echo '<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" value="1" id="checkbox2" name="enabled" checked>';
+                                                        } else {
+                                                                echo '<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" value="1" id="checkbox2" name="enabled">';
+                                                        }
+                                                        echo '<label class="form-check-label" for="checkbox2">'.$lang['enable'].'</label>
+                                                </div>
+                                        </div>
+
+                                        <!-- /.form-group -->
+                                        <input type="hidden" id="default_c" name="default_c" value="'.$row["default_c"].'">
+                                        <div class="form-group" class="control-label"><label>'.$lang['zone'].'</label> <small class="text-muted">'.$lang['select_hw_zone_info'].'</small>
+                                                <select class="form-select" type="text" id="hw_comp_zone" name="hw_comp_zone" >';
+                                                //get list of heat relays to display
+                                                while ($zrow=mysqli_fetch_array($z_results)) {
+                                                        echo '<option value="'.$zrow['id'].'" ' . ($zrow['id']==$row['zone_id'] ? 'selected' : '') . '>'.$zrow['name'].'</option>';
+                                                }
+                                                echo '</select>
+                                                <div class="help-block with-errors"></div>
+                                        </div>
+
+                                        <!-- /.form-group -->
+                                        <div class="form-group" class="control-label"><label>'.$lang['coefficient'].' </label>
+                                                <input class="form-control" type="text" id="hw_coefficient" name="hw_coefficient" value="'.$row['hw_coefficient'].'" placeholder="Coefficient">
+                                                <div class="help-block with-errors"></div>
+                                        </div>
+
+                                        <!-- /.form-group -->
+                                        <div class="form-group" class="control-label"><label>'.$lang['threshold'].' </label>
+                                                <input class="form-control" type="text" id="hw_threshold" name="hw_threshold" value="'.$row['hw_threshold'].'" placeholder="Threshold">
+                                                <div class="help-block with-errors"></div>
+                                        </div>
+
+                                        <!-- /.form-group -->
+                                        <div class="form-group" class="control-label"><label>'.$lang['default_temperature'].' </label>
+                                                <input class="form-control" type="text" id="default_temp" name="default_temp" value="'.$row['default_c'].'" placeholder="Zone Default Temp">
+                                                <div class="help-block with-errors"></div>
+                                        </div>
+
+                                        <!-- /.form-group -->
+                                        <div class="form-group" class="control-label"><label>'.$lang['weather_sensor'].'</label> <small class="text-muted">'.$lang['weather_sensor_info'].'</small>
+                                                <select class="form-select" type="text" id="weather_sensor_id" name="weather_sensor_id" >
+                                                        <option value="0" ' . ($brow['weather_sensor_id'] == 0 || $brow['weather_sensor_id'] == '0' ? 'selected' : '') . '>'.$lang['openweather'].'</option>';
+                                                        //get list of sensors to display
+                                                        $query = "SELECT id, name FROM sensors WHERE sensor_type_id = 1;";
+                                                        $result = $conn->query($query);
+                                                        if ($result){
+                                                                while ($srow=mysqli_fetch_array($result)) {
+                                                                        echo '<option value="'.$srow['id'].'" ' . ($srow['id']==$row['sensor_id'] ? 'selected' : '') . '>'.$srow['name'].'</option>';
+                                                                }
+                                                        }
+                                                echo '</select>
+                                                <div class="help-block with-errors"></div>
+                                        </div>
+                                        <!-- /.form-group -->
+                                        ';
+                                } else {
+                                        $hw_zone = 0;
+                                        echo '<p class="text-muted">'.$lang['no_hot_water_zone'].'</p>';
+                                }
+                        echo '</div>
+
+                        <!-- /.modal-body -->
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>';
+				if ($hw_zone == 1) {
+                                	echo '<input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="setup_hw_comp()">';
+				}
+                        echo '</div>
+                        <!-- /.modal-footer -->
+                </div>
+                <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+</div>
+<!-- /.modal fade -->
+';
+
+// Target Temp Modal
+$target_type = settings($conn, 'target_t');
+echo '
+<div class="modal fade" id="temp_target_type" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['target_temp'].'</h5>
+                        </div>
+                        <div class="modal-body">
+                                <p class="text-muted"> '.$lang['target_type_text'].'</p>
+                                <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
+                                <div class="form-group" class="control-label"><label>'.$lang['target_type'].'</label>
+                                        <select class="form-select" type="number" id="new_target_type" name="new_target_type">
+                                                <option value="0" ' . ($target_type==0 || $target_type=='0' ? 'selected' : '') . '>'.$lang['raw_target'].'</option>
+                                                <option value="1" ' . ($target_type==1 || $target_type=='1' ? 'selected' : '') . '>'.$lang['cuts_target'].'</option>
+                                        </select>
+                                        <div class="help-block with-errors"></div>
+                                </div>
+                        </div>
+                        <!-- /.modal-body -->
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['cancel'].'</button>
+                                <input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="update_target_type()">
+                        </div>
+                        <!-- /.modal-footer -->
+                </div>
+                <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+</div>
+<!-- /.modal fade -->
+';
 }
 
 if ($model_num == 4) {
@@ -2106,7 +3845,7 @@ echo '
 					<!-- /.form-group -->';
 
 					if ((settings($conn, 'mode') & 0b1) == 1) {
-                                        echo '<div class="form-group" class="control-label"><label>'.$lang['cool_relay_id'].'</label> <small class="text-muted">'.$lang['cool_relay_id_info'].'</small>
+  				        	echo '<div class="form-group" class="control-label"><label>'.$lang['cool_relay_id'].'</label> <small class="text-muted">'.$lang['cool_relay_id_info'].'</small>
                                                 <select class="form-select" type="text" id="cool_relay_id" name="cool_relay_id" >';
                                                 //get list of heat relays to display
                                                 $query = "SELECT id, name FROM relays WHERE type = 3;";
@@ -2188,18 +3927,18 @@ echo '
                                         if ((settings($conn, 'mode') & 0b1) == 0) {
 						echo '<div class="form-group" class="control-label"><label>'.$lang['system_controller_overrun'].'</label> <small class="text-muted">'.$lang['system_controller_overrun_info'].'</small>
 							<select class="form-select" type="text" id="overrun" name="overrun">
-							<option selected>'.$brow['overrun'].'</option>
-							<option value="-1">Keep valve open until next System Controller start</option>
-							<option value="0">Disable</option>
-							<option value="1">1</option>
-							<option value="2">2</option>
-							<option value="3">3</option>
-							<option value="4">4</option>
-							<option value="5">5</option>
-							<option value="6">6</option>
-							<option value="7">7</option>
-							<option value="8">8</option>
-							<option value="9">9</option>
+								<option selected>'.$brow['overrun'].'</option>
+								<option value="-1">Keep valve open until next System Controller start</option>
+								<option value="0">Disable</option>
+								<option value="1">1</option>
+								<option value="2">2</option>
+								<option value="3">3</option>
+								<option value="4">4</option>
+								<option value="5">5</option>
+								<option value="6">6</option>
+								<option value="7">7</option>
+								<option value="8">8</option>
+								<option value="9">9</option>
 							</select>
 	    						<div class="help-block with-errors">
 							</div>
@@ -2225,20 +3964,20 @@ echo '
                                                 				echo '<option value="'.$srow['id'].'" ' . ($srow['id']==$brow['weather_sensor_id'] ? 'selected' : '') . '>'.$srow['name'].'</option>';
                                                         		}
                                                 		}
-                                                		echo '</select>
-                                                		<div class="help-block with-errors">
-                                                		</div>
-                                        		</div>
-                                        		<!-- /.form-group -->
-						';
+                                                	echo '</select>
+                                                	<div class="help-block with-errors">
+                                              		</div>
+                                        	</div>
+                                        	<!-- /.form-group -->
+					';
 					}
 				} else {
 					echo '<p class="text-muted">'.$lang['system_controller_no_nodes'].'</p>';
 				}
 			echo '</div>
 			<!-- /.modal-body -->
-        	   	<div class="modal-footer">
-				<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>';
+        	   	<div class="modal-footer">';
+				if ($brow['heat_relay_id'] != 0) { echo'<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>'; }
 				if ($ncount > 0) { echo '<input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="system_controller_settings('.(settings($conn, 'mode') & 0b1).')">'; }
 
             		echo '</div>
@@ -2268,8 +4007,8 @@ if ((settings($conn, 'mode') & 0b1) == 0) {
 }
 
 if ((settings($conn, 'mode') & 0b1) == 0) {
-	$query = "SELECT boost.id, boost.`status`, boost.sync, boost.zone_id, zone_idx.index_id, zone_type.category, zone.name, 
-        boost.temperature, boost.minute, boost_button_id, boost_button_child_id, hvac_mode, ts.sensor_type_id
+	$query = "SELECT DISTINCT boost.id, boost.`status`, boost.sync, boost.zone_id, zone_idx.index_id, zone_type.category, zone.name, 
+        boost.temperature, boost.minute, boost.one_shot, boost_button_id, boost_button_child_id, hvac_mode, ts.sensor_type_id
         FROM boost
         JOIN zone ON boost.zone_id = zone.id
         JOIN zone zone_idx ON boost.zone_id = zone_idx.id
@@ -2283,7 +4022,8 @@ if ((settings($conn, 'mode') & 0b1) == 0) {
         	<th class="col-4"><small>'.$lang['zone'].'</small></th>
         	<th class="col-2"><small>'.$lang['boost_time'].'</small></th>
         	<th class="col-2"><small>'.$lang['boost_temp'].'</small></th>
-        	<th class="col-2"><small>'.$lang['boost_console_id'].'</small></th>
+                <th class="col-1"><small>'.$lang['one_shot'].'</small></th>
+        	<th class="col-1"><small>'.$lang['boost_console_id'].'</small></th>
         	<th class="col-1"><small>'.$lang['boost_button_child_id'].'</small></th>
         	<th class="col-1"></th>
     	</tr>';
@@ -2312,16 +4052,23 @@ while ($row = mysqli_fetch_assoc($results)) {
     if ((settings($conn, 'mode') & 0b1) == 0) {
     	$boost_button_id = $row["boost_button_id"];
     	$boost_button_child_id = $row["boost_button_child_id"];
+	if ($row['one_shot'] == 1) { $enabled_check = 'checked'; } else { $enabled_check = ''; }
     	echo '
             <tr>
             	<th scope="row"><small>'.$row['name'].'</small></th>
             	<td><input id="minute'.$row["id"].'" type="text" class="float-left text" style="border: none" name="minute" size="3" value="'.$minute.'" placeholder="Minutes" required></td>';
 	    	if($row["category"] < 2 || $row["category"] == 5) {
             		echo '<td><input id="temperature'.$row["id"].'" type="text" class="float-left text" style="border: none" name="temperature" size="3" value="'.DispSensor($conn,$row["temperature"],$row["sensor_type_id"]).'" placeholder="Temperature" required></td>
+			<td style="text-align:center; vertical-align:middle;">
+				<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="one_shot'.$row["id"].'" name="one_shot" value="1" '.$enabled_check.'>
+			</td>
             		<td><input id="boost_button_id'.$row["id"].'" type="text" class="float-left text" style="border: none" name="button_id"  size="3" value="'.$boost_button_id.'" placeholder="Button ID" required></td>
             		<td><input id="boost_button_child_id'.$row["id"].'" type="text" class="float-left text" style="border: none" name="button_child_id" size="3" value="'.$boost_button_child_id.'" placeholder="Child ID" required></td>';
 	    	} else {
             		echo '<td><input id="temperature'.$row["id"].'" type="hidden" class="float-left text" style="border: none" name="temperature" size="3" value="'.DispSensor($conn,$row["temperature"],$row["sensor_type_id"]).'" placeholder="Temperature" required></td>
+                        <td style="text-align:center; vertical-align:middle;">
+                                <input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="one_shot'.$row["id"].'" name="one_shot" value="1" '.$enabled_check.'>
+                        </td>
             		<td><input id="boost_button_id'.$row["id"].'" type="hidden" class="float-left text" style="border: none" name="button_id"  size="3" value="'.$boost_button_id.'" placeholder="Button ID" required></td>
             		<td><input id="boost_button_child_id'.$row["id"].'" type="hidden" class="float-left text" style="border: none" name="button_child_id" size="3" value="'.$boost_button_child_id.'" placeholder="Child ID" required></td>';
 	    	}
@@ -2430,7 +4177,7 @@ echo '<p class="text-muted">'.$info_text.'</p>
 	<option value="95">95</option>
 	</select>
     <div class="help-block with-errors"></div></div>
-	<div class="form-group" class="control-label"><label>'.$lang['boost_time'].'</label> <small class="text-muted">'.$lang['boost_time_info'].'</small>
+    <div class="form-group" class="control-label"><label>'.$lang['boost_time'].'</label> <small class="text-muted">'.$lang['boost_time_info'].'</small>
 	<select class="form-select" type="text" id="boost_time" name="boost_time">
 	<option value="20">20</option>
 	<option value="25">25</option>
@@ -2480,7 +4227,16 @@ echo '<p class="text-muted">'.$info_text.'</p>
 		</select>
     	  <div class="help-block with-errors"></div></div>	';
 	}
-echo '</div>
+
+        echo '<div class="form-group" class="control-label"><label>'.$lang['one_shot'].'</label> <small class="text-muted">'.$lang['one_shot_info'].'</small>
+
+                <div class="form-check">';
+                        echo '<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" id="checkbox7" class="styled" type="checkbox" value="1" name="one_shot" unchecked Enabled>';
+                        echo '<label class="form-check-label" for="checkbox7"> '.$lang['one_shot'].'</label>
+                </div>
+	</div>
+
+</div>
             <div class="modal-footer">
 				<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>';
 				if ((settings($conn, 'mode') & 0b1) == 0) {
@@ -2514,7 +4270,7 @@ echo '
             <div class="modal-body">
 <p class="text-muted"> '.$lang['override_settings_text'].'</p>';
 if ((settings($conn, 'mode') & 0b1) == 0) { //boiler mode
-	$query = "SELECT override.`status`, override.sync, override.purge, override.zone_id, zone_idx.index_id, zone_type.category, zone.name,
+	$query = "SELECT DISTINCT override.`status`, override.sync, override.purge, override.zone_id, zone_idx.index_id, zone_type.category, zone.name,
 	override.time, override.temperature, override.hvac_mode, ts.sensor_type_id
 	FROM override
 	JOIN zone ON override.zone_id = zone.id
@@ -2611,6 +4367,7 @@ while ($row = mysqli_fetch_assoc($results)) {
                 }
         } else {
                 $content_msg=$lang['confirm_del_sensor_1'];
+                $zcount = 0;
         }
     } elseif(strpos($row["name"], 'Controller') !== false || strpos($row["name"], 'Relay') !== false) {
         $query = "SELECT id, name, type FROM relays where relay_id = {$row['id']};";
@@ -2662,7 +4419,7 @@ while ($row = mysqli_fetch_assoc($results)) {
         <tr>
             <td>'.$row["type"].'</td>
             <td>'.$row["node_id"].'</td>
-            <td>'.$row["max_child_id"].'</td>
+            <td><input id="max_child_id'.$row["node_id"].'" type="value" class="form-control float-right" style="border: none" name="max_child_id'.$row["node_id"].'" value="'.$row["max_child_id"].'" placeholder="Max Child ID"></td>
             <td>'.$row["name"].'</td>';
 	    if($zcount != 0) {
 		echo '<td><div class="tooltip-wrapper" data-bs-toggle="tooltip" title="'.$content_msg_z.'"><button class="btn btn-danger btn-xs disabled"><span class="bi bi-trash-fill black"></span></button> </div></td>';
@@ -2674,6 +4431,7 @@ while ($row = mysqli_fetch_assoc($results)) {
 echo '</table></div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                <input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="update_max_child_id()">
                 <button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" data-bs-href="#" data-bs-toggle="modal" data-bs-target="#add_node">'.$lang['node_add'].'</button>
             </div>
         </div>
@@ -2742,7 +4500,7 @@ echo '
                 <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
                 <h5 class="modal-title">'.$lang['zone_type'].'</h5>
                 <div class="dropdown float-right">
-                        <a class="" data-bs-toggle="dropdown" <a href="javascript:delete_theme('.$row["id"].');"<a href="javascript:delete_theme('.$row["id"].');"href="#">
+                        <a class="" data-bs-toggle="dropdown" href="#">
                                 <i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
@@ -2824,6 +4582,45 @@ echo '<p class="text-muted">'.$lang['zone_type_add_info_text'].'</p>
     </div>
 </div>';
 
+//Zone Indexing Modal
+echo '<div class="modal fade" id="index_zones" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['index_zones'].'</h5>
+                                <div class="dropdown float-right">
+                                        <a class="" data-bs-toggle="dropdown" href="#">
+                                                <i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
+                                        </a>
+                                        <ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
+                                                <li><a class="dropdown-item" href="pdf_download.php?file=tile_indexing.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_tile_indexing'].'</a></li>
+                                        </ul>
+                                </div>
+                        </div>
+                        <div class="modal-body">
+                                <p class="text-muted">'.$lang['index_zones_text'].'</p>
+                                <input type="hidden" id="update_z_index" name="update_z_index" value="1">
+                                <table class="table table-bordered">
+                                	<thead>
+                                        	<tr>
+                                               		<th class="col-md-2"><small>'.$lang['name'].'</small></th>
+                                                        <th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['type'].'</small></th>
+                                                        <th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['enabled'].'</small></th>
+                                                        <th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['index'].'</small></th>
+                                                </tr>
+                                        </thead>
+                                        <tbody id= "zone_index_table"></tbody>
+                              	</table>
+                        </div>
+                        <div class="modal-footer">';
+				echo '<input type="button" name="submit" value="'.$lang['update'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="update_zone_index()">';
+                                echo '<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                        </div>
+                </div>
+        </div>
+</div>';
+
 //Zone model
 echo '
 <div class="modal fade" id="zone_setup" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -2846,6 +4643,8 @@ echo '
                         	<li><a class="dropdown-item" href="pdf_download.php?file=switch_zone_state_control.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['switch_zone_state_control'].'</a></li>
                                 <li class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="pdf_download.php?file=negative_gradient_zone.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['negative_gradient_zone'].'</a></li>
+                                <li class="dropdown-divider"></li>
+				<li><a class="dropdown-item" href="pdf_download.php?file=setup_guide_multiple_sensors.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_guide_multiple_sensors'].'</a></li>
                         </ul>
                 </div>
             </div>
@@ -2874,11 +4673,11 @@ echo '
                 						} elseif ($vrow['category'] == 2) {
 									echo '<span>&nbsp;&nbsp;<small> '.$lang['controller'].': '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
 								} elseif ($vrow['category'] == 3) {
-									echo '<span><em>&nbsp;&nbsp;<small> '.$lang['min'].' '.DispSensor($conn,$vrow['min_c'],$vrow['sensor_type_id']).$unit.', '.$lang['max'].' '.$vrow['max_c'].$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].'&nbsp</small></span>';
+									echo '<span><em>&nbsp;&nbsp;<small> '.$lang['min'].' '.DispSensor($conn,$vrow['min_c'],$vrow['sensor_type_id']).$unit.', '.$lang['max'].' '.$vrow['max_c'].$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].'-'.$vrow['sensor_child_id'].'&nbsp</small></span>';
                 						} elseif ($vrow['category'] == 5) {
-                        						echo '<span><em>&nbsp;&nbsp;<small> '.$lang['min'].' '.DispSensor($conn,$vrow['min_c'],$vrow['sensor_type_id']).$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].' - '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
+                        						echo '<span><em>&nbsp;&nbsp;<small> '.$lang['min'].' '.DispSensor($conn,$vrow['min_c'],$vrow['sensor_type_id']).$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].'-'.$vrow['sensor_child_id'].' - '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
                 						} else {
-                        						echo '<span><em>&nbsp;&nbsp;<small> '.$lang['max'].' '.DispSensor($conn,$vrow['max_c'],$vrow['sensor_type_id']).$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].' - '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
+                        						echo '<span><em>&nbsp;&nbsp;<small> '.$lang['max'].' '.DispSensor($conn,$vrow['max_c'],$vrow['sensor_type_id']).$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].'-'.$vrow['sensor_child_id'].' - '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
                 						}
 							echo '</div>';
 						} else {
@@ -2888,11 +4687,11 @@ echo '
 		                                                } elseif ($vrow['category'] == 2) {
                 						        echo '<span>&nbsp;&nbsp;<small> '.$lang['controller'].': '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
 		                                                } elseif ($vrow['category'] == 3) {
-						                        echo '<span><em>&nbsp;&nbsp;<small> '.$lang['min'].' '.DispSensor($conn,$vrow['min_c'],$vrow['sensor_type_id']).$unit.', '.$lang['max'].' '.$vrow['max_c'].$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].'&nbsp</small></span>';
+						                        echo '<span><em>&nbsp;&nbsp;<small> '.$lang['min'].' '.DispSensor($conn,$vrow['min_c'],$vrow['sensor_type_id']).$unit.', '.$lang['max'].' '.$vrow['max_c'].$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].'-'.$vrow['sensor_child_id'].'&nbsp</small></span>';
                                                 		} elseif ($vrow['category'] == 5) {
-					                        	echo '<span><em>&nbsp;&nbsp;<small> '.$lang['min'].' '.DispSensor($conn,$vrow['min_c'],$vrow['sensor_type_id']).$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].' - '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
+					                        	echo '<span><em>&nbsp;&nbsp;<small> '.$lang['min'].' '.DispSensor($conn,$vrow['min_c'],$vrow['sensor_type_id']).$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].'-'.$vrow['sensor_child_id'].' - '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
                                                 		} else {
-					                        	echo '<span><em>&nbsp;&nbsp;<small> '.$lang['max'].' '.DispSensor($conn,$vrow['max_c'],$vrow['sensor_type_id']).$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].' - '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
+					                        	echo '<span><em>&nbsp;&nbsp;<small> '.$lang['max'].' '.DispSensor($conn,$vrow['max_c'],$vrow['sensor_type_id']).$unit.' </em> - '.$lang['sensor'].': '.$vrow['sensors_id'].'-'.$vrow['sensor_child_id'].' - '.$vrow['relay_type'].': '.$vrow['relay_id'].'-'.$vrow['relay_child_id'].'&nbsp</small></span>';
 								}
 							echo '</div>';
  						}
@@ -2908,11 +4707,26 @@ echo '
 	    </div>
 	    <div class="modal-footer">
                 <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
-                <a class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" href="zone.php">'.$lang['zone_add'].'</a>
+                <a class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" href="zone.php?id=0">'.$lang['zone_add'].'</a>
             </div>
         </div>
     </div>
 </div>';
+if ($show_zone_modal == 1) {
+        ?>
+        <script type="text/javascript">
+                $(function(){
+                        //instantiate your content as modal
+                        $('#zone_setup').modal({
+                        //modal options here, like keyboard: false for e.g.
+                        });
+
+                        //show the modal when dom is ready
+                        $('#zone_setup').modal('show');
+                });
+        </script>
+        <?php
+}
 
 //gateway model
 echo '
@@ -2932,6 +4746,10 @@ echo '
                                 </div>
             		</div>
             		<div class="modal-body">';
+                                $gquery = "SELECT * FROM `nodes` WHERE `node_id` = '0' AND `name` LIKE '%Gateway%'";
+                                $result = $conn->query($gquery);
+				$row = mysqli_fetch_array($result);
+				$sketch_version = $row['sketch_version'];
 				$gquery = "SELECT * FROM gateway";
 				$gresult = $conn->query($gquery);
                                 $rowcount=mysqli_num_rows($gresult);
@@ -2949,16 +4767,19 @@ echo '
                                                 $display_wifi = "display:block";
                                                 $display_serial = "display:none";
                                                 $display_timeout = "display:block";
+                                                $display_heartbeat = "display:block";
                                         } elseif ($gateway_type=='serial') {
                                                 echo $lang['smart_home_gateway_text_serial'];
                                                 $display_wifi = "display:none";
                                                 $display_serial = "display:block";
                                                 $display_timeout = "display:block";
+                                                $display_heartbeat = "display:none";
                                         } elseif ($gateway_type=='virtual') {
                                                 echo $lang['smart_home_gateway_text_virtual'];
                                                 $display_wifi = "display:none";
                                                 $display_serial = "display:none";
                                                 $display_timeout = "display:none";
+                                                $display_heartbeat = "display:none";
                                         }
                                 }
 				echo '</p>';
@@ -3040,13 +4861,13 @@ echo '
                                         </div>
                                 </div>
                                 <!-- /.form-group -->
-				<div class="form-group" class="control-label" id="gw_timout_label" style="'.$display_timeout.'"><label>'.$lang['timeout'].' </label>
+				<div class="form-group" class="control-label" id="gw_timeout" style="'.$display_timeout.'"><label id="gw_timeout_label">'.$lang['interface_timeout'].' </label> <small class="text-muted">'.$lang['seconds'].'</small>
                                         <select class="form-select" type="text" id="gw_timout" name="gw_timout">
                                         <option selected>'.$grow['timout'].'</option>
                                         <option value="0">0</option>
                                         <option value="1">1</option>
                                         <option value="2">2</option>
-                                        <option value="3" selected>3</option>
+                                        <option value="3">3</option>
                                         <option value="4">4</option>
                                         <option value="5">5</option>
                                         <option value="6">6</option>
@@ -3059,28 +4880,30 @@ echo '
                                         <div class="help-block with-errors"></div>
 				</div>
                                 <!-- /.form-group -->
+                                <div class="form-group" class="control-label" id="heartbeat" style="'.$display_heartbeat.'"><label id="heartbeat_label">'.$lang['heartbeat_timeout'].' </label> <small class="text-muted">'.$lang['seconds'].'</small>
+                                        <select class="form-select" type="text" id="gw_heartbeat" name="gw_heartbeat">
+                                        <option selected>'.$grow['heartbeat_timeout'].'</option>
+                                        <option value="0">0</option>
+                                        <option value="30">30</option>
+                                        <option value="60">60</option>
+                                        <option value="90">90</option>
+                                        <option value="120">120</option>
+                                        <option value="150">150</option>
+                                        <option value="180">180</option>
+                                        <option value="210">210</option>
+                                        <option value="240">240</option>
+                                        <option value="270">270</option>
+                                        <option value="300">300</option>
+                                        </select>
+                                        <div class="help-block with-errors"></div>
+                                </div>
+                                <!-- /.form-group -->
 				<div class="form-group" class="control-label"><label>'.$lang['smart_home_gateway_version'].' </label>
-					<input class="form-control" type="text" id="gw_version" name="gw_version" value="'.$grow['version'].'" disabled>
+					<input class="form-control" type="text" id="gw_version" name="gw_version" value="'.$grow['version'].' ('.$sketch_version.')" disabled>
 					<div class="help-block with-errors">
 					</div>
 				</div>
                                 <!-- /.form-group -->
-				<br><h4 class="info"><i class="bi bi-heart-pulse-fill red" style="font-size:1.2rem;"></i> '.$lang['smart_home_gateway_scr_info'].'</h4>
-				<div class="list-group">';
-					echo '
-					<a href="#" class="list-group-item d-flex justify-content-between"><span>PID</span><span class="text-muted small"><em> '.$grow['pid'].'</em></span></a>
-					<a href="#" class="list-group-item d-flex justify-content-between"><span>'.$lang['smart_home_gateway_pid'].':</span><span class="text-muted small"><em>'.$grow['pid_running_since'].'</em></span></a>';
-
-					$query = "select * FROM gateway_logs WHERE pid_datetime >= NOW() - INTERVAL 5 MINUTE;";
-					$result = $conn->query($query);
-					if (mysqli_num_rows($result) != 0){
-						$gw_restarted = mysqli_num_rows($result);
-					} else {
-						$gw_restarted = '0';
-					}
-					echo '<a href="#" class="list-group-item d-flex justify-content-between"><span>'.$lang['smart_home_gateway_scr'].':</span><span class="text-muted small"><em>'.$gw_restarted.'</em></span></a>';
-				echo '</div>
-                                <!-- /.list-group -->
 			</div>
 			<!-- /.modal-body -->
             		<div class="modal-footer">
@@ -3131,11 +4954,11 @@ while ($row = mysqli_fetch_assoc($results)) {
             <td>'.$row['node_id'].'</td>
             <td>'.$row['name'].'</td>
             <td>'.$row['last_seen'].'</td>
-            <td><input id="interval'.$row["node_id"].'" type="value" class="form-control float-right" style="border: none" name="interval'.$row["node_id"].'" value="'.$row["notice_interval"].'" placeholder="Notice Interval" required></td>';
+            <td><input id="interval'.$row["id"].'" type="value" class="form-control float-right" style="border: none" name="interval'.$row["id"].'" value="'.$row["notice_interval"].'" placeholder="Notice Interval" required></td>';
 	    if(!isset($row['batt'])) {
-	            echo '<td><input id="min_value'.$row["node_id"].'" type="value" class="form-control float-right" style="border: none" name="min_value'.$row["node_id"].'" value="N/A" readonly="readonly" placeholder="Min Value"></td>';
+	            echo '<td><input id="min_value'.$row["id"].'" type="value" class="form-control float-right" style="border: none" name="min_value'.$row["id"].'" value="N/A" readonly="readonly" placeholder="Min Value"></td>';
 	    } else {
-                    echo '<td><input id="min_value'.$row["node_id"].'" type="value" class="form-control float-right" style="border: none" name="min_value'.$row["node_id"].'" value="'.$row["min_value"].'" placeholder="Min Value"></td>';
+                echo '<td><input id="min_value'.$row["id"].'" type="value" class="form-control float-right" style="border: none" name="min_value'.$row["id"].'" value="'.$row["min_value"].'" placeholder="Min Value"></td>';
 	    }
         echo '</tr>';
 
@@ -3187,8 +5010,10 @@ function gw_location()
         document.getElementById("wifi_gw").style.display = 'none';
         document.getElementById("serial_port").style.display = 'none';
         document.getElementById("wifi_port").style.display = 'none';
-        document.getElementById("gw_timout_label").style.visibility = 'hidden';
-        document.getElementById("gw_timout").style.display = 'none';
+        document.getElementById("gw_timeout_label").style.visibility = 'hidden';
+        document.getElementById("gw_timeout").style.display = 'none';
+        document.getElementById("heartbeat_label").style.visibility = 'hidden';
+        document.getElementById("heartbeat").style.display = 'none';
         document.getElementById("wifi_location").value = "";
         document.getElementById("wifi_port_num").value = "";
  } else if(selected_gw_type.includes("wifi")) {
@@ -3196,8 +5021,10 @@ function gw_location()
         document.getElementById("wifi_gw").style.display = 'block';
         document.getElementById("serial_port").style.display = 'none';
         document.getElementById("wifi_port").style.display = 'block';
-        document.getElementById("gw_timout_label").style.visibility = 'visible';
-        document.getElementById("gw_timout").style.display = 'block';
+        document.getElementById("gw_timeout_label").style.visibility = 'visible';
+	document.getElementById("gw_timeout").style.display = 'block';
+       	document.getElementById("heartbeat_label").style.visibility = 'visible';
+	document.getElementById("heartbeat").style.display = 'block';
         document.getElementById("wifi_location").value = "192.168.0.100";
         document.getElementById("wifi_port_num").value = "5003";
  } else {
@@ -3205,8 +5032,10 @@ function gw_location()
         document.getElementById("serial_gw").style.display = 'block';
         document.getElementById("wifi_port").style.display = 'none';
         document.getElementById("serial_port").style.display = 'block';
-        document.getElementById("gw_timout_label").style.visibility = 'visible';
-        document.getElementById("gw_timout").style.display = 'block';
+        document.getElementById("gw_timeout_label").style.visibility = 'visible';
+        document.getElementById("gw_timeout").style.display = 'block';
+        document.getElementById("heartbeat_label").style.visibility = 'hidden';
+        document.getElementById("heartbeat").style.display = 'none';
         document.getElementById("serial_location").value = "/dev/ttyAMA0";
         document.getElementById("serial_port_speed").value = "115200";
  }
@@ -3238,21 +5067,26 @@ echo '<div class="modal fade" id="relay_setup" tabindex="-1" role="dialog" aria-
             </div>
             <div class="modal-body">
 		<p class="text-muted">'.$lang['relay_settings_text'].'</p>';
-		$query = "SELECT DISTINCT relays.id, relays.relay_id, relays.relay_child_id, relays.on_trigger, relays.name, relays.type, IF(zr.zone_id IS NULL, 0, 1) AS attached, nd.node_id, nd.last_seen
-                FROM relays
-                LEFT join zone_relays zr ON relays.id = zr.zone_relay_id
-                LEFT JOIN zone z ON zr.zone_id = z.id
-                JOIN nodes nd ON relays.relay_id = nd.id
-                ORDER BY relay_id asc, relay_child_id ASC;";
+                $query = "SELECT DISTINCT relays.id, relays.relay_id, relays.relay_child_id, relays.on_trigger, relays.lag_time, relays.name, relays.type, relays.show_it,
+                        IF(zr.zone_id IS NULL, 0, 1) OR IF(sc.heat_relay_id IS NULL, 0, 1) AS attached, nd.node_id, nd.last_seen
+                        FROM relays
+                        LEFT join zone_relays zr ON relays.id = zr.zone_relay_id
+                        LEFT JOIN zone z ON zr.zone_id = z.id
+                        JOIN nodes nd ON relays.relay_id = nd.id
+                        LEFT JOIN system_controller sc ON relays.id = sc.heat_relay_id
+                        ORDER BY relay_id asc, relay_child_id ASC;";
 		$results = $conn->query($query);
 		echo '<table class="table table-bordered">
     			<tr>
         			<th class="col-md-3"><small>'.$lang['relay_name'].'</small></th>
         			<th class="col-md-1"><small>'.$lang['type'].'</small></th>
-        			<th class="col-md-2"><small>'.$lang['node_id'].'</small></th>
-        			<th class="col-md-2"><small>'.$lang['relay_child_id'].'</small></th>
-        			<th class="col-md-2">'.$lang['relay_trigger'].'</th>
-                                <th class="col-md-2"></th>
+        			<th class="col-md-1"><small>'.$lang['node_id'].'</small></th>
+        			<th class="col-md-1"><small>'.$lang['relay_child_id'].'</small></th>
+        			<th class="col-md-1">'.$lang['relay_trigger'].'</th>
+                                <th class="col-md-1">'.$lang['lag_time'].'</th>
+                                <th class="col-md-1"><small>'.$lang['show'].'</small></th>
+                                <th class="col-lg-1"><small>'.$lang['msg_in'].'</small></th>
+                              <th class="col-md-2"></th>
     			</tr>';
 
 			while ($row = mysqli_fetch_assoc($results)) {
@@ -3281,30 +5115,231 @@ echo '<div class="modal fade" id="relay_setup" tabindex="-1" role="dialog" aria-
                                                 $relay_type ="Pump";
                                                 $attached_to = $row["zone_name"]." Zone";
                                                 break;
+                                        case 6:
+                                                $relay_type ="Stand Alone";
+                                                $attached_to = "";
+                                                break;
     				}
 				if ($row["on_trigger"] == 0) { $trigger = "LOW"; } else { $trigger = "HIGH"; }
+                                $check = ($row['show_it'] == 1) ? 'checked' : '';
+                                $check_msg_in = ($row['message_in'] == 1) ? 'checked' : '';
     				echo '<tr>
             				<td>'.$row["name"].'<br> <small>('.$row["last_seen"].')</small></td>
             				<td>'.$relay_type.'</td>
             				<td>'.$row["node_id"].'</td>
             				<td>'.$row["relay_child_id"].'</td>
                                         <td>'.$trigger.'</td>
-            				<td><a href="relay.php?id='.$row["id"].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-xs"><i class="bi bi-pencil"></i></a>&nbsp';
-            				if($row['attached'] == 1 || $row['type'] == 1) {
-						echo '<span class="tooltip-wrapper" data-bs-toggle="tooltip" title="'.$lang['confirm_del_relay_2'].$attached_to.'"><button class="btn btn-danger btn-xs disabled"><i class="bi bi-trash-fill black"></i></button></span></td>';
+                                        <td>'.$row["lag_time"].'</td>';
+            				if($row['attached'] == 1) {
+                                                echo '<td style="text-align:center; vertical-align:middle;">
+                                                	<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox'.$row["id"].'" name="checkbox'.$row["id"].'" value="1" '.$check.'>
+                                                </td>
+                                                <td style="text-align:center; vertical-align:middle;">
+                                                        <input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox_msg_in'.$row["id"].'" name="checkbox_msg_in'.$row["id"].'" value="1" '.$check_msg_in.'>
+                                                </td>
+                                        	<td><a href="relay.php?id='.$row["id"].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-xs"><i class="bi bi-pencil"></i></a>&nbsp
+							<span class="tooltip-wrapper" data-bs-toggle="tooltip" title="'.$lang['confirm_del_relay_2'].$attached_to.'"><button class="btn btn-danger btn-xs disabled"><i class="bi bi-trash-fill black"></i></button></span>
+						</td>';
 	    				} else {
-                				echo '<button class="btn warning btn-danger btn-xs" onclick="delete_relay('.$row["id"].');" data-confirm="'.$lang['confirm_del_relay_1'].'"><span class="bi bi-trash-fill black"></span></button> </td>';
+                                                echo '<td style="text-align:center; vertical-align:middle;">
+                                                	<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox'.$row["id"].'" name="checkbox'.$row["id"].'" value="1" '.$check.' disabled>
+                                                </td>
+                                                <td style="text-align:center; vertical-align:middle;">
+                                                        <input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox_msg_in'.$row["id"].'" name="checkbox_msg_in'.$row["id"].'" value="1" '.$check_msg_in.' disabled>
+                                                </td>
+                                        	<td><a href="relay.php?id='.$row["id"].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-xs"><i class="bi bi-pencil"></i></a>&nbsp
+                					<button class="btn warning btn-danger btn-xs" onclick="delete_relay('.$row["id"].');" data-confirm="'.$lang['confirm_del_relay_1'].'"><span class="bi bi-trash-fill black"></span></button>
+						</td>';
             				}
         			echo '</tr>';
 			}
 		echo '</table>
 	    </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
-                <a class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" href="relay.php">'.$lang['relay_add'].'</a>
+            	<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                <input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="show_relays()">
+              	<a class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" href="relay.php?id=0">'.$lang['relay_add'].'</a>
             </div>
         </div>
     </div>
+</div>';
+if ($show_relay_modal == 1) {
+        ?>
+        <script type="text/javascript">
+                $(function(){
+                        //instantiate your content as modal
+                        $('#relay_setup').modal({
+                        //modal options here, like keyboard: false for e.g.
+                        });
+
+                        //show the modal when dom is ready
+                        $('#relay_setup').modal('show');
+                });
+        </script>
+        <?php
+}
+
+//Relay Message
+echo '
+<div class="modal fade" id="relay_messages" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                        <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                <h5 class="modal-title">'.$lang['custom_relay_messages'].'</h5>
+                <div class="dropdown float-right">
+                        <a class="" data-bs-toggle="dropdown" href="#">
+                                <i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
+                                <li><a class="dropdown-item" href="pdf_download.php?file=custom_relay_messages.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['custom_relay_messages'].'</a></li>
+                        </ul>
+                </div>
+            </div>
+            <div class="modal-body">
+<p class="text-muted"> '.$lang['custom_sensor_messages_info'].' </p>';
+
+echo '<table class="table table-bordered">
+    <tr>
+        <th class="col-2"><small>'.$lang['relay'].'</small></th>
+        <th class="col-2"><small>'.$lang['msg_id'].'</small></th>
+        <th class="col-3"><small>'.$lang['message'].'</small></th>
+       <th class="col-1"></th>
+    </tr>';
+
+$content_msg = "DELETE This Message";
+
+$query = "SELECT relay_messages.*, relays.name FROM relay_messages, relays WHERE (relay_messages.relay_id = relays.id) AND relay_messages.purge = 0;";
+$results = $conn->query($query);
+while ($row = mysqli_fetch_assoc($results)) {
+    if ($row["sub_type"] == 0 || $row["sub_type"] == '0') { $pos = $lang['centre']; } else { $pos = $lang['lower_right']; }
+    echo '
+        <tr>
+            <td>'.$row["name"].'</td>
+            <td>'.$row["message_id"].'</td>
+            <td>'.$row["message"].'</td>
+            <td><button class="btn warning btn-danger btn-xs" onclick="delete_relay_message('.$row["id"].');" data-confirm="'.$content_msg.'"><span class="bi bi-trash-fill black"></span></button> </a></td>
+        </tr>';
+}
+echo '</table></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                <button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" data-bs-href="#" data-bs-toggle="modal" data-bs-target="#add_relay_messages">'.$lang['msg_add'].'</button>
+            </div>
+        </div>
+    </div>
+</div>';
+
+//Add Relay Message
+echo '
+<div class="modal fade" id="add_relay_messages" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                        <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                <h5 class="modal-title">'.$lang['add_message'].'</h5>
+            </div>
+            <div class="modal-body">';
+                $query = "SELECT id, name FROM relays WHERE type <> 1;";
+                $results = $conn->query($query);
+
+        echo '<p class="text-muted">'.$lang['add_message_info_text'].'</p>
+        <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
+        <div class="form-group" class="control-label"><label>'.$lang['relay'].'</label> <small class="text-muted">'.$lang['msg_sensor_id_info'].'</small>
+                <select class="form-select" type="text" id="msg_relay_id" name="msg_relay_id">';
+                        while ($srow=mysqli_fetch_array($results)) {
+                                echo '<option value="'.$srow['id'].'">'.$srow['name'].'</option>';
+                        }
+                echo '</select>
+                <div class="help-block with-errors"></div>
+        </div>
+        <div class="form-group" class="control-label"><label>'.$lang['msg_id'].'</label> <small class="text-muted">'.$lang['msg_id_info'].'</small>
+                <input class="form-control" type="text" id="msg_id" name="msg_id" value="" placeholder="'.$lang['msg_id'].'">
+                <div class="help-block with-errors"></div>
+        </div>
+        <div class="form-group" class="control-label"><label>'.$lang['msg_text'].'</label> <small class="text-muted">'.$lang['msg_text_info'].'</small>
+                <input class="form-control" type="text" id="msg_text" name="msg_text" value="" placeholder="'.$lang['msg_text'].'">
+                <div class="help-block with-errors"></div>
+        </div>
+</div>
+            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+				<input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="add_relay_message()">
+            </div>
+        </div>
+    </div>
+</div>';
+
+//Relay Group
+echo '
+<div class="modal fade" id="relay_group_setup" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['relay_groups'].'</h5>
+                                <div class="dropdown float-right">
+                                        <a class="" data-bs-toggle="dropdown" href="#">
+                                                <i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
+                                        </a>
+                                        <ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
+						<li><a class="dropdown-item" href="pdf_download.php?file=setup_stand_alone_relays.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_stand_alone_relays'].'</a></li>
+                                        </ul>
+                                </div>
+                        </div>
+                        <div class="modal-body">
+                                <p class="text-muted"> '.$lang['relay_groups_text'].' </p>';
+
+                                echo '<table class="table table-bordered">
+                                        <tr>
+                                                <th class="col-11"><small>'.$lang['group'].'</small></th>
+                                                <th class="col-1"></th>
+                                        </tr>';
+
+                                        $query = "SELECT `id`, `name` FROM `relay_group` WHERE `purge`=0;";
+                                        $results = $conn->query($query);
+                                        $rowcount=mysqli_num_rows($results);
+                                        if($rowcount > 0) {
+                                                while ($row = mysqli_fetch_assoc($results)) {
+                                                        echo '<tr>
+                                                                <td>'.$row["name"].'</td>
+								<td><button class="btn warning btn-danger btn-xs" onclick="delete_relay_group('.$row["id"].');" data-confirm="'.$content_msg.'"><span class="bi bi-trash-fill black"></span></button> </td>
+                                                        </tr>';
+                                                }
+                                        }
+                                echo '</table>
+                        </div>
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+				<button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" data-bs-href="#" data-bs-toggle="modal" data-bs-target="#add_group">'.$lang['group_add'].'</button>
+                        </div>
+                </div>
+        </div>
+</div>';
+
+//Add Relay Group
+echo '
+<div class="modal fade" id="add_group" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                        <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                                <h5 class="modal-title">'.$lang['relay_group_add'].'</h5>
+                        </div>
+                        <div class="modal-body">';
+                                echo '<p class="text-muted">'.$lang['relay_group_add_info_text'].'</p>
+                                <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
+                                <div class="form-group" class="control-label"><label>'.$lang['relay_group_name'].'</label> <small class="text-muted">'.$lang['relay_group_name_info'].'</small>
+                                        <input class="form-control" type="text" id="relay_group" name="relay_group" value="" placeholder="'.$lang['relay_group'].'">
+                                        <div class="help-block with-errors"></div>
+                                </div>
+                        </div>
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+                                <input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="add_relay_group()">
+                        </div>
+                </div>
+        </div>
 </div>';
 
 //Test Relays
@@ -3324,14 +5359,16 @@ echo '<div class="modal fade" id="test_relays" tabindex="-1" role="dialog" aria-
                                 <th class="col-sm-3 text-center"><small>'.$lang['relay_name'].'</small></th>
                                 <th class="col-sm-2 text-center"><small>'.$lang['toggle_relay'].'</small></th>
                         </tr>';
-                        $query = "SELECT  messages_out.id, relays.name, messages_out.payload FROM relays, messages_out WHERE (messages_out.n_id = relays.relay_id) AND (messages_out.child_id = relays.relay_child_id);";
+                        $query = "SELECT  relays.id, relays.name, messages_out.payload FROM relays, messages_out
+                                  WHERE (messages_out.n_id = relays.relay_id) AND (messages_out.child_id = relays.relay_child_id)
+                                  ORDER BY relays.relay_id, relays.relay_child_id ASC;";
                         $results = $conn->query($query);
                         while ($row = mysqli_fetch_assoc($results)) {
-                                if ($row["payload"] == "0") { $button_text = $lang['relay_off']; } else { $button_text = $lang['relay_on']; }
+                                $button_text = $lang['relay_off'];
                                 echo '<tr>
                                         <td>'.$row["name"].'</td>
                                         <td><input type="button" id="relay_state'.$row["id"].'" value="'.$button_text.'" class="btn btn-primary-'.theme($conn, $theme, 'color').' d-grid gap-2 col-8 mx-auto" onclick="toggle_relay('.$row["id"].');"></td>
-                                        <input type="hidden" id="relay_state_value'.$row["id"].'" name="relay_state_value" value="'.$row["payload"].'">
+                                        <input type="hidden" id="relay_state_value'.$row["id"].'" name="relay_state_value" value="0">
                                 </tr>';
                         }
                 echo '</table>
@@ -3355,12 +5392,18 @@ function toggle_relay(id)
         document.getElementById("relay_state" + id_text).value = document.getElementById("relay_state_0").value;
         document.getElementById("relay_state_value" + id_text).value = 0;
  }
+ console.log(id_text);
  toggle_relay_state(id_text);
 }
 
 //exit test mode if the pop-up modal looses focus
 $('#test_relays').on('hidden.bs.modal', function () {
     toggle_relay_exit()
+});
+
+//enter test mode
+$('#test_relays').on('show.bs.modal', function () {
+  toggle_relay_load()
 });
 </script>
 <?php
@@ -3390,12 +5433,14 @@ echo '<div class="modal fade" id="sensor_setup" tabindex="-1" role="dialog" aria
 				<li><a class="dropdown-item" href="pdf_download.php?file=setup_guide_sensors.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_guide_sensors'].'</a></li>
                                 <li class="dropdown-divider"></li>
 				<li><a class="dropdown-item" href="pdf_download.php?file=setup_sensor_notifications.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_sensor_notifications'].'</a></li>
+                                <li class="dropdown-divider"></li>
+				<li><a class="dropdown-item" href="pdf_download.php?file=setup_guide_multiple_sensors.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_guide_multiple_sensors'].'</a></li>
                     	</ul>
                 </div>
             </div>
             <div class="modal-body">
 		<p class="text-muted">'.$lang['sensor_settings_text'].'</p>';
-		$query = "select sensors.id, sensors.name, sensors.sensor_child_id, sensors.correction_factor, sensors.mode, sensors.timeout, sensors.resolution, sensors.zone_id, sensors.show_it, nodes.node_id, nodes.last_seen from sensors, nodes WHERE sensors.sensor_id = nodes.id order by name asc";
+		$query = "select sensors.id, sensors.name, sensors.sensor_child_id, sensors.correction_factor, sensors.mode, sensors.timeout, sensors.resolution, sensors.zone_id, sensors.show_it, sensors.message_in, nodes.node_id, nodes.last_seen from sensors, nodes WHERE sensors.sensor_id = nodes.id order by name asc";
 		$results = $conn->query($query);
 		echo '<table class="table table-bordered">
     			<tr>
@@ -3405,8 +5450,9 @@ echo '<div class="modal fade" id="sensor_setup" tabindex="-1" role="dialog" aria
                                 <th class="col-lg-1"><small>'.$lang['sensor_mode'].'</small></th>
                                 <th class="col-lg-1"><small>'.$lang['correct_factor'].'</small></th>
                                 <th class="col-lg-1"><small>'.$lang['res'].'</small></th>
-                                <th class="col-lg-2"><small>'.$lang['zone_name'].'</small></th>
+                                <th class="col-lg-1"><small>'.$lang['zone_name'].'</small></th>
                                 <th class="col-lg-1"><small>'.$lang['show'].'</small></th>
+                                <th class="col-lg-1"><small>'.$lang['msg_in'].'</small></th>
                                 <th class="col-lg-2"></th>
     			</tr>';
 			while ($row = mysqli_fetch_assoc($results)) {
@@ -3424,6 +5470,7 @@ echo '<div class="modal fade" id="sensor_setup" tabindex="-1" role="dialog" aria
 					$zone_name = "Not Allocated";
     				}
     				$check = ($row['show_it'] == 1) ? 'checked' : '';
+                                $check_msg_in = ($row['message_in'] == 1) ? 'checked' : '';
                                 $cf = ($row['correction_factor'] == 0) ? '0' : $row['correction_factor'];
                                 echo '<tr>
                                         <td style="text-align:center; vertical-align:middle;">'.$row["name"].'<br> <small>('.$row["last_seen"].')</small></td>
@@ -3432,7 +5479,7 @@ echo '<div class="modal fade" id="sensor_setup" tabindex="-1" role="dialog" aria
 					if ($row['mode'] == 0) {
 						echo'<td style="text-align:center; vertical-align:middle;"><i class="bi bi-caret-right-square-fill green" style="font-size: 1.2rem;"></i></td>';
 					} else {
-						echo'<td style="text-align:center; vertical-align:middle;">'.$row['timeout'].'</i></td>';
+                                                echo'<td style="text-align:center; vertical-align:middle;"><i class="bi bi-bar-chart-fill green" style="font-size: 1.2rem;"> '.$row['timeout'].'</i></td>';
 					}
                                         echo '<td style="text-align:center; vertical-align:middle;">'.$cf.'</td>
                                         <td style="text-align:center; vertical-align:middle;">'.$row["resolution"].'</td>
@@ -3440,11 +5487,17 @@ echo '<div class="modal fade" id="sensor_setup" tabindex="-1" role="dialog" aria
             				if (empty($row['zone_id'])) {
 						echo '<td style="text-align:center; vertical-align:middle;">
                 				<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox'.$row["id"].'" name="checkbox'.$row["id"].'" value="1" '.$check.'>
-            					</td>';
+            					</td>
+                                        	<td style="text-align:center; vertical-align:middle;">
+                                        		<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox_msg_in'.$row["id"].'" name="checkbox_msg_in'.$row["id"].'" value="1" '.$check_msg_in.'>
+                                        	</td>';
 	    				} else {
                 				echo '<td style="text-align:center; vertical-align:middle;">
                 				<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox'.$row["id"].'" name="checkbox'.$row["id"].'" value="1" '.$check.' disabled>
-                				</td>';
+                				</td>
+                                        	<td style="text-align:center; vertical-align:middle;">
+                                        		<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox_msg_in'.$row["id"].'" name="checkbox_msg_in'.$row["id"].'" value="1" '.$check_msg_in.' disabled>
+                                        	</td>';
 	    				}
 	    				echo '<td style="text-align:center; vertical-align:middle;"><a href="sensor.php?id='.$row["id"].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-xs"><i class="bi bi-pencil"></i></a>&nbsp';
 	    				if (empty($row['zone_id'])) {
@@ -3459,11 +5512,26 @@ echo '<div class="modal fade" id="sensor_setup" tabindex="-1" role="dialog" aria
 		<div class="modal-footer">
                 	<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
                 	<input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="show_sensors()">
-                	<a class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" href="sensor.php">'.$lang['sensor_add'].'</a>
+                	<a class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" href="sensor.php?id=0">'.$lang['sensor_add'].'</a>
             </div>
         </div>
     </div>
 </div>';
+if ($show_sensor_modal == 1) {
+        ?>
+        <script type="text/javascript">
+                $(function(){
+                        //instantiate your content as modal
+                        $('#sensor_setup').modal({
+                        //modal options here, like keyboard: false for e.g.
+                        });
+
+                        //show the modal when dom is ready
+                        $('#sensor_setup').modal('show');
+                });
+        </script>
+        <?php
+}
 
 //Sensor Message
 echo '
@@ -3530,7 +5598,7 @@ echo '
                 <h5 class="modal-title">'.$lang['add_message'].'</h5>
             </div>
             <div class="modal-body">';
-		$query = "SELECT id, name FROM sensors WHERE sensor_type_id = 4;";
+		$query = "SELECT id, name FROM sensors WHERE sensor_type_id = 3 or sensor_type_id = 4;";
 		$results = $conn->query($query);
 
 	echo '<p class="text-muted">'.$lang['add_message_info_text'].'</p>
@@ -3592,11 +5660,14 @@ echo '
 <p class="text-muted"> '.$lang['sensor_type_info'].' </p>';
 
 echo '<table class="table table-bordered">
-    <tr>
-        <th class="col-8"><small>'.$lang['type'].'</small></th>
-         <th class="col-3"><small>'.$lang['units_character'].'</small></th>
-       <th class="col-1"></th>
-    </tr>';
+	<tr>
+        	<th class="col-3"><small>'.$lang['type'].'</small></th>
+                <th class="col-2"><small>'.$lang['decimal_places'].'</small></th>
+                <th class="col-2"><small>'.$lang['operator'].'</small></th>
+                <th class="col-2"><small>'.$lang['factor'].'</small></th>
+         	<th class="col-2"><small>'.$lang['units_character'].'</small></th>
+       		<th class="col-1"></th>
+    	</tr>';
 
 $query = "SELECT * FROM sensor_type where `purge`=0;";
 $results = $conn->query($query);
@@ -3613,6 +5684,9 @@ while ($row = mysqli_fetch_assoc($results)) {
     echo '
         <tr>
             <td>'.$row["type"].'</td>
+            <td>'.$row["decimal_places"].'</td>
+            <td>'.$row["operator"].'</td>
+            <td>'.$row["factor"].'</td>
             <td>'.$row["units"].'</td>
             <td><button class="btn warning btn-danger btn-xs" onclick="delete_sensor_type('.$row["id"].');" data-confirm="'.$content_msg.'"><span class="bi bi-trash-fill black"></span></button> </a></td>
         </tr>';
@@ -3641,6 +5715,21 @@ echo '<p class="text-muted">'.$lang['sensor_type_add_info_text'].'</p>
         <div class="form-group" class="control-label"><label>'.$lang['sensor_type'].'</label> <small class="text-muted">'.$lang['sensor_type_info'].'</small>
         <input class="form-control" type="text" id="sensor_type" name="sensor_type" value="" placeholder="'.$lang['sensor_type'].'">
         <div class="help-block with-errors"></div></div>
+        <div class="form-group" class="control-label"><label>'.$lang['decimal_places'].'</label> <small class="text-muted">'.$lang['decimal_places_info'].'</small>
+        <input class="form-control" type="text" id="decimal_places" name="decimal_places" value="0" placeholder="'.$lang['decimal_places'].'">
+        <div class="help-block with-errors"></div></div>
+        <div class="form-group" class="control-label"><label>'.$lang['operator'].'</label> <small class="text-muted">'.$lang['operator_info'].'</small>
+                <select <input class="form-select" type="text" id="operator" name="operator" value="None" placeholder="None">
+                        <option selected value="None">None</option>
+                        <option value="+">+</option>
+                        <option value="-">-</option>
+                        <option value="*">*</option>
+                        <option value="/">/</option>
+                </select>
+        <div class="help-block with-errors"></div></div>
+        <div class="form-group" class="control-label"><label>'.$lang['factor'].'</label> <small class="text-muted">'.$lang['factor_info'].'</small>
+        <input class="form-control" type="text" id="factor" name="factor" value="0" placeholder="'.$lang['factor'].'">
+        <div class="help-block with-errors"></div></div>
         <div class="form-group" class="control-label"><label>'.$lang['units_character'].'</label> <small class="text-muted">'.$lang['units_character_info'].'</small>
         <input class="form-control" type="text" id="sensor_units" name="sensor_units" value="" placeholder="'.$lang['sensor_units'].'">
         <div class="help-block with-errors"></div></div>
@@ -3649,6 +5738,75 @@ echo '<p class="text-muted">'.$lang['sensor_type_add_info_text'].'</p>
                                 <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
                                 <input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="add_sensor_type()">
             </div>
+        </div>
+    </div>
+</div>';
+
+//Hide Sensor/Relay model
+echo '<div class="modal fade" id="hide_sensor_relay" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+		<button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                <h5 class="modal-title">'.$lang['hide_sensor_relay'].'</h5>
+                <div class="dropdown float-right">
+                	<a class="" data-bs-toggle="dropdown" href="#">
+                        	<i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
+                        	<li><a class="dropdown-item" href="pdf_download.php?file=setup_user_accounts.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_user_accounts'].'</a></li>
+                        </ul>
+                </div>
+            </div>
+            <div class="modal-body">
+		<p class="text-muted">'.$lang['hide_sensor_relay_text'].'</p>';
+              	$query = "SELECT `fullname`, `username` FROM `user` WHERE `username` NOT LIKE 'admin' ORDER BY `id`;";
+              	$user_results = $conn->query($query);
+		$user_count = mysqli_num_rows($user_results);
+		if ($user_count > 0) {
+			$query = "SELECT `sensors`.`id`, `sensors`.`name`, 'Sensor' AS type, `sensors`.`user_display`
+				FROM `sensors`
+				WHERE `sensors`.`zone_id` = 0
+				UNION
+				SELECT `relays`.`id`, `relays`.`name`, 'Relay' AS type, `relays`.`user_display`
+				FROM `relays`
+				JOIN `zone_relays` zr ON `relays`.`id` = zr.zone_relay_id
+				LEFT JOIN `zone` z ON `z`.`id` = `zr`.`zone_id`
+				WHERE `z`.`type_id` IS NULL OR `z`.`type_id` != 2;";
+			$results = $conn->query($query);
+			echo '<table class="table table-bordered">
+    				<tr>
+                                	<th class="col-lg-2"><small>'.$lang['name'].'</small></th>
+	                                <th class="col-lg-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['type'].'</small></th>';
+					while ($user_row = mysqli_fetch_assoc($user_results)) {
+						echo '<th class="col-lg-1" style="text-align:center; vertical-align:middle;"><small>'.$user_row['username'].'</small></th>';
+					}
+                                echo '</tr>';
+				while ($row = mysqli_fetch_assoc($results)) {
+                	                echo '<tr>
+                        	                <td>'.$row["name"].'</td>
+                                	        <td style="text-align:center; vertical-align:middle;">'.$row["type"].'</td>';
+	                                	for ($x = 0; $x < $user_count; $x++) {
+							$user_mask = pow(2,$x);
+							$check = (($row["user_display"] & $user_mask) > 0) ? 'checked' : '';
+			                                if (strpos($row["type"], "Sensor") !== false) { $id = $x."s".$row["id"]; } else { $id = $x."r".$row["id"]; }
+							echo '<td style="text-align:center; vertical-align:middle;">
+                					<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" id="checkbox'.$id.'" name="checkbox'.$id.'" value="1" '.$check.'>
+            						</td>';
+						}
+	        			echo '</tr>';
+				}
+			echo '</table>';
+		} else {
+			echo '<p class="text-center fs-2 font-weight-bold">'.$lang['only_admin_account'].'</p>';
+		}
+	    echo '</div>
+		<div class="modal-footer">
+                	<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>';
+			if ($user_count > 0) {
+                		echo '<input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="hide_sensors_relays()">';
+			}
+            echo '</div>
         </div>
     </div>
 </div>';
@@ -3807,7 +5965,7 @@ echo '<p class="text-muted">'.$lang['add_on_add_info_text'].'</p>
 
 //MQTT Devices
 echo '<div class="modal fade" id="mqtt_devices" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
 		<button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
@@ -3825,17 +5983,24 @@ echo '<div class="modal fade" id="mqtt_devices" tabindex="-1" role="dialog" aria
             </div>
             <div class="modal-body">
 		<p class="text-muted">'.$lang['mqtt_device_text'].'</p>';
-		$query = "SELECT `mqtt_devices`.`id`, `mqtt_devices`.`nodes_id` AS `mqtt_nodes_id`, `nodes`.`name` AS `node`, `nodes`.`node_id` AS `node_id`, `mqtt_devices`.`type`, `mqtt_devices`.`child_id` AS `child`, `mqtt_devices`.`name` AS `name`, `mqtt_devices`.`mqtt_topic`, `mqtt_devices`.`on_payload`, `mqtt_devices`.`off_payload`, `mqtt_devices`.`attribute` FROM `mqtt_devices`, `nodes` WHERE `mqtt_devices`.`nodes_id` = `nodes`.`id` ORDER BY `mqtt_devices`.`nodes_id`, `mqtt_devices`.`child_id`;";
+		$query = "SELECT `mqtt_devices`.`id`, `mqtt_devices`.`nodes_id` AS `mqtt_nodes_id`, `nodes`.`name` AS `node`, `nodes`.`node_id` AS `node_id`, `mqtt_devices`.`type`,
+			`mqtt_devices`.`child_id` AS `child`, `mqtt_devices`.`name` AS `name`, `mqtt_devices`.`mqtt_topic`, `mqtt_devices`.`on_payload`,
+			`mqtt_devices`.`off_payload`, `mqtt_devices`.`attribute`, `mqtt_devices`.`notice_interval`, `mqtt_devices`.`min_value`
+			FROM `mqtt_devices`, `nodes`
+			WHERE `mqtt_devices`.`nodes_id` = `nodes`.`id`
+			ORDER BY `mqtt_devices`.`nodes_id`, `mqtt_devices`.`child_id`;";
 		$results = $conn->query($query);
 		echo '<table class="table table-bordered">
     			<tr>
                                 <th class="col-lg-1"><small>'.$lang['node'].'</small></th>
                                 <th class="col-lg-1"><small>'.$lang['mqtt_child_id'].'</small></th>
                                 <th class="col-lg-2"><small>'.$lang['mqtt_child_name'].'</small></th>
-                                <th class="col-lg-2"><small>'.$lang['mqtt_topic'].'</small></th>
+                                <th class="col-lg-1"><small>'.$lang['mqtt_topic'].'</small></th>
                                 <th class="col-lg-1"><small>'.$lang['mqtt_on_payload'].'</small></th>
                                 <th class="col-lg-1"><small>'.$lang['mqtt_off_payload'].'</small></th>
-                                <th class="col-lg-2"><small>'.$lang['mqtt_attribute'].'</small></th>
+                                <th class="col-lg-1"><small>'.$lang['mqtt_attribute'].'</small></th>
+                                <th class="col-lg-1"><small>'.$lang['notice_interval'].'</small></th>
+                                <th class="col-lg-1"><small>'.$lang['min_battery_level'].'</small></th>
                                 <th class="col-lg-2"></th>
     			</tr>';
 			while ($row = mysqli_fetch_assoc($results)) {
@@ -3854,8 +6019,18 @@ echo '<div class="modal fade" id="mqtt_devices" tabindex="-1" role="dialog" aria
                                         <td><small>'.$row["on_payload"].'</small></td>
             				<td><small>'.$row["off_payload"].'</small></td>
                                         <td><small>'.$row["attribute"].'</small></td>';
-					if (!$state_record) {
-	    					echo '<td><a href="mqtt_device.php?id='.$row["id"].'" style="text-decoration: none;" class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-xs"><i class="bi bi-pencil"></i</a>&nbsp
+                                        if ($row["type"] == 0) {
+                                        	echo '<td><small>'.$row["notice_interval"].'</small></td>';
+					} else {
+                                                echo '<td></td>';
+                                        }
+                                        if ($row["type"] == 0) {
+                                        	echo '<td><small>'.$row["min_value"].'</small></td>';
+                                        } else {
+                                                echo '<td></td>';
+                                        }
+					if (!$state_record || $row["type"] == 1) {
+	    					echo '<td><a href="mqtt_device.php?id='.$row["id"].'" style="text-decoration: none;" class="btn btn-bm-'.theme($conn, $theme, 'color').' btn-xs"><i class="bi bi-pencil"></i></a>&nbsp
 						<button class="btn warning btn-danger btn-xs" onclick="delete_mqtt_device('.$row["id"].');" data-confirm="'.$lang['confirm_del_mqtt_child'].'"><span class="bi bi-trash-fill black"></span></button> </td>';
 					} else {
                                                 echo '<td></td>';
@@ -3970,11 +6145,50 @@ echo '
         </div>
 </div>
             <div class="modal-footer">
-                                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
-                                <input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="add_ebus_command()">
+                <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+            	<input type="button" name="submit" value="'.$lang['save'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="add_ebus_command()">
             </div>
         </div>
     </div>
+</div>';
+
+//Device Indexing Modal
+echo '<div class="modal fade" id="index_devices" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+        	<div class="modal-content">
+            		<div class="modal-header '.theme($conn, $theme, 'text_color').' bg-'.theme($conn, $theme, 'color').'">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">x</button>
+                		<h5 class="modal-title">'.$lang['index_devices'].'</h5>
+                		<div class="dropdown float-right">
+                        		<a class="" data-bs-toggle="dropdown" href="#">
+                                		<i class="bi bi-file-earmark-pdf text-white" style="font-size: 1.2rem;"></i>
+                        		</a>
+                        		<ul class="dropdown-menu dropdown-menu-'.theme($conn, settings($conn, 'theme'), 'color').'">
+                                		<li><a class="dropdown-item" href="pdf_download.php?file=tile_indexing.pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i>&nbsp'.$lang['setup_tile_indexing'].'</a></li>
+                         		</ul>
+                		</div>
+            		</div>
+            		<div class="modal-body">
+				<p class="text-muted">'.$lang['index_devices_text'].'</p>
+				<input type="hidden" id="update_d_index" name="update_d_index" value="1">
+				<table class="table table-bordered">
+                        		<thead>
+                                		<tr>
+                                        		<th class="col-md-2"><small>'.$lang['name'].'</small></th>
+                                        		<th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['type'].'</small></th>
+                                        		<th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['pre_post'].'</small></th>
+                                       			<th class="col-md-1" style="text-align:center; vertical-align:middle;"><small>'.$lang['index'].'</small></th>
+                                       		</tr>
+                               		</thead>
+                               		<tbody id= "device_index_table"></tbody>
+                       		</table>
+			</div>
+			<div class="modal-footer">';
+                		echo '<input type="button" name="submit" value="'.$lang['update'].'" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" onclick="update_device_index()">';
+                        	echo '<button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
+            		</div>
+           	</div>
+    	</div>
 </div>';
 
 // Reboot Modal
@@ -4303,7 +6517,7 @@ $(document).ready(function(){
   $('[data-bs-toggle="popover"]').popover();
   $('[data-bs-toggle="tooltip"]').tooltip();
 
-  $("#maxair_versions").on('show.bs.modal', function () {
+  $("#about_maxair").on('show.bs.modal', function () {
     document.getElementById("bs_local").innerHTML=$.fn.popover.Constructor.VERSION;
   });
 });
