@@ -2996,7 +2996,7 @@ echo '<div class="modal fade" id="modal_openweather" tabindex="-1" role="dialog"
                 				<label>Country</label>&nbsp;(ISO-3166-1: Alpha-2 Codes)
                 				<select class="form-control" id="sel_Country" name="sel_Country" onchange=set_country(this.options[this.selectedIndex].value)>
                     					<option value="AF" ' . ($country=="AF" ? 'selected' : '') . '>Afghanistan</option>
-                    					<option value="AX" ' . ($country=="AX" ? 'selected' : '') . '>Åland Islands</option>
+                    					<option value="AX" ' . ($country=="AX" ? 'selected' : '') . '>Ã…land Islands</option>
                     					<option value="AL" ' . ($country=="AL" ? 'selected' : '') . '>Albania</option>
 					                <option value="DZ" ' . ($country=="DZ" ? 'selected' : '') . '>Algeria</option>
                     					<option value="AS" ' . ($country=="AS" ? 'selected' : '') . '>American Samoa</option>
@@ -3049,10 +3049,10 @@ echo '<div class="modal fade" id="modal_openweather" tabindex="-1" role="dialog"
                     					<option value="CD" ' . ($country=="CD" ? 'selected' : '') . '>Congo, the Democratic Republic of the</option>
                     					<option value="CK" ' . ($country=="CK" ? 'selected' : '') . '>Cook Islands</option>
                     					<option value="CR" ' . ($country=="CR" ? 'selected' : '') . '>Costa Rica</option>
-                    					<option value="CI" ' . ($country=="CI" ? 'selected' : '') . '>Côte d\'Ivoire</option>
+                    					<option value="CI" ' . ($country=="CI" ? 'selected' : '') . '>CÃ´te d\'Ivoire</option>
                     					<option value="HR" ' . ($country=="HR" ? 'selected' : '') . '>Croatia</option>
                     					<option value="CU" ' . ($country=="CU" ? 'selected' : '') . '>Cuba</option>
-                    					<option value="CW" ' . ($country=="CW" ? 'selected' : '') . '>Curaçao</option>
+                    					<option value="CW" ' . ($country=="CW" ? 'selected' : '') . '>CuraÃ§ao</option>
                                                         <option value="CY" ' . ($country=="CY" ? 'selected' : '') . '>Cyprus</option>
                                                         <option value="CZ" ' . ($country=="CZ" ? 'selected' : '') . '>Czech Republic</option>
                                                         <option value="DK" ' . ($country=="DK" ? 'selected' : '') . '>Denmark</option>
@@ -3175,11 +3175,11 @@ echo '<div class="modal fade" id="modal_openweather" tabindex="-1" role="dialog"
                                                         <option value="PT" ' . ($country=="PT" ? 'selected' : '') . '>Portugal</option>
                                                         <option value="PR" ' . ($country=="PR" ? 'selected' : '') . '>Puerto Rico</option>
                                                         <option value="QA" ' . ($country=="QA" ? 'selected' : '') . '>Qatar</option>
-                                                        <option value="RE" ' . ($country=="RE" ? 'selected' : '') . '>Réunion</option>
+                                                        <option value="RE" ' . ($country=="RE" ? 'selected' : '') . '>RÃ©union</option>
                                                         <option value="RO" ' . ($country=="RO" ? 'selected' : '') . '>Romania</option>
                                                         <option value="RU" ' . ($country=="RU" ? 'selected' : '') . '>Russian Federation</option>
                                                         <option value="RW" ' . ($country=="RW" ? 'selected' : '') . '>Rwanda</option>
-                                                        <option value="BL" ' . ($country=="BL" ? 'selected' : '') . '>Saint Barthélemy</option>
+                                                        <option value="BL" ' . ($country=="BL" ? 'selected' : '') . '>Saint BarthÃ©lemy</option>
                                                         <option value="SH" ' . ($country=="SH" ? 'selected' : '') . '>Saint Helena, Ascension and Tristan da Cunha</option>
                                                         <option value="KN" ' . ($country=="KN" ? 'selected' : '') . '>Saint Kitts and Nevis</option>
                                                         <option value="LC" ' . ($country=="LC" ? 'selected' : '') . '>Saint Lucia</option>
@@ -4707,7 +4707,7 @@ echo '
 	    </div>
 	    <div class="modal-footer">
                 <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
-                <a class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm" href="zone.php?id=0">'.$lang['zone_add'].'</a>
+                <a href="zone.php" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm">'.$lang['zone_add'].'</a>
             </div>
         </div>
     </div>
