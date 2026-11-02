@@ -9,3 +9,12 @@ CREATE TABLE IF NOT EXISTS `reset` (
 `end_datetime` timestamp NULL DEFAULT NULL,
 PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=20264 DEFAULT CHARSET=utf16 COLLATE=utf16_bin;
+
+INSERT INTO jobs (`job_name`, `script`, `enabled`, `log_it`, `time`, `output`, `datetime`)
+SELECT 'check_boiler_reset', '/var/www/cron/check_boiler_reset.php', 1, 0, 60, '', now()
+FROM DUAL
+WHERE NOT EXISTS (
+   SELECT 1
+   FROM jobs
+   WHERE script = '/var/www/cron/check_boiler_reset.php'
+);
