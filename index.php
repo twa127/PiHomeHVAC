@@ -340,7 +340,7 @@ if (isset($_POST['submit'])) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title><?php  echo settings($conn, 'name') ;?></title>
         <link href="css/bootstrap.min.css" rel="stylesheet">
-        <link href="fonts/bootstrap-icons-1.11.0/bootstrap-icons.css" rel="stylesheet" type="text/css">
+        <link href="fonts/bootstrap-icons-1.13.2/bootstrap-icons.css" rel="stylesheet" type="text/css">
         <link href="css/maxair.css" rel="stylesheet">
     </head>
 

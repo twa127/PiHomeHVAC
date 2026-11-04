@@ -1,0 +1,468 @@
+
+### 2026-11-04 15:44:00,038 - ERROR - list index out of range  ###
+
+### 2026-11-04 15:44:00,042 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 15:45:01,505 - ERROR - list index out of range  ###
+
+### 2026-11-04 15:45:01,507 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 15:46:04,443 - ERROR - list index out of range  ###
+
+### 2026-11-04 15:46:04,444 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 15:47:05,558 - ERROR - list index out of range  ###
+
+### 2026-11-04 15:47:05,559 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 15:48:11,727 - ERROR - list index out of range  ###
+
+### 2026-11-04 15:48:11,728 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 15:49:13,056 - ERROR - list index out of range  ###
+
+### 2026-11-04 15:49:13,057 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 15:50:19,124 - ERROR - list index out of range  ###
+
+### 2026-11-04 15:50:19,125 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 15:51:19,598 - ERROR - list index out of range  ###
+
+### 2026-11-04 15:51:19,600 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 15:52:26,476 - ERROR - list index out of range  ###
+
+### 2026-11-04 15:52:26,477 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 15:53:27,750 - ERROR - list index out of range  ###
+
+### 2026-11-04 15:53:27,752 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 15:54:33,666 - ERROR - list index out of range  ###
+
+### 2026-11-04 15:54:33,668 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 15:55:34,939 - ERROR - list index out of range  ###
+
+### 2026-11-04 15:55:34,941 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 15:56:42,109 - ERROR - list index out of range  ###
+
+### 2026-11-04 15:56:42,112 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 15:57:42,041 - ERROR - list index out of range  ###
+
+### 2026-11-04 15:57:42,043 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 15:58:48,864 - ERROR - list index out of range  ###
+
+### 2026-11-04 15:58:48,867 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 15:59:48,927 - ERROR - list index out of range  ###
+
+### 2026-11-04 15:59:48,929 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:00:55,995 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:00:55,999 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:01:56,899 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:01:56,903 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:03:03,419 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:03:03,425 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:04:03,408 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:04:03,411 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:05:10,328 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:05:10,332 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:06:11,875 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:06:11,879 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:07:18,156 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:07:18,160 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:08:18,622 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:08:18,625 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:09:25,123 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:09:25,126 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:10:25,671 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:10:25,675 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:11:32,363 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:11:32,368 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:12:33,060 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:12:33,063 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:13:39,614 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:13:39,616 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:14:40,312 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:14:40,314 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:15:46,780 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:15:46,783 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:16:47,681 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:16:47,686 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:17:54,416 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:17:54,417 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:18:55,084 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:18:55,087 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:20:01,632 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:20:01,634 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:21:02,886 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:21:02,891 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:22:08,447 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:22:08,450 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:23:09,143 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:23:09,145 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:24:16,023 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:24:16,026 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:25:16,734 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:25:16,738 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:26:22,916 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:26:22,918 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:27:24,820 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:27:24,825 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:28:29,974 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:28:29,975 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:29:31,373 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:29:31,375 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:30:36,634 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:30:36,636 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:31:38,036 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:31:38,040 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:32:43,788 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:32:43,789 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:33:45,707 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:33:45,709 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:34:50,151 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:34:50,152 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:35:51,966 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:35:51,967 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:36:57,430 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:36:57,431 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
+
+### 2026-11-04 16:37:59,073 - ERROR - list index out of range  ###
+
+### 2026-11-04 16:37:59,074 - INFO - Traceback (most recent call last):
+  File "/var/www/cron/gateway.py", line 3313, in <module>
+    MQTT_PASSWORD = result.stdout.decode("utf-8").split()[0] # result.stdout contains a byte-string
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+  ###
