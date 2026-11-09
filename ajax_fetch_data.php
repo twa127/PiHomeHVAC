@@ -1839,5 +1839,170 @@ if ($type <= 4 || $type == 38) {
                         <td style="text-align:center; vertical-align:middle;">'.$row["Diff"].'</td>
                 </tr>';
         }
+} elseif ($type == 50) {
+        //-----------------------------------
+        //update software install list group
+        //-----------------------------------
+	$installpath = "/var/www/api/enable_rewrite.sh";
+	$installname = "Install Apache ReWrite";
+	if (file_exists("/etc/apache2/mods-available/rewrite.load")) {
+		$prompt = $lang['re_install'];
+	} else {
+		$prompt = $lang['install'];
+	}
+	echo '<div class="list-group-item">
+		<div class="d-flex justify-content-between">
+			<div>
+				<i class="bi bi-terminal-fill green" style="font-size: 2rem;"></i> '.$installname.'
+			</div>
+			<div>
+				<span class="text-muted small"><button type="button" class="btn btn-bm-'.theme($conn, settings($conn, 'theme'), 'color').' login btn-sm"
+				onclick="install_software(`'.$installpath.'`)">'.$prompt.'</button></span>
+			</div>
+		</div>
+		<p class="text-muted">Install ReWrite for Apache Web Server</p>
+	</div>';
+
+	$path = '/var/www/add_on';
+	$dir = new DirectoryIterator($path);
+	foreach ($dir as $fileinfo) {
+		$installed = 0;
+		if ($fileinfo->isDir() && !$fileinfo->isDot()) {
+			$installpath = $path."/".$fileinfo->getFilename()."/install.sh";
+			if (file_exists($installpath)) {
+				$contents = file_get_contents($installpath);
+				$searchfor = 'app_name';
+				$pattern = preg_quote($searchfor, '/');
+				$pattern = "/^.*$pattern.*\$/m";
+				if(preg_match_all($pattern, $contents, $matches)){
+					$str = implode("\n", $matches[0]);
+					$name = explode(':',$str)[1];
+				} else {
+					$name = $fileinfo->getFilename();
+				}
+				$searchfor = 'app_description';
+				$pattern = preg_quote($searchfor, '/');
+				$pattern = "/^.*$pattern.*\$/m";
+				if(preg_match_all($pattern, $contents, $matches)){
+					$str = implode("\n", $matches[0]);
+					$description = explode(':',$str)[1];
+				} else {
+					$description = '';
+				}
+				$searchfor = 'service_name';
+ 				$pattern = preg_quote($searchfor, '/');
+				$pattern = "/^.*$pattern.*\$/m";
+				if(preg_match_all($pattern, $contents, $matches)){
+
+					$str = implode("\n", $matches[0]);
+					$service_name = explode(':',$str);
+					$rval=my_exec("/bin/systemctl status " . $service_name[1]);
+					if ($rval['stdout']=='') { $installed = 0; } else { $installed = 1; }
+				} else {
+					$instaleed = 2;
+				}
+				if (str_contains($name, 'TinyTuya')) {
+					$output = shell_exec("pip3 list|grep tinytuya|awk '{print $1}'");
+					if (str_contains($output, 'tinytuya')) { $installed = 1; }
+				}
+				echo '<div class="list-group-item">
+					<div class="d-flex justify-content-between">
+						<div>
+							<i class="bi bi-terminal-fill green" style="font-size: 2rem;"></i> '.$name.'
+						</div>
+						<div>';
+							if ($installed == 0) {
+ 								echo '<span class="text-muted small"><button type="button" class="btn btn-bm-'.theme($conn, settings($conn, 'theme'), 'color').' login btn-sm"
+								onclick="install_software(`'.$installpath.'`)">'.$lang['install'].'</button></span>';
+							} elseif ($installed == 1) {
+								echo '<span class="text"><p> '.$lang['already_installed'].'</p></span>';
+							} else {
+								echo '<span class="text"><p> '.$lang['no_installer'].'</p></span>';
+							}
+						echo '</div>
+					</div>
+					<p class="text-muted">'.$description.'</p>
+				</div>';
+			}
+		}
+	}
+} elseif ($type == 51) {
+        //--------------------------
+        //update About MaxAir Table
+        //--------------------------
+	$query = "SELECT name FROM repository WHERE status = 1 LIMIT 1;";
+	$result = $conn->query($query);
+	$row = mysqli_fetch_assoc($result);
+	$url = 'https://raw.githubusercontent.com/'.$row['name'].'/master/st_inc/db_config.ini';
+	$file_headers = @get_headers($url);
+	if(!$file_headers || $file_headers[0] == 'HTTP/1.1 404 Not Found') {
+	} else {
+		// parse the GitHub db_config.ini file
+		$db_config_array = parse_ini_string(file_get_contents($url));
+		//get latest Bootstrap version number
+		$url = 'https://getbootstrap.com/docs/versions/';
+		$result = file_get_contents($url);
+		if (strlen($result) > 0) {
+			$search = 'Last update was ';
+			$start = stripos($result, $search);
+			if ($start !== false) {
+				$start = $start + strlen($search) + 1;
+				$end = stripos($result, '.</p>', $offset = $start);
+				$length = $end - $start;
+				$bootstrap_ver = substr($result, $start, $length);
+			} else {
+				$bootstrap_ver = "Not Found";
+			}
+		} else {
+			$bootstrap_ver = "Not Found";
+		}
+	}
+	//find the local Bootstrap Version
+	$bootstrap_path = "/var/www/css/bootstrap.css";
+	if (file_exists($bootstrap_path)) {
+        	$contents = file_get_contents($bootstrap_path);
+	        $searchfor = 'Bootstrap  v';
+        	$pattern = preg_quote($searchfor, '/');
+	        $pattern = "/^.*$pattern.*\$/m";
+        	if(preg_match_all($pattern, $contents, $matches)){
+                	$str = implode("\n", $matches[0]);
+	                $pieces = explode(" ", $str);
+	        	foreach($pieces as $v){
+        	        	if (str_starts_with($v, "v")) {
+                	        	$local_bs_ver = substr($v, 1);
+                		}
+        		}
+        	} else {
+                	$local_bs_ver = "Not Found";
+	        }
+	} else {
+		$local_bs_ver = "Not Found";
+	}
+
+	echo '<tr>
+		<td style="font-weight:bold">'.$lang['maxair_update_code_v'].'</td>
+		<td style="text-align:center; vertical-align:middle;">'.$version.'</td>
+		<td style="text-align:center; vertical-align:middle;">'.$db_config_array["version"].'</td>
+	</tr>
+	<tr>
+		<td style="font-weight:bold">'.$lang['maxair_update_code_b'].'</td>
+		<td style="text-align:center; vertical-align:middle;">'.$build.'</td>
+		<td style="text-align:center; vertical-align:middle;">'.$db_config_array["build"].'</td>
+ 	</tr>
+	<tr>
+		<td style="font-weight:bold">'.$lang['maxair_update_db_v'].'</td>
+		<td style="text-align:center; vertical-align:middle;">'.$db_version.'</td>
+		<td style="text-align:center; vertical-align:middle;">'.$db_config_array["db_version"].'</td>
+		</tr>
+	<tr>
+		<td style="font-weight:bold">'.$lang['maxair_update_db_b'].'</td>
+		<td style="text-align:center; vertical-align:middle;">'.$db_build.'</td>
+		<td style="text-align:center; vertical-align:middle;">'.$db_config_array["db_build"].'</td>
+	</tr>
+ 	<tr>
+		<td style="font-weight:bold">'.$lang['bs_ver'].'</td>
+                <td style="text-align:center; vertical-align:middle;">'.$local_bs_ver.'</td>
+                <td style="text-align:center; vertical-align:middle;">'.$bootstrap_ver.'</td>
+	</tr>';
 }
 ?>

@@ -296,6 +296,17 @@ $(document).ready(function(){
                 }
         }
 
+        if ($('#sw_install').is(':visible')) {
+                $('#sw_install_list').load("ajax_fetch_data.php?id=0&type=50").fadeIn("slow");
+        }
+
+        if ($('#about_maxair').is(':visible')) {
+                if (document.getElementById("update_about_maxair").value == 1) {
+                        $('#about_maxair_table').load("ajax_fetch_data.php?id=0&type=51").fadeIn("slow");
+                        document.getElementById("update_about_maxair").value = 0;
+		}
+        }
+
 	$('#settings_date').load("ajax_fetch_data.php?id=0&type=13").fadeIn("slow");
 	$('#footer_weather').load("ajax_fetch_data.php?id=0&type=14").fadeIn("slow");
 	$('#footer_all_running_time').load("ajax_fetch_data.php?id=0&type=17").fadeIn("slow");

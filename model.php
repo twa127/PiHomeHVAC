@@ -237,66 +237,18 @@ echo '
                                 $query = "SELECT name FROM repository WHERE status = 1 LIMIT 1;";
                                 $result = $conn->query($query);
                                 $row = mysqli_fetch_assoc($result);
-                                $url = 'https://raw.githubusercontent.com/'.$row['name'].'/master/st_inc/db_config.ini';
-                                $file_headers = @get_headers($url);
-                                if(!$file_headers || $file_headers[0] == 'HTTP/1.1 404 Not Found') {
-                                } else {
-					// parse the GitHub db_config.ini file
-	                                $db_config_array = parse_ini_string(file_get_contents($url));
-                                	//get latest Bootstrap version number
-                                        $url = 'https://getbootstrap.com/docs/versions/';
-                                        $result = file_get_contents($url);
-                                        if (strlen($result) > 0) {
-                                                $search = 'Last update was ';
-                                                $start = stripos($result, $search);
-                                                if ($start !== false) {
-                                                        $start = $start + strlen($search) + 1;
-                                                        $end = stripos($result, '.</p>', $offset = $start);
-                                                        $length = $end - $start;
-                                                        $bootstrap_ver = substr($result, $start, $length);
-                                                } else {
-                                                        $bootstrap_ver = "Not Found";
-                                                }
-                                        } else {
-                                                $bootstrap_ver = "Not Found";
-                                        }
-                                }
-
                                 echo '<p class="text-muted"> '.$lang['maxair_versions_text'].' <br>'.$lang['repository'].' - https://github.com/'.$row['name'].'.git</p>
-                                <table class="table table-bordered">
-                                        <tr>
-                                                <th class="col-8 "not_mapped_style" style="text-align:center">'.$lang['title'].'<br>'.$lang['copyright'].'</th>
-                                                <th class="col-2" "not_mapped_style" style="text-align:center">'.$lang['maxair_update_installed'].'</th>
-                                                <th class="col-2" "not_mapped_style" style="text-align:center">'.$lang['maxair_update_github'].'</th>
-                                        </tr>
-
-                                        <tr>
-                                                <td style="font-weight:bold">'.$lang['maxair_update_code_v'].'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$version.'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$db_config_array["version"].'</td>
-                                        </tr>
-                                        <tr>
-                                                <td style="font-weight:bold">'.$lang['maxair_update_code_b'].'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$build.'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$db_config_array["build"].'</td>
-                                        </tr>
-                                        <tr>
-                                                <td style="font-weight:bold">'.$lang['maxair_update_db_v'].'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$db_version.'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$db_config_array["db_version"].'</td>
-                                        </tr>
-                                        <tr>
-                                                <td style="font-weight:bold">'.$lang['maxair_update_db_b'].'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$db_build.'</td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$db_config_array["db_build"].'</td>
-                                        </tr>
-                                        <tr>
-                                                <td style="font-weight:bold">'.$lang['bs_ver'].'</td>
-                                                <td id="bs_local" style="text-align:center; vertical-align:middle;"></td>
-                                                <td style="text-align:center; vertical-align:middle;">'.$bootstrap_ver.'</td>
-                                        </tr>';
-
-                                echo '</table>
+                         	<input type="hidden" id="update_about_maxair" name="update_about_maxair" value="1">
+                              	<table class="table table-bordered">
+					<thead>
+                                        	<tr>
+                                                	<th class="col-8 "not_mapped_style" style="text-align:center">'.$lang['title'].'<br>'.$lang['copyright'].'</th>
+                                                	<th class="col-2" "not_mapped_style" style="text-align:center">'.$lang['maxair_update_installed'].'</th>
+                                                	<th class="col-2" "not_mapped_style" style="text-align:center">'.$lang['maxair_update_github'].'</th>
+                                        	</tr>
+					</thead>
+					<tbody id="about_maxair_table"></tbody>
+                                </table>
                         </div>
                         <div class="modal-footer">
                                 <button type="button" class="btn btn-primary-'.theme($conn, $theme, 'color').' btn-sm" data-bs-dismiss="modal">'.$lang['close'].'</button>
@@ -1384,112 +1336,7 @@ echo '
                         </div>
                         <div class="modal-body">
                                 <p class="text-muted">'.$lang['install_software_text'].'</p>
-                                <div class="list-group">';
-                                        $installpath = "/var/www/api/enable_rewrite.sh";
-                                        $installname = "Install Apache ReWrite";
-                                        if (file_exists("/etc/apache2/mods-available/rewrite.load")) {
-                                                $prompt = $lang['re_install'];
-                                        } else {
-                                                $prompt = $lang['install'];
-                                        }
-                                        echo '<div class="list-group-item">
-						<div class="d-flex justify-content-between">
-							<div>
-                                        			<i class="bi bi-terminal-fill green" style="font-size: 2rem;"></i> '.$installname.'
-							</div>
-							<div>
-			                                        <span class="text-muted small"><button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm"
-                                        			onclick="install_software(`'.$installpath.'`)">'.$prompt.'</button></span>
-							</div>
-						</div>
-                                        	<p class="text-muted">Install ReWrite for Apache Web Server</p>
-					</div>';
-
-                                        $installpath = "/var/www/add_on/tinytuya/install.sh";
-                                        $installname = "Install tinytuya";
-					$output = shell_exec("pip3 list|grep tinytuya|awk '{print $1}'");
-					if (str_contains($output, 'tinytuya')) {
-						$installed = 1;
-						$prompt = $lang['Already Installed'];
-					} else {
-						$installed = 0;
-						$prompt = 'Install'; }
-                                        echo '<div class="list-group-item">
-                                                <div class="d-flex justify-content-between">
-                                                        <div>
-                                                                <i class="bi bi-terminal-fill green" style="font-size: 2rem;"></i> '.$installname.'
-                                                        </div>
-                                                        <div>';
-								if ($installed == 0) {
-                                                                	echo '<span class="text-muted small"><button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm"
-                                                                	onclick="install_software(`'.$installpath.'`)">'.$prompt.'</button></span>';
-								} else {
-									echo '<span class="text"><p> '.$lang['already_installed'].'</p></span>';
-								}
-                                                        echo '</div>
-                                                </div>
-                                                <p class="text-muted">Install tinytuya for tuya_bridge.py</p>
-                                        </div>';
-
-                                        $path = '/var/www/add_on';
-                                        $dir = new DirectoryIterator($path);
-                                        foreach ($dir as $fileinfo) {
-						$installed = 0;
-                                                if ($fileinfo->isDir() && !$fileinfo->isDot() && strpos($fileinfo->getFilename(), 'tinytuya') === FALSE) {
-                                                        $installpath = $path."/".$fileinfo->getFilename()."/install.sh";
-                                                        if (file_exists($installpath)) {
-                                                                $contents = file_get_contents($installpath);
-                                                                $searchfor = 'app_name';
-                                                                $pattern = preg_quote($searchfor, '/');
-                                                                $pattern = "/^.*$pattern.*\$/m";
-                                                                if(preg_match_all($pattern, $contents, $matches)){
-                                                                        $str = implode("\n", $matches[0]);
-                                                                        $name = explode(':',$str)[1];
-                                                                } else {
-                                                                        $name = $fileinfo->getFilename();
-                                                                }
-                                                                $searchfor = 'app_description';
-                                                                $pattern = preg_quote($searchfor, '/');
-                                                                $pattern = "/^.*$pattern.*\$/m";
-                                                                if(preg_match_all($pattern, $contents, $matches)){
-                                                                        $str = implode("\n", $matches[0]);
-                                                                        $description = explode(':',$str)[1];
-                                                                } else {
-                                                                        $description = '';
-                                                                }
-                                                                $searchfor = 'service_name';
-                                                                $pattern = preg_quote($searchfor, '/');
-                                                                $pattern = "/^.*$pattern.*\$/m";
-                                                                if(preg_match_all($pattern, $contents, $matches)){
-                                                                        $str = implode("\n", $matches[0]);
-                                                                        $service_name = explode(':',$str);
-                                                                        $rval=my_exec("/bin/systemctl status " . $service_name[1]);
-                                                                        if ($rval['stdout']=='') { $installed = 0; } else { $installed = 1; }
-                                                                } else {
-                                                                        $instaleed = 2;
-                                                                }
-                                                                echo '<div class="list-group-item">
-                                                                        <div class="d-flex justify-content-between">
-                                                                                <div>
-                                                                                        <i class="bi bi-terminal-fill green" style="font-size: 2rem;"></i> '.$name.'
-                                                                                </div>
-                                                                                <div>';
-                                                                                        if ($installed == 0) {
-                                                                				echo '<span class="text-muted small"><button type="button" class="btn btn-bm-'.theme($conn, $theme, 'color').' login btn-sm"
-                                                                                                onclick="install_software(`'.$installpath.'`)">'.$lang['install'].'</button></span>';
-                                                                                        } elseif ($installed == 1) {
-                                                                                                echo '<span class="text"><p> '.$lang['already_installed'].'</p></span>';
-                                                                                        } else {
-                                                                                                echo '<span class="text"><p> '.$lang['no_installer'].'</p></span>';
-                                                                                        }
-                                                                                echo '</div>
-                                                                        </div>
-                                                                        <p class="text-muted">'.$description.'</p>
-                                                                </div>';
-                                                        }
-                                                }
-                                        }
-                                echo '</div>
+                           	<div class="list-group" id="sw_install_list"></div>
                         </div>
                         <!-- /.modal-body -->
                         <div class="modal-footer">
@@ -6517,9 +6364,9 @@ $(document).ready(function(){
   $('[data-bs-toggle="popover"]').popover();
   $('[data-bs-toggle="tooltip"]').tooltip();
 
-  $("#about_maxair").on('show.bs.modal', function () {
-    document.getElementById("bs_local").innerHTML=$.fn.popover.Constructor.VERSION;
-  });
+//  $("#about_maxair").on('show.bs.modal', function () {
+//    document.getElementById("bs_local").innerHTML=$.fn.popover.Constructor.VERSION;
+//  });
 });
 
 </script>
