@@ -583,7 +583,7 @@ $count_num_sensors =count($sensorArray);
 						</div>
 
 						<!-- Index Number -->
-						<?php 
+						<?php
 						$query = "select index_id from zone order by index_id desc limit 1;";
 						$result = $conn->query($query);
 						$found_product = mysqli_fetch_array($result);
@@ -857,7 +857,7 @@ $count_num_sensors =count($sensorArray);
                                         optn.value = jArray[j]['id'];
                                         if(stype == sensor_type || zone_cat === "2") {
                                             document.getElementById("sens_id0").options.add(optn);
-                                            if(j == 0) {option.setAttribute('selected', true);}
+                                            if(j == 0) {optn.setAttribute('selected', true);}
                                         }
                                     }
                                 }
@@ -952,7 +952,7 @@ $count_num_sensors =count($sensorArray);
                                                         <?php for ($i = 0; $i < $sensor_count; $i++) { ?>
                                                         	<div class="wrap" id>
 									<!-- Sensor ID -->
-                                    <div class="form-group" id="sensor_id" style="display:block"><label for="sens_id<?php echo $i ?>" class="control-label" id="sensor_id_label_1"><?php if($i == 0) { echo $lang['primary_temperature_sensor']; } else { echo $lang['secondary_temperature_sensor']; } ?></label> <small class="text-muted" id="sensor_id_label_2"><?php echo $lang['zone_sensor_id_info'];?></small>
+                                    					<div class="form-group" id="sensor_id" style="display:block"><label for="sens_id<?php echo $i ?>" class="control-label" id="sensor_id_label_1"><?php if($i == 0) { echo $lang['primary_temperature_sensor']; } else { echo $lang['secondary_temperature_sensor']; } ?></label> <small class="text-muted" id="sensor_id_label_2"><?php echo $lang['zone_sensor_id_info'];?></small>
 										<input type="hidden" id="selected_sensors_id[]" name="selected_sensors_id[]" value="<?php echo $zone_sensors[$i]['zone_sensor_id']?>"/>
 										<div class="entry input-group col-12" id="sen_id - <?php echo $i ?>">
 											<select id="sens_id<?php echo $i ?>" onchange="SensorIDList(this.options[this.selectedIndex].value, <?php echo $i ?>)" name="sens_id<?php echo $i ?>" class="form-select" data-bs-error="<?php echo $lang['zone_temp_sensor_id_error']; ?>" autocomplete="off">
