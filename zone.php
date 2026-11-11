@@ -34,7 +34,6 @@ if(isset($_GET['id'])) {
 	$sensor_count = 1;
 }
 
-
 $uri = $_SERVER['QUERY_STRING'];
 if (strpos($uri, "id=") !== false) { $link = "settings.php?s_id=9"; } else { $link = "home.php"; }
 
@@ -498,13 +497,14 @@ if (isset($_POST['submit'])) {
         $query = "select zone.*,zone_type.category,zone_type.type from zone,zone_type where (zone.type_id = zone_type.id) and zone.id = {$id} limit 1;";
 	$result = $conn->query($query);
 	$row = mysqli_fetch_assoc($result);
+	$zone_category = $row['category'];
 
        	$query = "SELECT sensors.*, sensor_type.type FROM sensors, sensor_type WHERE (sensors.sensor_type_id = sensor_type.id) AND zone_id = '{$row['id']}' LIMIT 1;";
         $result = $conn->query($query);
 	$sensorcount = $result->num_rows;
         $rowtempsensors = mysqli_fetch_assoc($result);
 
-        if($row['category'] <> 2) {
+        if($zone_category <> 2) {
 		$query = "SELECT zone_sensors.*, sensors.sensor_id, sensors.name, sensors.sensor_child_id, sensors.sensor_type_id FROM zone_sensors, sensors WHERE (zone_sensors.zone_sensor_id = sensors.id) AND zone_sensors.zone_id = '{$row['id']}';";
         	$sresult = $conn->query($query);
 //                $sensor_count = mysqli_num_rows($result);
@@ -518,6 +518,7 @@ if (isset($_POST['submit'])) {
                 $sensor_count = $index;
         } else {
                 $s_type_id = "1";
+		$sensor_count = 1;
         }
 
         if($zone_category <> 3) {
@@ -547,14 +548,10 @@ if (isset($_POST['submit'])) {
 // get the list of available sensors in to array
 $query = "SELECT id, name, sensor_type_id FROM sensors WHERE zone_id = 0 OR zone_id = {$id} ORDER BY name ASC;";
 $result = $conn->query($query);
-$sensorArray = array();
-$sensorArray[0]["id"] = 0;
-$sensorArray[0]["name"] = "NONE";
-$sensorArray[0]["sensor_type_id"] = 0;
 while($rowsensors = mysqli_fetch_assoc($result)) {
-   $sensorArray[] = $rowsensors;
+	$sensorArray[] = $rowsensors;
 }
-$count_num_sensors =count($sensorArray);
+$count_num_sensors = count($sensorArray);
 ?>
 
 <!-- Title (e.g. Add Zone or Edit Zone) -->
@@ -673,7 +670,7 @@ $count_num_sensors =count($sensorArray);
 						    			map_bin = 0b10111111011;
 						    			break;
 						                case "2":
-						                        map_bin = 0b00001100000;
+						                        map_bin = 0b00001000000;
 						                        break;
 						                case "3":
 						                        map_bin = 0b01110111110;
@@ -784,12 +781,14 @@ $count_num_sensors =count($sensorArray);
 						                document.getElementById("sensor_id_label_1").style.visibility = 'visible';
 								document.getElementById("sensor_id_label_1").innerHTML = str_1;
 						                document.getElementById("sensor_id_label_2").style.visibility = 'visible';
+                                                                document.getElementById("sensor_button").style.visibility = 'visible';
 						                document.getElementById("sens_id0").style.display = 'block';
 						                document.getElementById("sens_id0").required = true;
 						        } else {
 						                document.getElementById("sens_id0").style.display = 'none';
 						                document.getElementById("sensor_id_label_1").style.visibility = 'hidden';
 						                document.getElementById("sensor_id_label_2").style.visibility = 'hidden';
+								document.getElementById("sensor_button").style.visibility = 'hidden';
 						                document.getElementById("sens_id0").required = false;
 						        }
 						        if (map_bin & 0b1000000) {
@@ -828,48 +827,48 @@ $count_num_sensors =count($sensorArray);
 						                document.getElementById("system_controller_id_label").style.visibility = 'hidden';
 						                document.getElementById("system_controller_id").required = false;
 						        }
-                                if (map_bin & 0b10000000000 && sensor_type === "1") {
-                                	document.getElementById("default_m_label_1").style.visibility = 'visible';
-									document.getElementById("default_m_label_2").style.visibility = 'visible';
-                                    document.getElementById("m_default").style.display = 'block';
-                                    document.getElementById("m_default").required = true;
-                                } else {
-                                    document.getElementById("m_default").style.display = 'none';
-                                	document.getElementById("default_m_label_1").style.visibility = 'hidden';
-									document.getElementById("default_m_label_2").style.visibility = 'hidden';
-                                    document.getElementById("m_default").required = false;
-                                }
+                                			if (map_bin & 0b10000000000 && sensor_type === "1") {
+                                				document.getElementById("default_m_label_1").style.visibility = 'visible';
+								document.getElementById("default_m_label_2").style.visibility = 'visible';
+                                    				document.getElementById("m_default").style.display = 'block';
+                                    				document.getElementById("m_default").required = true;
+                                			} else {
+                                    				document.getElementById("m_default").style.display = 'none';
+                                				document.getElementById("default_m_label_1").style.visibility = 'hidden';
+								document.getElementById("default_m_label_2").style.visibility = 'hidden';
+                                    				document.getElementById("m_default").required = false;
+                                			}
 
-                                // re-build the sensor list based on the zone type (1 = temperature, 2 = humidity)
-                                var id = <?php echo $id; ?>;
-                                if(id == 0) {
-                                    var opt = document.getElementById("sens_id0").getElementsByTagName("option");
-                                    var jArray = <?php echo json_encode($sensorArray); ?>;
+							// re-build the sensor list based on the zone type (1 = temperature, 2 = humidity)
+							var id = <?php echo $id; ?>;
+							var opt = document.getElementById("sens_id0").getElementsByTagName("option");
+							var jArray = <?php echo json_encode($sensorArray); ?>;
 
-                                    for(j=opt.length-1;j>=0;j--) {
-                                    	document.getElementById("sens_id0").options.remove(j);
-                                    }
+							//console.log(jArray, jArray.length, zone_cat);
+							for(j=opt.length-1;j>=0;j--) {
+								document.getElementById("sens_id0").options.remove(j);
+							}
+							// loop through the array of unallocated sensors
+							for(j=0;j<jArray.length;j++) {
+								var optn = document.createElement("OPTION");
+								var stype = parseInt(jArray[j]['sensor_type_id']);
+								optn.text = jArray[j]['name'];
+								optn.value = jArray[j]['id'];
+								if(stype == sensor_type || zone_cat === "2") {
+									document.getElementById("sens_id0").options.add(optn);
+									if(j == 0 && zone_cat != 2) {optn.setAttribute('selected', true);}
+								}
+							}
 
-                                    for(j=0;j<jArray.length;j++) {
-                                        var optn = document.createElement("OPTION");
-                                        var stype = parseInt(jArray[j]['sensor_type_id']);
-                                        optn.text = jArray[j]['name'];
-                                        optn.value = jArray[j]['id'];
-                                        if(stype == sensor_type || zone_cat === "2") {
-                                            document.getElementById("sens_id0").options.add(optn);
-                                            if(j == 0) {optn.setAttribute('selected', true);}
-                                        }
-                                    }
-                                }
-                                document.getElementById("selected_zone_category").value = zone_cat;
-                                var e = document.getElementById("type");
-                                var selected_type = e.options[e.selectedIndex].text;
-                                document.getElementById("selected_zone_type").value = selected_type;
+							document.getElementById("selected_zone_category").value = zone_cat;
+							var e = document.getElementById("type");
+							var selected_type = e.options[e.selectedIndex].text;
+							document.getElementById("selected_zone_type").value = selected_type;
 
-                                //set initial sensor
-                                //document.getElementById("zone_sensor_id").value = document.getElementById("selected_sensor_id").value;
-                                document.getElementById("selected_sensor_type_id").value = sensor_type;
-                            }
+							//set initial sensor
+							//document.getElementById("zone_sensor_id").value = document.getElementById("selected_sensor_id").value;
+							document.getElementById("selected_sensor_type_id").value = sensor_type;
+						}
 						</script>
 
 						<!-- Default Temperature -->
@@ -971,9 +970,9 @@ $count_num_sensors =count($sensorArray);
 											<div class="help-block with-errors"></div>
                                                                                 	<span class="input-group-btn">
                                                                                			<?php if ($i == 0) {
-                											echo '<button class="btn btn-outline add_sensor_button" type="button" data-bs-toggle="tooltip" title="'.$lang['add_sensor'].'"><img src="./images/add-icon.png"/></button>';
+                											echo '<button class="btn btn-outline add_sensor_button" type="button" id="sensor_button" data-bs-toggle="tooltip" title="'.$lang['add_sensor'].'"><img src="./images/add-icon.png"/></button>';
                                                                                        		} else {
-        												echo '<button class="btn btn-outline remove_sensor_button" type="button" data-bs-toggle="tooltip" title="'.$lang['remove_sensor'].'"><img src="./images/remove-icon.png"/></button>';
+        												echo '<button class="btn btn-outline remove_sensor_button" type="button" i"sensor_button" data-bs-toggle="tooltip" title="'.$lang['remove_sensor'].'"><img src="./images/remove-icon.png"/></button>';
 	                                                                                       	} ?>
         	                                                                       	</span>
 										</div>
