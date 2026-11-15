@@ -26,7 +26,7 @@ print("********************************************************")
 print("*             EMS Set RC10 Emulator Script             *")
 print("*                                                      *")
 print("*               Build Date: 05/12/2025                 *")
-print("*       Version 0.14 - Last Modified 13/07/2026        *")
+print("*       Version 0.15 - Last Modified 15/11/2026        *")
 print("*                                 Have Fun - PiHome.eu *")
 print("********************************************************")
 print(" " + bc.ENDC)
@@ -365,6 +365,7 @@ if cur.rowcount > 0 :
         )
         state_node_id = int(result[node_to_index["node_id"]])
         state_sensor = True
+        minute_timer_dict[state_sensor_id] = time.time()
 
 # check if a 'Boiler Status' sensor exists in the database
 status_sensor = False
@@ -388,6 +389,7 @@ if cur.rowcount > 0 :
         )
         status_node_id = int(result[node_to_index["node_id"]])
         status_sensor = True
+        minute_timer_dict[status_id] = time.time()
 
 # check if a 'Boiler Flow' sensor exists in the database
 boiler_flow_sensor = False
