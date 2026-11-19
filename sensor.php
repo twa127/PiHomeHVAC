@@ -200,13 +200,13 @@ if (isset($_POST['submit'])) {
 						$found_product = mysqli_fetch_array($result);
 						$new_index_id = $found_product['index_id']+1;
 						?>
-						<div class="form-group" class="control-label"><label><?php echo $lang['temp_sensor_index_number']; ?>  </label> <small class="text-muted"><?php echo $lang['temp_sensor_index_number_info'];?></small>
+						<div class="form-group"><label for="index_id" class="control-label"><?php echo $lang['temp_sensor_index_number']; ?>  </label> <small class="text-muted"><?php echo $lang['temp_sensor_index_number_info'];?></small>
 							<input class="form-control" placeholder="<?php echo $lang['temp_sensor_index_number']; ?>r" value="<?php if(isset($row['index_id'])) { echo $row['index_id']; }else {echo $new_index_id; }  ?>" id="index_id" name="index_id" data-bs-error="<?php echo $lang['temp_sensor_index_number_help']; ?>" autocomplete="off" required>
 							<div class="help-block with-errors"></div>
 						</div>
 
 						<!-- Sensor Type -->
-						<div class="form-group" class="control-label" style="display:block"><label><?php echo $lang['sensor_type']; ?></label> <small class="text-muted"><?php echo $lang['sensor_type_info'];?></small>
+						<div class="form-group" style="display:block"><label for="type" class="control-label"><?php echo $lang['sensor_type']; ?></label> <small class="text-muted"><?php echo $lang['sensor_type_info'];?></small>
 							<select class="form-select" type="number" id="type" name="type" onchange=enable_fields(this.options[this.selectedIndex].value,<?php echo $id; ?>)>
 
 							<?php if(isset($rowtype['type'])) { 
@@ -274,13 +274,13 @@ if (isset($_POST['submit'])) {
                                                 </script>
 
 						<!-- Sensor Name -->
-						<div class="form-group" class="control-label"><label><?php echo $lang['sensor_name']; ?></label> <small class="text-muted"><?php echo $lang['sensor_name_info'];?></small>
+						<div class="form-group"><label for="name" class="control-label"><?php echo $lang['sensor_name']; ?></label> <small class="text-muted"><?php echo $lang['sensor_name_info'];?></small>
 							<input class="form-control" placeholder="Temperature Sensor Name" value="<?php if(isset($row['name'])) { echo $row['name']; } ?>" id="name" name="name" data-bs-error="<?php echo $lang['sensor_name_help']; ?>" autocomplete="off" required>
 							<div class="help-block with-errors"></div>
 						</div>
 
 						<!-- Temperature Sensor ID -->
-						<div class="form-group" class="control-label" id="sensor_id_label" style="display:block"><label><?php echo $lang['sensor_id']; ?></label> <small class="text-muted"><?php echo $lang['zone_sensor_id_info'];?></small>
+						<div class="form-group" id="sensor_id_label" style="display:block"><label for="sensor_id" class="control-label"><?php echo $lang['sensor_id']; ?></label> <small class="text-muted"><?php echo $lang['zone_sensor_id_info'];?></small>
 							<select id="sensor_id" onchange=SensorChildList(this.options[this.selectedIndex].value) name="sensor_id" class="form-control select2" data-bs-error="<?php echo $lang['sensor_id_error']; ?>" autocomplete="off" required>
                                                                 <?php if(isset($rownode['node_id'])) {
                                                                         echo '<option selected >'.$rownode['node_id'].' - '.$rownode['name'].'</option>';
@@ -329,7 +329,7 @@ if (isset($_POST['submit'])) {
                                                 <input type="hidden" id="min_max_graph" name="min_max_graph" value="<?php echo $row['min_max_graph']?>"/>
 
 						<!-- Temperature Sensor Child ID -->
-						<div class="form-group" class="control-label" id="sensor_child_id_label" style="display:block"><label><?php echo $lang['sensor_child_id']; ?></label> <small class="text-muted"><?php echo $lang['sensor_child_id_info'];?></small>
+						<div class="form-group" id="sensor_child_id_label" style="display:block"><label for="sensor_child_id" class="control-label"><?php echo $lang['sensor_child_id']; ?></label> <small class="text-muted"><?php echo $lang['sensor_child_id_info'];?></small>
 							<select id="sensor_child_id" name="sensor_child_id" class="form-control select2" data-bs-error="<?php echo $lang['sensor_child_id_error']; ?>" autocomplete="off" required>
 								<?php if(isset($row['sensor_child_id'])) { echo '<option selected >'.$row['sensor_child_id'].'</option>';
 								for ($x = 0; $x <= $rownode['max_child_id']; $x++) {
@@ -341,7 +341,7 @@ if (isset($_POST['submit'])) {
 						</div>
 
                                                 <!-- Mode -->
-                                                <div class="form-group" class="control-label" id="mode_label" style="display:block"><label><?php echo $lang['sensor_mode']; ?></label> <small class="text-muted"><?php echo $lang['sensor_mode_info'];?></small>
+                                                <div class="form-group" id="mode_label" style="display:block"><label for="mode" class="control-label"><?php echo $lang['sensor_mode']; ?></label> <small class="text-muted"><?php echo $lang['sensor_mode_info'];?></small>
  							<select class="form-select" type="text" id="mode" name="mode" onchange=set_mode(this.options[this.selectedIndex].value)>
 								<?php echo'<option value=0 ' . ($row['mode']==0 ? 'selected' : '') . '>'.$lang['continous'].'</option>'; ?>
                                                                 <?php echo'<option value=1 ' . ($row['mode']==1 ? 'selected' : '') . '>'.$lang['onchange'].'</option>'; ?>
@@ -369,7 +369,7 @@ if (isset($_POST['submit'])) {
                                                 </script>
 
                                                 <!-- Timout -->
-							<div class="form-group" class="control-label" id="timeout_label" style="display:block"><label><?php echo $lang['sensor_timeout']; ?></label> <small class="text-muted"><?php echo $lang['sensor_timeout_info'];?></small>
+							<div class="form-group" id="timeout_label" style="display:block"><label for="timeout" class="control-label"><?php echo $lang['sensor_timeout']; ?></label> <small class="text-muted"><?php echo $lang['sensor_timeout_info'];?></small>
                                                         <select id="timeout" name="timeout" class="form-control select2" autocomplete="off">
 					                <?php for ($x = 10; $x <=  120; $x = $x + 10) {
                         					echo '<option value="'.$x.'" ' . ($x==$row['timeout'] ? 'selected' : '') . '>'.$x.'</option>';
@@ -379,7 +379,7 @@ if (isset($_POST['submit'])) {
                                                 </div>
 
                                                 <!-- Resolution -->
-							<div class="form-group" class="control-label" id="resolution_label" style="display:block"><label><?php echo $lang['sensor_resolution']; ?></label> <small class="text-muted"><?php echo $lang['sensor_resolution_info'];?></small>
+							<div class="form-group" id="resolution_label" style="display:block"><label for="resolution" class="control-label"><?php echo $lang['sensor_resolution']; ?></label> <small class="text-muted"><?php echo $lang['sensor_resolution_info'];?></small>
                                                         <select id="resolution" name="resolution" class="form-control select2" autocomplete="off">
                                                         <?php for ($x = 0; $x <  10; $x++) {
                                                                 $y = $x/10;
@@ -390,13 +390,13 @@ if (isset($_POST['submit'])) {
                                                 </div>
 
                                                 <!-- Correction Factor -->
-                                                <div class="form-group" class="control-label" id="correction_factor_label" style="display:block"><label><?php echo $lang['sensor_correction_factor']; ?></label> <small class="text-muted"><?php echo $lang['sensor_correction_factor_info'];?></small>
+                                                <div class="form-group" id="correction_factor_label" style="display:block"><label for="correction_factor" class="control-label"><?php echo $lang['sensor_correction_factor']; ?></label> <small class="text-muted"><?php echo $lang['sensor_correction_factor_info'];?></small>
                                                         <input class="form-control" placeholder="Temperature Sensor Correction Factor" value="<?php if(isset($row['name'])) { echo $row['correction_factor']; } else { echo '0.00'; } ?>" id="correction_factor" name="correction_factor" data-bs-error="<?php echo $lang['sensor_correction_factor_help']; ?>" autocomplete="off" required>
                                                         <div class="help-block with-errors"></div>
                                                 </div>
 
 						<!-- Frost Temperature -->
-						<div class="form-group" class="control-label" id="frost_protection_label" style="display:block"><label><?php echo $lang['frost_protection']; ?></label> <small class="text-muted"><?php echo $lang['frost_protection_text'];?></small>
+						<div class="form-group" id="frost_protection_label" style="display:block"><label for="frost_temp" class="control-label"><?php echo $lang['frost_protection']; ?></label> <small class="text-muted"><?php echo $lang['frost_protection_text'];?></small>
 							<select class="form-select" type="number" id="frost_temp" name="frost_temp" onchange=enable_frost()>
                 						<?php if(isset($row['frost_temp'])) { 
 									echo '<option selected >'.$row['frost_temp'].'</option>';
@@ -437,7 +437,7 @@ if (isset($_POST['submit'])) {
 						<div class="frost_id_wrapper">
 							<?php for ($i = 0; $i < $frost_count; $i++) { ?>
 								<div class="wrap" id>
-									<div class="form-group"  id="frost_controller_label" style="display:block"><label><?php echo $lang['frost_controller']; ?></label> <small class="text-muted"><?php echo $lang['frost_controller_text'];?></small>
+									<div class="form-group"  id="frost_controller_label" style="display:block"><label for="frost_contr_id<?php echo $i ?>" class="control-label"><?php echo $lang['frost_controller']; ?></label> <small class="text-muted"><?php echo $lang['frost_controller_text'];?></small>
                                                                                 <input type="hidden" id="selected_frost_controler_id[]" name="selected_frost_controler_id[]" value="<?php echo $frost_zones[$i]['relay_id']?>"/>
                                                                                 <div class="entry input-group col-12" id="frost_cnt_id - <?php echo $i ?>">
 	                                                        			<select id="frost_contr_id<?php echo $i ?>" onchange="ControllerIDList(this.options[this.selectedIndex].value)" name="frost_contr_id<?php echo $i ?>" class="form-select" data-bs-error="<?php echo $lang['zone_controller_id_error']; ?>" autocomplete="off">
@@ -477,7 +477,7 @@ if (isset($_POST['submit'])) {
                                                 </script>
 
                                                 <!-- Sensor Fail Timout -->
-                                                        <div class="form-group" class="control-label" id="fail_timeout_label" style="display:block"><label><?php echo $lang['fail_timeout'];?></label> <small class="text-muted"><?php echo $lang['fail_timeout_info'];?></small>
+                                                        <div class="form-group" id="fail_timeout_label" style="display:block"><label for="fail_timeout" class="control-label"><?php echo $lang['fail_timeout'];?></label> <small class="text-muted"><?php echo $lang['fail_timeout_info'];?></small>
                                                         <select id="fail_timeout" name="fail_timeout" class="form-control select2" autocomplete="off">
                                                         <?php for ($x = 0; $x <=  120; $x = $x + 10) {
                                                                 echo '<option value="'.$x.'" ' . ($x==$row['fail_timeout'] ? 'selected' : '') . '>'.$x.'</option>';

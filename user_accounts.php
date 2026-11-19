@@ -196,8 +196,8 @@ $persist = $row['persist'];
         	      		<div class="card-body">
                 	                <form method="post" action="<?php $PHP_SELF ?>" data-bs-toggle="validator" role="form" >
 
-					<div class="form-group"><label><?php echo $info_text; ?></label>
-					<br>
+					<div class="form-group">
+					<p><strong><?php echo $info_text; ?></strong></p>
 					<p class="text-danger"> <strong>Do not use any special character i.e
 					' &nbsp;&nbsp; ` &nbsp;&nbsp; , &nbsp;&nbsp; & &nbsp;&nbsp; ? &nbsp;&nbsp; { &nbsp;&nbsp; } &nbsp;&nbsp; [ &nbsp;&nbsp; ] &nbsp;&nbsp; ( &nbsp;&nbsp; ) &nbsp;&nbsp; - &nbsp;&nbsp; &nbsp;&nbsp; ; &nbsp;&nbsp; ! &nbsp;&nbsp; ~ &nbsp;&nbsp; * &nbsp;&nbsp; % &nbsp;&nbsp; \ &nbsp;&nbsp; |</strong></p>
 					</div>
@@ -229,31 +229,31 @@ $persist = $row['persist'];
 						<!-- /.row -->
 						<br>
 					<?php } ?>
-					<div class="form-group"><label><?php echo $lang['fullname']; ?></label>
+					<div class="form-group"><label for="full_name" class="control-label"><?php echo $lang['fullname']; ?></label>
         	        			<input type="text" class="form-control" placeholder="Full Name" value="<?php echo $fname ;?>" id="full_name" name="full_name" data-bs-error="Full Name is Required" autocomplete="off" required <?php echo $dis; ?>>
 	        	        	</div>
 
-	        	        	<div class="form-group"><label><?php echo $lang['username']; ?></label>
+	        	        	<div class="form-group"><label for="user_name" class="control-label"><?php echo $lang['username']; ?></label>
         	        			<input type="text" class="form-control" placeholder="User Name" value="<?php echo $uname ;?>" id="user_name" name="user_name" data-bs-error="User Name is Required" autocomplete="off" required <?php echo $dis; ?>>
                 			</div>
 
-                        	        <div class="form-group"><label><?php echo $lang['email_address']; ?></label>
+                        	        <div class="form-group"><label for="user_email" class="control-label"><?php echo $lang['email_address']; ?></label>
                                 	        <input type="text" class="form-control" placeholder="Email Address" value="<?php echo $email ;?>" id="user_email" name="user_email" data-bs-error="Email Address is Required" autocomplete="off" required <?php echo $dis; ?>>
 	                                </div>
 
 					<?php if($mode != 2) {
-	        	        		echo '<div class="form-group"><label>'.$lang['old_password'].'</label>'; if($mode == 1) { echo '<small class="text-muted">'.$lang['old_password_info'].'</small>'; }
+	        	        		echo '<div class="form-group"><label for="old_pass" class="control-label">'.$lang['old_password'].'</label>'; if($mode == 1) { echo '<small class="text-muted">'.$lang['old_password_info'].'</small>'; }
         	        				echo '<input class="form-control" type="password" class="form-control" placeholder="Old Password" value="" id="old_pass" name="old_pass" data-bs-error="Old Password is Required" autocomplete="off" '.$req.'>
                 				<div class="help-block with-errors"></div>
 						</div>';
 					} ?>
 
-		                	<div class="form-group"><label><?php echo $lang['new_password']; ?></label>
+		                	<div class="form-group"><label for="example-progress-bar" class="control-label"><?php echo $lang['new_password']; ?></label>
         		        		<input class="form-control" type="password" class="form-control" placeholder="New Password" value="" id="example-progress-bar" name="new_pass" data-bs-error="New Password is Required" autocomplete="off" <?php echo $req; ?>>
                 				<div class="help-block with-errors"></div>
 					</div>
 
-		                	<div class="form-group"><label><?php echo $lang['confirm_password']; ?></label>
+		                	<div class="form-group"><label for="con_pass" class="control-label"><?php echo $lang['confirm_password']; ?></label>
         		        		<input class="form-control" type="password" class="form-control" placeholder="Confirm New Password" value="" id="con_pass" name="con_pass" data-bs-error="Confirm New Password is Required" autocomplete="off" <?php echo $req; ?>>
                 				<div class="help-block with-errors"></div>
 					</div>

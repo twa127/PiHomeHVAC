@@ -94,13 +94,13 @@ if (isset($_POST['submit'])) {
 				<div class="card-body">
 					<form data-bs-toggle="validator" role="form" method="post" action="<?php $_SERVER['PHP_SELF'];?>" id="form-join">
 						<!-- Theme Name -->
-						<div class="form-group" class="control-label"><label class="fs-6"><?php echo $lang['theme_name']; ?></label> <small class="text-muted"><?php echo $lang['theme_name_info'];?></small>
+						<div class="form-group"><label for="name" class="fs-6" class="control-label"><?php echo $lang['theme_name']; ?></label> <small class="text-muted"><?php echo $lang['theme_name_info'];?></small>
 							<input class="form-control" placeholder="Theme Name" value="<?php if(isset($row['name'])) { echo $row['name']; } ?>" id="name" name="name" data-bs-error="<?php echo $lang['theme_name_help']; ?>" autocomplete="off" required>
 							<div class="help-block with-errors"></div>
 						</div>
 
 						<!-- Justification -->
-						<div class="form-group" class="control-label" id="justify_label" style="display:block"><label class="fs-6"><?php echo $lang['justify']; ?></label> <small class="text-muted"><?php echo $lang['justify_info'];?></small>
+						<div class="form-group" id="justify_label" style="display:block"><label for="justification" class="fs-6" class="control-label"><?php echo $lang['justify']; ?></label> <small class="text-muted"><?php echo $lang['justify_info'];?></small>
         						<select class="form-select" type="text" id="justification" name="justification" >
 								<?php echo'<option value="left" ' . ($row['row_justification']=="left" ? 'selected' : '') . '>'.$lang['left'].'</option>'; ?>
                 						<?php echo'<option value="center" ' . ($row['row_justification']=="center" ? 'selected' : '') . '>'.$lang['center'].'</option>'; ?>
@@ -110,7 +110,7 @@ if (isset($_POST['submit'])) {
 						</div>
 
                                                 <!-- Theme Color -->
-                                                <div class="form-group" class="control-label" id="theme_color_label" style="display:block"><label class="fs-6"><?php echo $lang['theme_color']; ?></label> <small class="text-muted"><?php echo $lang['theme_color_info'];?></small>
+                                                <div class="form-group" id="theme_color_label" style="display:block"><label for="theme_color" class="fs-6" class="control-label"><?php echo $lang['theme_color']; ?></label> <small class="text-muted"><?php echo $lang['theme_color_info'];?></small>
                                                         <select class="form-select" type="text" id="theme_color" name="theme_color" >
 						    		<?php echo'<option value="red" ' . ($row['color']=="red" ? 'selected' : '') . '>'.$lang['red'].'</option>'; ?>
                                                                 <?php echo'<option value="orange" ' . ($row['color']=="orange" ? 'selected' : '') . '>'.$lang['orange'].'</option>'; ?>
@@ -124,7 +124,7 @@ if (isset($_POST['submit'])) {
                                                 </div>
 
                                                 <!-- Text Color -->
-                                                <div class="form-group" class="control-label" id="text_color_label" style="display:block"><label class="fs-6"><?php echo $lang['text_color']; ?></label> <small class="text-muted"><?php echo $lang['text_color_info'];?></small>
+                                                <div class="form-group" id="text_color_label" style="display:block"><label for="text_color" class="fs-6" class="control-label"><?php echo $lang['text_color']; ?></label> <small class="text-muted"><?php echo $lang['text_color_info'];?></small>
                                                         <select class="form-select" type="text" id="text_color" name="text_color" >
 								<?php echo'<option value="text-white" ' . ($row['text_color']=="text-white" ? 'selected' : '') . '>'.$lang['white'].'</option>'; ?>
 								<?php echo'<option value="text-black" ' . ($row['text_color']=="text-black" ? 'selected' : '') . '>'.$lang['black'].'</option>'; ?>
@@ -133,7 +133,7 @@ if (isset($_POST['submit'])) {
                                                 </div>
 
                                                 <!-- Button Size -->
-                                                <div class="form-group" class="control-label" id="tile_size_label" style="display:block"><label class="fs-6"><?php echo $lang['button_size']; ?></label> <small class="text-muted"><?php echo $lang['button_size_info'];?></small>
+                                                <div class="form-group" id="tile_size_label" style="display:block"><label for="tile_size" class="fs-6" class="control-label"><?php echo $lang['button_size']; ?></label> <small class="text-muted"><?php echo $lang['button_size_info'];?></small>
                                                         <select class="form-select" type="text" id="tile_size" name="tile_size" >
 								<?php echo'<option value=0 ' . ($row['tile_size']==0 ? 'selected' : '') . '>'.$lang['standard_button'].'</option>'; ?>
 								<?php echo'<option value=1 ' . ($row['tile_size']==1 ? 'selected' : '') . '>'.$lang['wide_button'].'</option>'; ?>

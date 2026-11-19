@@ -107,7 +107,7 @@ echo '
                                 <h5 class="modal-title">'.$lang['jobs_status_log'].'</h5>
                         </div>
                         <div class="modal-body">
-                                <div class="form-group" class="control-label"><label>'.$lang['jobs_name'].'</label> <small class="text-muted">'.$lang['last_job_log_info'].'</small>
+                                <div class="form-group"><label for="job_name" class="control-label">'.$lang['jobs_name'].'</label> <small class="text-muted">'.$lang['last_job_log_info'].'</small>
                                         <select class="form-select" type="text" id="job_name" name="job_name" onchange=last_job_log(this.options[this.selectedIndex].value)>';
                                         //get list of heat relays to display
                                         $query = "SELECT id, job_name, output FROM jobs WHERE enabled = 1;";
@@ -845,7 +845,7 @@ echo '<div class="modal fade" id="theme" tabindex="-1" role="dialog" aria-labell
                 $theme_id = $row['theme'];
                 $query = "SELECT id, name FROM theme ORDER BY name ASC;";
                 $results = $conn->query($query);
-                echo '<div class="form-group" class="control-label"><label>'.$lang['theme_name'].'</label> <small class="text-muted"> </small>
+                echo '<div class="form-group"><label for="theme_id" class="control-label">'.$lang['theme_name'].'</label> <small class="text-muted"> </small>
 	                <select class="form-select" type="text" id="theme_id" name="theme_id" >';
         	                while ($row = mysqli_fetch_array($results)) {
                 	                echo '<option value="'.$row['id'].'" ' . ($theme_id==$row['id'] ? 'selected' : '') . '>'.$row['name'].'</option>';
@@ -874,7 +874,7 @@ echo '<div class="modal fade" id="set_repository" tabindex="-1" role="dialog" ar
                 <p class="text-muted">'.$lang['github_repository_text'].'</p>';
                 $query = "SELECT id, status, name FROM repository;";
                 $results = $conn->query($query);
-		echo '<div class="form-group" class="control-label"><label>'.$lang['repository_url'].'</label> <small class="text-muted"> (Default Repository is - '.$lang['default_repository'].')</small>
+		echo '<div class="form-group"><label for="rep_id" class="control-label">'.$lang['repository_url'].'</label> <small class="text-muted"> (Default Repository is - '.$lang['default_repository'].')</small>
                 <select class="form-select" type="text" id="rep_id" name="rep_id" >';
                 if ($results){
                         while ($frow=mysqli_fetch_array($results)) {
@@ -945,7 +945,7 @@ echo '
                         <p class="text-muted"> '.$lang['backup_location_text'].' </p>
                         <p class="text-muted"> '.$lang['pihome_backup_text'].' </p>
                         <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
-                        <div class="form-group" class="control-label"><label>'.$lang['email_address'].'</label> <small class="text-muted">'.$lang['pihome_backup_email_info'].'</small>
+                        <div class="form-group"><label for="backup_email" class="control-label">'.$lang['email_address'].'</label> <small class="text-muted">'.$lang['pihome_backup_email_info'].'</small>
         			<input class="form-control" type="text" id="backup_email" name="backup_email" value="'.settings($conn, 'backup_email').'" placeholder="Email Address to Receive your Backup file">
                         	<div class="help-block with-errors"></div>
                         </div>
@@ -1029,7 +1029,7 @@ echo '<div class="modal fade" id="auto_backup" tabindex="-1" role="dialog" aria-
         	                </div>
              		</div>
 
-	                <div class="form-group" class="control-label"><label><h5>'.$lang['frequency'].'</h5></label><small class="text-muted">&nbsp'.$lang['frequency_info'].'</small>
+	                <div class="form-group"><label for="fval1" class="control-label"><h5>'.$lang['frequency'].'</h5></label><small class="text-muted">&nbsp'.$lang['frequency_info'].'</small>
         	                <div class="row mb-3">
                 	                <div class="col-2">
 						<input class="form-control" placeholder="0" value="'.$f[0].'" id="fval1" name="fval1" autocomplete="off" required>
@@ -1046,7 +1046,7 @@ echo '<div class="modal fade" id="auto_backup" tabindex="-1" role="dialog" aria-
 				</div>
 			</div>
 
-        	        <div class="form-group" class="control-label"><label><h5>'.$lang['rotation'].'</h5></label><small class="text-muted">&nbsp'.$lang['rotation_info'].'</small>
+        	        <div class="form-group"><label for="rval1" class="control-label"><h5>'.$lang['rotation'].'</h5></label><small class="text-muted">&nbsp'.$lang['rotation_info'].'</small>
                 	        <div class="row mb-3">
                         	        <div class="col-2">
 						<input class="form-control" placeholder="0" value="'.$r[0].'" id="rval1" name="rval1" autocomplete="off" required>
@@ -1063,7 +1063,7 @@ echo '<div class="modal fade" id="auto_backup" tabindex="-1" role="dialog" aria-
 	                        </div>
                 	</div>
 
-	                <div class="form-group" class="control-label"><label><h5>'.$lang['destination'].'</h5></label><small class="text-muted">&nbsp'.$lang['destination_info'].'</small>
+	                <div class="form-group"><label for="dest" class="control-label"><h5>'.$lang['destination'].'</h5></label><small class="text-muted">&nbsp'.$lang['destination_info'].'</small>
         	                <div class="row mb-3">
                 	                <div class="col-12">
                         	                <input class="form-control" placeholder="" value="'.$row['destination'].'" id="dest" name="dest" autocomplete="off" required>
@@ -1208,14 +1208,14 @@ if (mysqli_num_rows($result) != 0) {
                                         		</div>
 	        	                	</div>
         	     			</div>
-	        	        	<div class="form-group" class="control-label"><label><h5>'.$lang['frequency'].'</h5></label><small class="text-muted">&nbsp'.$lang['frequency_info'].'</small>
+	        	        	<div class="form-group"><label for="image_fval2" class="control-label"><h5>'.$lang['frequency'].'</h5></label><small class="text-muted">&nbsp'.$lang['frequency_info'].'</small>
         	        	        	<div class="row mb-3">
                 	        	        	<div class="col-2">
-								<input class="form-control" placeholder="0" value="'.$f[0].'" id="fval1" name="fval1" autocomplete="off" required>
+								<input class="form-control" placeholder="0" value="'.$f[0].'" id="image_fval1" name="image_fval1" autocomplete="off" required>
                                 	        		<div class="help-block with-errors"></div>
 		                                	</div>
         		                        	<div class="col-4">
-								<select class="form-select" type="text" id="fval2" name="fval2" onchange=set_ai_frequency(this.options[this.selectedIndex].value)>
+								<select class="form-select" type="text" id="image_fval2" name="image_fval2" onchange=set_ai_frequency(this.options[this.selectedIndex].value)>
         	        		                        	<option value="DAY" ' . ($f[1]=='DAY' ? 'selected' : '') . '>'.$lang['DAY'].'</option>
 		                        		                <option value="WEEK" ' . ($f[1]=='WEEK' ? 'selected' : '') . '>'.$lang['WEEK'].'</option>
 								</select>
@@ -1224,14 +1224,14 @@ if (mysqli_num_rows($result) != 0) {
 							</div>
 						</div>
 					</div>
-	        	        	<div class="form-group" class="control-label"><label><h5>'.$lang['rotation'].'</h5></label><small class="text-muted">&nbsp'.$lang['rotation_info'].'</small>
+	        	        	<div class="form-group"><label for="image_rval1" class="control-label"><h5>'.$lang['rotation'].'</h5></label><small class="text-muted">&nbsp'.$lang['rotation_info'].'</small>
         	        	        	<div class="row mb-3">
                 	        	        	<div class="col-2">
-								<input class="form-control" placeholder="0" value="'.$r[0].'" id="rval1" name="rval1" autocomplete="off" required>
+								<input class="form-control" placeholder="0" value="'.$r[0].'" id="image_rval1" name="image_rval1" autocomplete="off" required>
 	                                	        	<div class="help-block with-errors"></div>
 		                                	</div>
 	        		                        <div class="col-4">
-        	        		                        <select class="form-select" type="text" id="rval2" name="rval2" onchange=set_ai_rotation(this.options[this.selectedIndex].value)>
+        	        		                        <select class="form-select" type="text" id="image_rval2" name="image_rval2" onchange=set_ai_rotation(this.options[this.selectedIndex].value)>
                 	        		                        <option value="DAY" ' . ($r[1]=='DAY' ? 'selected' : '') . '>'.$lang['DAY'].'</option>
                         	        		                <option value="WEEK" ' . ($r[1]=='WEEK' ? 'selected' : '') . '>'.$lang['WEEK'].'</option>
                                 	        		</select>
@@ -1240,10 +1240,10 @@ if (mysqli_num_rows($result) != 0) {
 		        	                        </div>
 			                        </div>
                 			</div>
-	                		<div class="form-group" class="control-label"><label><h5>'.$lang['destination'].'</h5></label><small class="text-muted">&nbsp'.$lang['destination_info'].'</small>
+	                		<div class="form-group"><label for="dest" class="control-label"><h5>'.$lang['destination'].'</h5></label><small class="text-muted">&nbsp'.$lang['destination_info'].'</small>
         	                		<div class="row mb-3">
                 	                		<div class="col-12">
-                        	                		<input class="form-control" placeholder="" value="'.$row['destination'].'" id="dest" name="dest" autocomplete="off" required>
+                        	                		<input class="form-control" placeholder="" value="'.$row['destination'].'" id="image_dest" name="image_dest" autocomplete="off" required>
 		                                	        <div class="help-block with-errors"></div>
         		                        	</div>
 						</div>
@@ -1383,7 +1383,7 @@ echo '<div class="modal fade" id="db_cleanup" tabindex="-1" role="dialog" aria-l
 				}
                 		echo '<div class="row mb-2">
                 			<div class="col-5">
-        					<div class="form-group" class="control-label">
+        					<div class="form-check">
                 					<div class="form-check">';
                         					if ($enabled == '1' || $enabled == 1){
         								echo '<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="checkbox" value="1" id="checkbox8" name="status" checked>';
@@ -1395,7 +1395,9 @@ echo '<div class="modal fade" id="db_cleanup" tabindex="-1" role="dialog" aria-l
         					</div>
 					</div>
                         		<div class="col-3">
-                                		<div class="control-label align-items-end"><label>'.$lang['run_db_cleanup_at'].'</label></div>
+						<div class="d-flex align-items-end">
+							<div class="text">'.$lang['run_db_cleanup_at'].'</div>
+						</div>
                         		</div>
 					<div class="col-4">
 		                		<div class="form-group">
@@ -1463,7 +1465,7 @@ echo '<div class="modal fade" id="max_cpu_temp" tabindex="-1" role="dialog" aria
                 $query = "SELECT max_cpu_temp FROM system LIMIT 1;";
                 $result = $conn->query($query);
                 $row = mysqli_fetch_array($result);
-                echo '<div class="form-group" class="control-label"><label>'.$lang['temperature'].'</label> <small class="text-muted"> </small>
+                echo '<div class="form-group"><label for="m_cpu_temp" class="control-label">'.$lang['temperature'].'</label> <small class="text-muted"> </small>
                 <select class="form-select" type="text" id="m_cpu_temp" name="m_cpu_temp" >';
                 for ($x = 40; $x <=  70; $x = $x + 5) {
                         echo '<option value="'.$x.'" ' . ($x==$row['max_cpu_temp'] ? 'selected' : '') . '>'.$x.'&deg;</option>';
@@ -1513,7 +1515,7 @@ echo '<div class="modal fade" id="change_refresh" tabindex="-1" role="dialog" ar
                 $query = "SELECT page_refresh, page_timeout FROM system LIMIT 1;";
                 $result = $conn->query($query);
                 $row = mysqli_fetch_array($result);
-                echo '<div class="form-group" class="control-label"><label>'.$lang['page_refresh_seconds'].'</label> <small class="text-muted"> </small>
+                echo '<div class="form-group"><label for="new_refresh" class="control-label">'.$lang['page_refresh_seconds'].'</label> <small class="text-muted"> </small>
                 <select class="form-select" type="text" id="new_refresh" name="new_refresh" >';
                 for ($x = 1; $x <=  15; $x++) {
                         echo '<option value="'.$x.'" ' . ($x==$row['page_refresh'] ? 'selected' : '') . '>'.$x.'</option>';
@@ -1522,7 +1524,7 @@ echo '<div class="modal fade" id="change_refresh" tabindex="-1" role="dialog" ar
                         <div class="help-block with-errors"></div>
                 </div>
                 <br><p class="text-muted">'.$lang['change_timeout_text'].'</p>
-                <div class="form-group" class="control-label"><label>'.$lang['page_timeout_seconds'].'</label> <small class="text-muted"> </small>
+                <div class="form-group"><label for="new_timeout" class="control-label">'.$lang['page_timeout_seconds'].'</label> <small class="text-muted"> </small>
                 <select class="form-select" type="text" id="new_timeout" name="new_timeout" >';
                 for ($x = 0; $x <=  600; $x = $x + 60) {
                         echo '<option value="'.$x.'" ' . ($x==$row['page_timeout'] ? 'selected' : '') . '>'.$x.'</option>';
@@ -1850,7 +1852,7 @@ echo '
             </div>
             <div class="modal-body">
                                 <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
-                                <div class="form-group" class="control-label"><label>'.$lang['system_mode'].'</label>
+                                <div class="form-group"><label  for="new_mode" class="control-label">'.$lang['system_mode'].'</label>
                                 <select class="form-select" type="text" id="new_mode" name="new_mode">
                                 <option value="0" ' . ($system_mode==0 || $system_mode=='0' ? 'selected' : '') . '>'.$lang['boiler'].' ('.$lang['cyclic'].' control)</option>
                                 <option value="1" ' . ($system_mode==1 || $system_mode=='1' ? 'selected' : '') . '>'.$lang['hvac'].' ('.$lang['cyclic'].' control)</option>
@@ -1883,7 +1885,7 @@ echo '
             </div>
             <div class="modal-body">
 				<form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
-				<div class="form-group" class="control-label"><label>'.$lang['units'].'</label>
+				<div class="form-group"><label for="new_units" class="control-label">'.$lang['units'].'</label>
 				<select class="form-select" type="number" id="new_units" name="new_units">
 				<option value="0" ' . ($c_f==0 || $c_f=='0' ? 'selected' : '') . '>'.$lang['unit_celsius'].'</option>
 				<option value="1" ' . ($c_f==1 || $c_f=='1' ? 'selected' : '') . '>'.$lang['unit_fahrenheit'].'</option>
@@ -1910,7 +1912,7 @@ echo '
             </div>
             <div class="modal-body">
 				<form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
-				<div class="form-group" class="control-label"><label>'.$lang['language'].'</label>
+				<div class="form-group"><label for="new_lang" class="control-label">'.$lang['language'].'</label>
 				<select class="form-select" type="text" id="new_lang" name="new_lang">';
 				$languages = ListLanguages($language);
 				for ($x = 0; $x <=  count($languages) - 1; $x++) {
@@ -2056,7 +2058,7 @@ echo '
             </div>
             <div class="modal-body">
             	<form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
-                <div class="form-group" class="control-label"><label>'.$lang['zone'].'</label>
+                <div class="form-group"><label for="livetemp_zone_id" class="control-label">'.$lang['zone'].'</label>
                         <select class="form-select" type="text" id="livetemp_zone_id" name="livetemp_zone_id" >';
 				//get the id of the zone currently attached to the live temperature control
 				$query = "SELECT zone_id FROM livetemp LIMIT 1;";
@@ -2106,7 +2108,7 @@ echo '<p class="text-muted">'.$lang['network_text'].'</p>';
 echo '
         <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
         <input class="form-control" type="hidden" id="n_int_type" name="n_int_type" value="'.$rowArray[0]['interface_type'].'"/>
-        <div class="form-group" class="control-label"><label>'.$lang['network_interface'].'</label>
+        <div class="form-group"><label for="n_int_num" class="control-label">'.$lang['network_interface'].'</label>
                 <select class="form-select" type="text" id="n_int_num" name="n_int_num" onchange=change(this.options[this.selectedIndex].value)>
                 <option value=0>wlan0</option>
                 <option value=1>wlan1</option>
@@ -2116,7 +2118,7 @@ echo '
                 <div class="help-block with-errors">
                 </div>
         </div>
-        <div class="form-group" class="control-label"><label>'.$lang['network_primary'].'</label>
+        <div class="form-group"><label for="n_primary" class="control-label">'.$lang['network_primary'].'</label>
                 <select class="form-select" type="text" id="n_primary" name="n_primary">
                 <option value=0>No</option>
                 <option selected value=1>Yes</option>
@@ -2124,7 +2126,7 @@ echo '
                 <div class="help-block with-errors">
                 </div>
         </div>
-        <div class="form-group" class="control-label"><label>'.$lang['network_ap_mode'].'</label>
+        <div class="form-group"><label for="n_ap_mode" class="control-label">'.$lang['network_ap_mode'].'</label>
                 <select class="form-select" type="text" id="n_ap_mode" name="n_ap_mode">
                 <option selected value=0>No</option>
                 <option value=1>Yes</option>
@@ -2132,37 +2134,37 @@ echo '
                 <div class="help-block with-errors">
                 </div>
         </div>
-        <div class="form-group" class="control-label"><label>'.$lang['network_mac_address'].'</label>
+        <div class="form-group"><label for="n_mac" class="control-label">'.$lang['network_mac_address'].'</label>
                 <input class="form-control" type="text" id="n_mac" name="n_mac" value="'.$rowArray[0]['mac_address'].'" placeholder="MAC Address">
                 <div class="help-block with-errors">
                 </div>
         </div>
-        <div class="form-group" class="control-label"><label>'.$lang['network_hostname'].'</label>
+        <div class="form-group"><label for="n_hostname" class="control-label">'.$lang['network_hostname'].'</label>
                 <input class="form-control" type="text" id="n_hostname" name="n_hostname" value="'.$rowArray[0]['hostname'].'" placeholder="Hostname">
                 <div class="help-block with-errors">
                 </div>
         </div>
-        <div class="form-group" class="control-label"><label>'.$lang['network_ip_address'].'</label>
+        <div class="form-group"><label for="n_ip" class="control-label">'.$lang['network_ip_address'].'</label>
                 <input class="form-control" type="text" id="n_ip" name="n_ip" value="'.$rowArray[0]['ip_address'].'" placeholder="IP Address">
                 <div class="help-block with-errors">
                 </div>
         </div>
-        <div class="form-group" class="control-label"><label>'.$lang['network_gateway_address'].'</label>
+        <div class="form-group"><label for="n_gateway" class="control-label">'.$lang['network_gateway_address'].'</label>
                 <input class="form-control" type="text" id="n_gateway" name="n_gateway" value="'.$rowArray[0]['gateway_address'].'" placeholder="Gateway Address">
                 <div class="help-block with-errors">
                 </div>
         </div>
-        <div class="form-group" class="control-label"><label>'.$lang['network_net_mask'].'</label>
+        <div class="form-group"><label for="n_net_mask" class="control-label">'.$lang['network_net_mask'].'</label>
                 <input class="form-control" type="text" id="n_net_mask" name="n_net_mask" value="'.$rowArray[0]['net_mask'].'" placeholder="Net Mask">
                 <div class="help-block with-errors">
                 </div>
         </div>
-        <div class="form-group" class="control-label"><label>'.$lang['network_dns1_address'].'</label>
+        <div class="form-group"><label for="n_dns1" class="control-label">'.$lang['network_dns1_address'].'</label>
                 <input class="form-control" type="text" id="n_dns1" name="n_dns1" value="'.$rowArray[0]['dns1_address'].'" placeholder="DNS1 Address">
                 <div class="help-block with-errors">
                 </div>
         </div>
-        <div class="form-group" class="control-label"><label>'.$lang['network_dns2_address'].'</label>
+        <div class="form-group"><label for="n_dns2" class="control-label">'.$lang['network_dns2_address'].'</label>
                 <input class="form-control" type="text" id="n_dns2" name="n_dns2" value="'.$rowArray[0]['dns2_address'].'" placeholder="DNS2 Address">
                 <div class="help-block with-errors">
                 </div>
@@ -2248,23 +2250,23 @@ echo '
 	  		echo '<label class="form-check-label" for="checkbox3">'.$lang['email_enable'].'</label>
 		</div>
 	</div>
-	<div class="form-group" class="control-label"><label>'.$lang['email_smtp_server'].'</label>
+	<div class="form-group"><label for="e_smtp" class="control-label">'.$lang['email_smtp_server'].'</label>
 	<input class="form-control" type="text" id="e_smtp" name="e_smtp" value="'.$erow['smtp'].'" placeholder="e-mail SMTP Server Address ">
 	<div class="help-block with-errors"></div></div>
-        <div class="form-group" class="control-label"><label>'.$lang['port'].'</label>
+        <div class="form-group"><label for="e_port" class="control-label">'.$lang['port'].'</label>
         <select class="form-select" type="text" id="e_port" name="e_port" >
                 <option value="25" ' . ($erow['port']==25 ? 'selected' : '') . '>25</option>
                 <option value="465" ' . ($erow['port']==465 ? 'selected' : '') . '>465</option>
         </select>
         <div class="help-block with-errors"></div></div>
-	<div class="form-group" class="control-label"><label>'.$lang['email_username'].' </label>
+	<div class="form-group"><label for="e_username" class="control-label">'.$lang['email_username'].' </label>
                 <div class="input-group mb-3">
                         <span class="input-group-text bg-'.theme($conn, $theme, 'color').'"><i class="bi bi-person-plus-fill text-white"></i></span>
                         <input class="form-control" type="text" id="e_username" name="e_username" value="'.$erow['username'].'" placeholder="Username for e-mail Server">
                 </div>
                 <div class="help-block with-errors"></div>
         </div>
-        <div class="form-group" class="control-label"><label>'.$lang['email_password'].' </label>
+        <div class="form-group"><label for="e_password" class="control-label">'.$lang['email_password'].' </label>
                 <div class="input-group mb-3">
                         <div class="input-group-prepend">
                                 <span class="input-group-text bg-'.theme($conn, $theme, 'color').'" id="basic-addon1"><i class="bi bi-key-fill text-white"></i></span>
@@ -2279,10 +2281,10 @@ echo '
                 </div>
             <div class="help-block with-errors"></div>
         </div>
-	<div class="form-group" class="control-label"><label>'.$lang['email_from_address'].' </label>
+	<div class="form-group"><label for="e_from_address" class="control-label">'.$lang['email_from_address'].' </label>
 	<input class="form-control" type="text" id="e_from_address" name="e_from_address" value="'.$erow['from'].'" placeholder="From e-mail" >
 	<div class="help-block with-errors"></div></div>
-	<div class="form-group" class="control-label"><label>'.$lang['email_to_address'].' </label>
+	<div class="form-group"><label for="e_to_address" class="control-label">'.$lang['email_to_address'].' </label>
 	<input class="form-control" type="text" id="e_to_address" name="e_to_address" value="'.$erow['to'].'" placeholder="To e-mail Address">
 	<div class="help-block with-errors"></div></div>';
 
@@ -2327,7 +2329,7 @@ echo '
             <div class="modal-body">
                 <p class="text-muted"> '.$lang['time_zone_text'].'</p>
 				<form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
-				<div class="form-group" class="control-label"><label>'.$lang['time_zone'].'</label>
+				<div class="form-group"><label for="new_time_zone" class="control-label">'.$lang['time_zone'].'</label>
 				<select class="form-select" type="number" id="new_time_zone" name="new_time_zone" >
 				<option selected >'.settings($conn, 'timezone').'</option>';
 $timezones = array(
@@ -2615,13 +2617,13 @@ echo '<p class="text-muted">'.$lang['add_new_job_info_text'].'</p>
                  <label class="form-check-label" for="checkbox_enabled"> '.$lang['enabled'].'</label>
              </div>
         </div>
-	<div class="form-group" class="control-label"><label>'.$lang['jobs_name'].'</label> <small class="text-muted">'.$lang['jobs_name_info'].'</small>
+	<div class="form-group"><label for="job_name" class="control-label">'.$lang['jobs_name'].'</label> <small class="text-muted">'.$lang['jobs_name_info'].'</small>
 	<input class="form-control" type="text" id="job_name" name="job_name" value="" placeholder="'.$lang['jobs_name'].'">
 	<div class="help-block with-errors"></div></div>
-        <div class="form-group" class="control-label"><label>'.$lang['jobs_script'].'</label> <small class="text-muted">'.$lang['jobs_script_info'].'</small>
+        <div class="form-group"><label for="job_script" class="control-label">'.$lang['jobs_script'].'</label> <small class="text-muted">'.$lang['jobs_script_info'].'</small>
         <input class="form-control" type="text" id="job_script" name="job_script" value="" placeholder="'.$lang['jobs_script'].'">
         <div class="help-block with-errors"></div></div>
-        <div class="form-group" class="control-label"><label>'.$lang['jobs_time'].'</label> <small class="text-muted">'.$lang['jobs_time_info'].'</small>
+        <div class="form-group"><label for="job_time" class="control-label">'.$lang['jobs_time'].'</label> <small class="text-muted">'.$lang['jobs_time_info'].'</small>
         <input class="form-control" type="text" id="job_time" name="job_time" value="" placeholder="'.$lang['jobs_time'].'">
         <div class="help-block with-errors"></div></div>
         <div class="form-group" class="control-label">
@@ -2840,7 +2842,7 @@ echo '<div class="modal fade" id="modal_openweather" tabindex="-1" role="dialog"
             			<p>'.$lang['openweather_text4'].'
 	                        <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
             				<div class="form-group">
-                				<label>Country</label>&nbsp;(ISO-3166-1: Alpha-2 Codes)
+                				<label for="sel_Country" class="control-label">Country</label>&nbsp;(ISO-3166-1: Alpha-2 Codes)
                 				<select class="form-control" id="sel_Country" name="sel_Country" onchange=set_country(this.options[this.selectedIndex].value)>
                     					<option value="AF" ' . ($country=="AF" ? 'selected' : '') . '>Afghanistan</option>
                     					<option value="AX" ' . ($country=="AX" ? 'selected' : '') . '>Åland Islands</option>
@@ -3094,7 +3096,7 @@ echo '<div class="modal fade" id="modal_openweather" tabindex="-1" role="dialog"
 						</select>
             				</div>
             				<div class="form-group">
-                				<label>City or Zip</label>
+                				<p>City or Zip</p>
 						<div class="form-check">
   							<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" type="radio" name="rad_CityZip" id="rad_CityZip_City" value="City" onchange=rad_CityZip_Changed("City") '.$city_checked.'>
   							<label class="form-check-label" for="rad_CityZip_City">
@@ -3301,28 +3303,28 @@ echo '
                                 <input type="hidden" id="inp_Type" name="inp_Type" value="0" autocomplete="off" required>
 
                                 <div class="form-group">
-                                	<label>Name</label>
+                                	<label for="inp_Name" class="control-label">Name</label>
                                         <input type="text" class="form-control" name="inp_Name" id="inp_Name" placeholder="Enter Broker Name">
                                         <div class="help-block with-errors"></div>
                                 </div>
                                 <div class="form-group">
-                                        <label>IP</label>
+                                        <label for="inp_Ip" class="control-label">IP</label>
                                         <input type="text" class="form-control" name="inp_Ip" id="inp_Ip" placeholder="Enter Broker IP Address">
                                         <div class="help-block with-errors"></div>
                                 </div>
                                 <div class="form-group">
-                                        <label>Port</label>
+                                        <label for="inp_Port" class="control-label">Port</label>
                                         <input type="text" class="form-control" name="inp_Port" id="inp_Port" placeholder="Enter Broker Port">
                                         <div class="help-block with-errors"></div>
                                 </div>
-                                <div class="form-group" class="control-label"><label>'.$lang['username'].' </label>
+                                <div class="form-group"><label for="inp_Username" class="control-label">'.$lang['username'].' </label>
                                         <div class="input-group mb-3">
                                                 <span class="input-group-text bg-'.theme($conn, $theme, 'color').'"><i class="bi bi-person-plus-fill text-white"></i></span>
                                                 <input class="form-control" type="text" id="inp_Username" name="inp_Username" placeholder="Username for MQTT Broker">
                                         </div>
                                         <div class="help-block with-errors"></div>
                                 </div>
-                                <div class="form-group" class="control-label"><label>'.$lang['password'].' </label>
+                                <div class="form-group"><label for="inp_Password" class="control-label">'.$lang['password'].' </label>
                                         <div class="input-group mb-3">
                                                 <div class="input-group-prepend">
                                                         <span class="input-group-text bg-'.theme($conn, $theme, 'color').'" id="basic-addon1"><i class="bi bi-key-fill text-white"></i></span>
@@ -3338,7 +3340,7 @@ echo '
                                         <div class="help-block with-errors"></div>
                                 </div>
                                 <div class="form-group">
-                                        <label>Enabled</label>
+                                        <label for="sel_Enabled" class="control-label">Enabled</label>
                                         <select class="form-control" id="sel_Enabled" name="sel_Enabled" onchange="set_enabled(this.options[this.selectedIndex].value)" >
                                                 <option value="0">'.$lang['disabled'].'</option>
                                                 <option value="1">'.$lang['enabled'].'</option>
@@ -3346,7 +3348,7 @@ echo '
                                         <div class="help-block with-errors"></div>
                                 </div>
                                 <div class="form-group">
-                                        <label>Type</label>
+                                        <label for="sel_Type" class="control-label">Type</label>
                                         <select class="form-control" id="sel_Type" name="sel_Type" onchange="set_type(this.options[this.selectedIndex].value)" >
                                                 <option value="0">Default - view all</option>
                                                 <option value="1">Sonoff - Tasmota</option>
@@ -3425,7 +3427,7 @@ echo '<div class="modal fade" id="archive_graphs" tabindex="-1" role="dialog" ar
                         	<label class="form-check-label" for="checkbox6">'.$lang['enable_graph_archive'].'</label>
                 	</div>
         	</div>
-		<div class="form-group" class="control-label"><label>'.$lang['archive_file_path'].'</label>
+		<div class="form-group"><label for="graph_archive_file" class="control-label">'.$lang['archive_file_path'].'</label>
 			<input class="form-control" type="text" id="graph_archive_file" name="graph_archive_file" value="'.$row['archive_file'].'" placeholder="Full Path Name of Graph Archive File ">
         		<div class="help-block with-errors"></div></div>
             	</div>
@@ -3519,7 +3521,7 @@ echo '
 
                                         <!-- /.form-group -->
                                         <input type="hidden" id="default_c" name="default_c" value="'.$row["default_c"].'">
-                                        <div class="form-group" class="control-label"><label>'.$lang['zone'].'</label> <small class="text-muted">'.$lang['select_hw_zone_info'].'</small>
+                                        <div class="form-group"><label for="hw_comp_zone" class="control-label">'.$lang['zone'].'</label> <small class="text-muted">'.$lang['select_hw_zone_info'].'</small>
                                                 <select class="form-select" type="text" id="hw_comp_zone" name="hw_comp_zone" >';
                                                 //get list of heat relays to display
                                                 while ($zrow=mysqli_fetch_array($z_results)) {
@@ -3530,25 +3532,25 @@ echo '
                                         </div>
 
                                         <!-- /.form-group -->
-                                        <div class="form-group" class="control-label"><label>'.$lang['coefficient'].' </label>
+                                        <div class="form-group"><label for="hw_coefficient" class="control-label">'.$lang['coefficient'].' </label>
                                                 <input class="form-control" type="text" id="hw_coefficient" name="hw_coefficient" value="'.$row['hw_coefficient'].'" placeholder="Coefficient">
                                                 <div class="help-block with-errors"></div>
                                         </div>
 
                                         <!-- /.form-group -->
-                                        <div class="form-group" class="control-label"><label>'.$lang['threshold'].' </label>
+                                        <div class="form-group"><label for="hw_threshold" class="control-label">'.$lang['threshold'].' </label>
                                                 <input class="form-control" type="text" id="hw_threshold" name="hw_threshold" value="'.$row['hw_threshold'].'" placeholder="Threshold">
                                                 <div class="help-block with-errors"></div>
                                         </div>
 
                                         <!-- /.form-group -->
-                                        <div class="form-group" class="control-label"><label>'.$lang['default_temperature'].' </label>
+                                        <div class="form-group"><label for="default_temp" class="control-label">'.$lang['default_temperature'].' </label>
                                                 <input class="form-control" type="text" id="default_temp" name="default_temp" value="'.$row['default_c'].'" placeholder="Zone Default Temp">
                                                 <div class="help-block with-errors"></div>
                                         </div>
 
                                         <!-- /.form-group -->
-                                        <div class="form-group" class="control-label"><label>'.$lang['weather_sensor'].'</label> <small class="text-muted">'.$lang['weather_sensor_info'].'</small>
+                                        <div class="form-group"><label for="weather_sensor_id" class="control-label">'.$lang['weather_sensor'].'</label> <small class="text-muted">'.$lang['weather_sensor_info'].'</small>
                                                 <select class="form-select" type="text" id="weather_sensor_id" name="weather_sensor_id" >
                                                         <option value="0" ' . ($brow['weather_sensor_id'] == 0 || $brow['weather_sensor_id'] == '0' ? 'selected' : '') . '>'.$lang['openweather'].'</option>';
                                                         //get list of sensors to display
@@ -3599,7 +3601,7 @@ echo '
                         <div class="modal-body">
                                 <p class="text-muted"> '.$lang['target_type_text'].'</p>
                                 <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
-                                <div class="form-group" class="control-label"><label>'.$lang['target_type'].'</label>
+                                <div class="form-group"><label for="new_target_type" class="control-label">'.$lang['target_type'].'</label>
                                         <select class="form-select" type="number" id="new_target_type" name="new_target_type">
                                                 <option value="0" ' . ($target_type==0 || $target_type=='0' ? 'selected' : '') . '>'.$lang['raw_target'].'</option>
                                                 <option value="1" ' . ($target_type==1 || $target_type=='1' ? 'selected' : '') . '>'.$lang['cuts_target'].'</option>
@@ -3668,13 +3670,13 @@ echo '
 				                </div>
 					</div>
 					<!-- /.form-group -->
-					<div class="form-group" class="control-label"><label>'.$lang['system_controller_name'].'</label>
-						<input class="form-control" type="text" id="name" name="name" value="'.$brow['name'].'" placeholder="System Controller Name to Display on Screen ">
+					<div class="form-group"><label for="name" class="control-label">'.$lang['system_controller_name'].'</label>
+						<input class="form-control" type="text" id="name" name="name" value="'.$brow['name'].'" placeholder="System Controller Name to Display on Screen " autocomplete=off required>
 						<div class="help-block with-errors">
 						</div>
 					</div>
 					<!-- /.form-group -->
-                        		<div class="form-group" class="control-label"><label>'.$lang['heat_relay_id'].'</label> <small class="text-muted">'.$lang['heat_relay_id_info'].'</small>
+                        		<div class="form-group"><label for="heat_relay_id" class="control-label">'.$lang['heat_relay_id'].'</label> <small class="text-muted">'.$lang['heat_relay_id_info'].'</small>
                                                 <select class="form-select" type="text" id="heat_relay_id" name="heat_relay_id" >';
                                                 //get list of heat relays to display
                                                 if ((settings($conn, 'mode') & 0b1) == 0) { $heat_relay_type = 1; } else { $heat_relay_type = 2; }
@@ -3692,7 +3694,7 @@ echo '
 					<!-- /.form-group -->';
 
 					if ((settings($conn, 'mode') & 0b1) == 1) {
-  				        	echo '<div class="form-group" class="control-label"><label>'.$lang['cool_relay_id'].'</label> <small class="text-muted">'.$lang['cool_relay_id_info'].'</small>
+  				        	echo '<div class="form-group"><label for="cool_relay_id" class="control-label">'.$lang['cool_relay_id'].'</label> <small class="text-muted">'.$lang['cool_relay_id_info'].'</small>
                                                 <select class="form-select" type="text" id="cool_relay_id" name="cool_relay_id" >';
                                                 //get list of heat relays to display
                                                 $query = "SELECT id, name FROM relays WHERE type = 3;";
@@ -3707,7 +3709,7 @@ echo '
                                                 </div>
                                         </div>
                                         <!-- /.form-group -->
-                                        <div class="form-group" class="control-label"><label>'.$lang['fan_relay_id'].'</label> <small class="text-muted">'.$lang['fan_relay_id_info'].'</small>
+                                        <div class="form-group"><label for="fan_relay_id" class="control-label">'.$lang['fan_relay_id'].'</label> <small class="text-muted">'.$lang['fan_relay_id_info'].'</small>
                                                 <select class="form-select" type="text" id="fan_relay_id" name="fan_relay_id" >';
                                                 //get list of heat relays to display
                                                 $query = "SELECT id, name FROM relays WHERE type = 4;";
@@ -3724,7 +3726,7 @@ echo '
                                         <!-- /.form-group -->';
 					}
 
-					echo '<div class="form-group" class="control-label"><label>'.$lang['system_controller_hysteresis_time'].'</label> <small class="text-muted">'.$lang['system_controller_hysteresis_time_info'].'</small>
+					echo '<div class="form-group"><label for="hysteresis_time" class="control-label">'.$lang['system_controller_hysteresis_time'].'</label> <small class="text-muted">'.$lang['system_controller_hysteresis_time_info'].'</small>
 						<select class="form-select" type="text" id="hysteresis_time" name="hysteresis_time">
 						<option selected>'.$brow['hysteresis_time'].'</option>
 						<option value="0">0</option>
@@ -3744,7 +3746,7 @@ echo '
 						</div>
 					</div>
 					<!-- /.form-group -->
-					<div class="form-group" class="control-label"><label>'.$lang['max_operation_time'].'</label> <small class="text-muted">'.$lang['max_operation_time_info'].'</small>
+					<div class="form-group"><label for="max_operation_time" class="control-label">'.$lang['max_operation_time'].'</label> <small class="text-muted">'.$lang['max_operation_time_info'].'</small>
 						<select class="form-select" type="text" id="max_operation_time" name="max_operation_time">
 						<option selected>'.$brow['max_operation_time'].'</option>
                                                 <option value="0">0</option>
@@ -3772,7 +3774,7 @@ echo '
 					';
 
                                         if ((settings($conn, 'mode') & 0b1) == 0) {
-						echo '<div class="form-group" class="control-label"><label>'.$lang['system_controller_overrun'].'</label> <small class="text-muted">'.$lang['system_controller_overrun_info'].'</small>
+						echo '<div class="form-group"><label for="overrun" class="control-label">'.$lang['system_controller_overrun'].'</label> <small class="text-muted">'.$lang['system_controller_overrun_info'].'</small>
 							<select class="form-select" type="text" id="overrun" name="overrun">
 								<option selected>'.$brow['overrun'].'</option>
 								<option value="-1">Keep valve open until next System Controller start</option>
@@ -3791,7 +3793,7 @@ echo '
 							</div>
 						</div>
 						<!-- /.form-group -->
-                        			<div class="form-group" class="control-label"><label>'.$lang['weather_factoring'].'</label> <small class="text-muted">'.$lang['weather_factoring_info'].'</small>
+                        			<div class="form-group"><label for="weather_factoring" class="control-label">'.$lang['weather_factoring'].'</label> <small class="text-muted">'.$lang['weather_factoring_info'].'</small>
                                                         <select class="form-select" type="text" id="weather_factoring" name="weather_factoring">
                                         			<option value="0" ' . ($brow['weather_factoring'] == 0 || $brow['weather_factoring'] == '0' ? 'selected' : '') . '>'.$lang['disabled'].'</option>
                                         			<option value="1" ' . ($brow['weather_factoring'] == 1 || $brow['weather_factoring'] == '1' ? 'selected' : '') . '>'.$lang['enabled'].'</option>
@@ -3800,7 +3802,7 @@ echo '
                                                         </div>
                                                 </div>
                                                 <!-- /.form-group -->
-                                		<div class="form-group" class="control-label"><label>'.$lang['weather_sensor'].'</label> <small class="text-muted">'.$lang['weather_sensor_info'].'</small>
+                                		<div class="form-group"><label for="weather_sensor_id" class="control-label">'.$lang['weather_sensor'].'</label> <small class="text-muted">'.$lang['weather_sensor_info'].'</small>
                                                 	<select class="form-select" type="text" id="weather_sensor_id" name="weather_sensor_id" >
                                 				<option value="0" ' . ($brow['weather_sensor_id'] == 0 || $brow['weather_sensor_id'] == '0' ? 'selected' : '') . '>'.$lang['openweather'].'</option>';
                                                 		//get list of sensors to display
@@ -3982,7 +3984,7 @@ echo '
             <div class="modal-body">';
 echo '<p class="text-muted">'.$info_text.'</p>
 	<form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
-	<div class="form-group" class="control-label"><label>'.$zone_hvac.'</label> 
+	<div class="form-group"><label for="zone_id" class="control-label">'.$zone_hvac.'</label> 
 	<select class="form-select" type="text" id="zone_id" name="zone_id">';
 	if ((settings($conn, 'mode') & 0b1) == 0) {
 		//Get Zone List
@@ -4001,7 +4003,7 @@ echo '<p class="text-muted">'.$info_text.'</p>
 	echo '
 	</select>
     <div class="help-block with-errors"></div></div>
-	<div class="form-group" class="control-label"><label>'.$lang['boost_temperature'].'</label> <small class="text-muted">'.$lang['boost_temperature_info'].'</small>
+	<div class="form-group"><label for="boost_temperature" class="control-label">'.$lang['boost_temperature'].'</label> <small class="text-muted">'.$lang['boost_temperature_info'].'</small>
 	<select class="form-select" type="text" id="boost_temperature" name="boost_temperature">
 	<option value="20">20</option>
 	<option value="21">22</option>
@@ -4024,7 +4026,7 @@ echo '<p class="text-muted">'.$info_text.'</p>
 	<option value="95">95</option>
 	</select>
     <div class="help-block with-errors"></div></div>
-    <div class="form-group" class="control-label"><label>'.$lang['boost_time'].'</label> <small class="text-muted">'.$lang['boost_time_info'].'</small>
+    <div class="form-group"><label for="boost_time" class="control-label">'.$lang['boost_time'].'</label> <small class="text-muted">'.$lang['boost_time_info'].'</small>
 	<select class="form-select" type="text" id="boost_time" name="boost_time">
 	<option value="20">20</option>
 	<option value="25">25</option>
@@ -4047,9 +4049,9 @@ echo '<p class="text-muted">'.$info_text.'</p>
 	</select>
     <div class="help-block with-errors"></div></div>';
 	if ((settings($conn, 'mode') & 0b1) == 0) {
-		echo '<div class="form-group" class="control-label"><label>'.$lang['boost_console_id'].'</label> <small class="text-muted">'.$lang['boost_console_id_info'].'</small>
+		echo '<div class="form-group"><label for="boost_console_id" class="control-label">'.$lang['boost_console_id'].'</label> <small class="text-muted">'.$lang['boost_console_id_info'].'</small>
 		<select class="form-select" type="text" id="boost_console_id" name="boost_console_id">';
-		//get list from nodes table to display 
+		//get list from nodes table to display
 		$query = "SELECT * FROM nodes where name = 'Button Console' OR name = 'Boost Controller' AND node_id!=0;";
 		$result = $conn->query($query);
 		if ($result){
@@ -4060,7 +4062,7 @@ echo '<p class="text-muted">'.$info_text.'</p>
 		echo '<option value="0">N/A</option>
 		</select>
 	    <div class="help-block with-errors"></div></div>
-		<div class="form-group" class="control-label"><label>'.$lang['boost_button_child_id'].'</label> <small class="text-muted">'.$lang['boost_button_child_id_info'].'</small>
+		<div class="form-group"><label for="boost_button_child_id" class="control-label">'.$lang['boost_button_child_id'].'</label> <small class="text-muted">'.$lang['boost_button_child_id_info'].'</small>
 		<select class="form-select" type="text" id="boost_button_child_id" name="boost_button_child_id">
 		<option value="0">N/A</option>
 		<option value="1">1</option>
@@ -4075,8 +4077,8 @@ echo '<p class="text-muted">'.$info_text.'</p>
     	  <div class="help-block with-errors"></div></div>	';
 	}
 
-        echo '<div class="form-group" class="control-label"><label>'.$lang['one_shot'].'</label> <small class="text-muted">'.$lang['one_shot_info'].'</small>
-
+        echo '<div class="form-group">
+		<div class="text">'.$lang['one_shot'].'&nbsp<small class="text-muted">'.$lang['one_shot_info'].'</small></div>
                 <div class="form-check">';
                         echo '<input class="form-check-input form-check-input-'.theme($conn, settings($conn, 'theme'), 'color').'" id="checkbox7" class="styled" type="checkbox" value="1" name="one_shot" unchecked Enabled>';
                         echo '<label class="form-check-label" for="checkbox7"> '.$lang['one_shot'].'</label>
@@ -4298,7 +4300,7 @@ echo '
             <div class="modal-body">';
 echo '<p class="text-muted">'.$lang['node_add_info_text'].'</p>
 	<form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
-	<div class="form-group" class="control-label"><label>'.$lang['node_type'].'</label> <small class="text-muted">'.$lang['node_type_info'].'</small>
+	<div class="form-group"><label for="node_type" class="control-label">'.$lang['node_type'].'</label> <small class="text-muted">'.$lang['node_type_info'].'</small>
 	<select class="form-select" type="text" id="node_type" onchange=show_hide_devices() name="node_type">
 	<option value="I2C" selected="selected">I2C</option>
 	<option value="GPIO">GPIO</option>
@@ -4308,24 +4310,24 @@ echo '<p class="text-muted">'.$lang['node_add_info_text'].'</p>
         <option value="MQTT">MQTT</option>
 	</select>
     <div class="help-block with-errors"></div></div>
-	<div class="form-group" class="control-label"><label>'.$lang['node_id'].'</label> <small class="text-muted">'.$lang['node_id_info'].'</small>
+	<div class="form-group"><label for="add_node_id" class="control-label">'.$lang['node_id'].'</label> <small class="text-muted">'.$lang['node_id_info'].'</small>
 		<input class="form-control" type="text" id="add_node_id" name="add_node_id" value="" placeholder="'.$lang['node_id'].'">
 	<div class="help-block with-errors"></div></div>
-        <div class="form-group" class="control-label" id="dummy_type_label" style="display:none"><label>'.$lang['node_name'].'</label> <smallclass="text-muted">'.$lang['dummy_name_info'].'</small>
+        <div class="form-group" id="dummy_type_label" style="display:none"><label for="dummy_type" class="control-label">'.$lang['node_name'].'</label> <smallclass="text-muted">'.$lang['dummy_name_info'].'</small>
                 <select class="form-select" type="text" id="dummy_type" name="dummy_type">
                         <option value="Sensor" selected="selected">Dummy Sensor</option>
                         <option value="Controller">Dummy Controller</option>
                 </select>
                 <div class="help-block with-errors"></div>
         </div>
-        <div class="form-group" class="control-label" id="mqtt_type_label" style="display:none"><label>'.$lang['node_name'].'</label> <smallclass="text-muted">'.$lang['mqtt_name_info'].'</small>
+        <div class="form-group" id="mqtt_type_label" style="display:none"><label for="mqtt_type" class="control-label">'.$lang['node_name'].'</label> <smallclass="text-muted">'.$lang['mqtt_name_info'].'</small>
                 <select class="form-select" type="text" id="mqtt_type" name="mqtt_type">
                         <option value="Sensor" selected="selected">MQTT Sensor</option>
                         <option value="Controller">MQTT Controller</option>
                 </select>
                 <div class="help-block with-errors"></div>
         </div>
-	<div class="form-group" class="control-label" id="add_devices_label" style="display:block"><label>'.$lang['node_child_id'].'</label> <small class="text-muted">'.$lang['node_child_id_info'].'</small>
+	<div class="form-group" id="add_devices_label" style="display:block"><label for="nodes_max_child_id" class="control-label">'.$lang['node_child_id'].'</label> <small class="text-muted">'.$lang['node_child_id_info'].'</small>
 		<input class="form-control" type="text" id="nodes_max_child_id" name="nodes_max_child_id" value="0" placeholder="'.$lang['node_max_child_id'].'">
 		<div class="help-block with-errors"></div>
 	</div>
@@ -4407,10 +4409,10 @@ echo '
             <div class="modal-body">';
 echo '<p class="text-muted">'.$lang['zone_type_add_info_text'].'</p>
         <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
-        <div class="form-group" class="control-label"><label>'.$lang['zone_type'].'</label> <small class="text-muted">'.$lang['zone_type_info'].'</small>
+        <div class="form-group"><label for="zone_type" class="control-label">'.$lang['zone_type'].'</label> <small class="text-muted">'.$lang['zone_type_info'].'</small>
         <input class="form-control" type="text" id="zone_type" name="zone_type" value="" placeholder="'.$lang['zone_type'].'">
         <div class="help-block with-errors"></div></div>
-        <div class="form-group" class="control-label"><label>'.$lang['category'].'</label> <small class="text-muted">'.$lang['zone_category_info'].'</small>
+        <div class="form-group"><label for="category" class="control-label">'.$lang['category'].'</label> <small class="text-muted">'.$lang['zone_category_info'].'</small>
         <select class="form-select" type="text" id="category" name="category">
         <option value=0 selected>'.$lang['zone_category0'].'</option>
         <option value=1>'.$lang['zone_category1'].'</option>
@@ -4655,7 +4657,7 @@ echo '
                                         </div>
                                 </div>
                                 <!-- /.form-group -->
-                                <div class="form-group" class="control-label"><label>'.$lang['smart_home_gateway_type'].'</label>
+                                <div class="form-group"><label for="gw_type" class="control-label">'.$lang['smart_home_gateway_type'].'</label>
                                         <select class="form-select" type="text" id="gw_type" name="gw_type" onchange=gw_location()>
                                         <option value="wifi" ' . ($gateway_type=='wifi' ? 'selected' : '') . '>'.$lang['wifi'].'</option>
                                         <option value="serial" ' . ($gateway_type=='serial' ? 'selected' : '') . '>'.$lang['serial'].'</option>
@@ -4665,13 +4667,13 @@ echo '
                                         </div>
                                 </div>
                                 <!-- /.form-group -->
-                                <div class="form-group" class="control-label" id="wifi_gw" style="'.$display_wifi.'"><label>'.$lang['wifi_gateway_location'].'</label>
+                                <div class="form-group" id="wifi_gw" style="'.$display_wifi.'"><label for="wifi_location" class="control-label">'.$lang['wifi_gateway_location'].'</label>
                                 	<input class="form-control" type="text" id="wifi_location" name="wifi_location" value="'.$grow['location'].'" placeholder="Gateway Location">
                                         <div class="help-block with-errors">
                                         </div>
                                 </div>
                                 <!-- /.form-group -->
-                                <div class="form-group" class="control-label" id="serial_gw" style="'.$display_serial.'"><label>'.$lang['serial_gateway_location'].'</label>
+                                <div class="form-group" id="serial_gw" style="'.$display_serial.'"><label for="serial_location" class="control-label">'.$lang['serial_gateway_location'].'</label>
                                         <select class="form-select" type="text" id="serial_location" name="serial_location">
                                         <option selected>'.$grow['location'].'</option>';
                                         $dev_tty = glob("/dev/tty*");
@@ -4683,13 +4685,13 @@ echo '
                                         </div>
                                 </div>
                                 <!-- /.form-group -->
-                                <div class="form-group" class="control-label" id="wifi_port" style="'.$display_wifi.'"><label>'.$lang['wifi_gateway_port'].' </label>
+                                <div class="form-group" id="wifi_port" style="'.$display_wifi.'"><label for="wifi_port_num" class="control-label">'.$lang['wifi_gateway_port'].' </label>
                                         <input class="form-control" type="text" id="wifi_port_num" name="wifi_port_num" value="'.$grow['port'].'" placeholder="Gateway Port">
                                         <div class="help-block with-errors">
                                         </div>
                                 </div>
                                 <!-- /.form-group -->
-                                <div class="form-group" class="control-label" id="serial_port" style="'.$display_serial.'"><label>'.$lang['serial_gateway_port'].' </label>
+                                <div class="form-group" id="serial_port" style="'.$display_serial.'"><label for="serial_port_speed" class="control-label">'.$lang['serial_gateway_port'].' </label>
                                         <select class="form-select" type="text" id="serial_port_speed" name="serial_port_speed">
                                                 <option selected>'.$grow['port'].'</option>
                                                 <option value="9600">9600</option>
@@ -4708,7 +4710,7 @@ echo '
                                         </div>
                                 </div>
                                 <!-- /.form-group -->
-				<div class="form-group" class="control-label" id="gw_timeout" style="'.$display_timeout.'"><label id="gw_timeout_label">'.$lang['interface_timeout'].' </label> <small class="text-muted">'.$lang['seconds'].'</small>
+				<div class="form-group" id="gw_timeout" style="'.$display_timeout.'"><label for="gw_timout" class="control-label" id="gw_timeout_label">'.$lang['interface_timeout'].' </label> <small class="text-muted">'.$lang['seconds'].'</small>
                                         <select class="form-select" type="text" id="gw_timout" name="gw_timout">
                                         <option selected>'.$grow['timout'].'</option>
                                         <option value="0">0</option>
@@ -4727,7 +4729,7 @@ echo '
                                         <div class="help-block with-errors"></div>
 				</div>
                                 <!-- /.form-group -->
-                                <div class="form-group" class="control-label" id="heartbeat" style="'.$display_heartbeat.'"><label id="heartbeat_label">'.$lang['heartbeat_timeout'].' </label> <small class="text-muted">'.$lang['seconds'].'</small>
+                                <div class="form-group" id="heartbeat" style="'.$display_heartbeat.'"><label for="gw_heartbeat" class="control-label" id="heartbeat_label">'.$lang['heartbeat_timeout'].' </label> <small class="text-muted">'.$lang['seconds'].'</small>
                                         <select class="form-select" type="text" id="gw_heartbeat" name="gw_heartbeat">
                                         <option selected>'.$grow['heartbeat_timeout'].'</option>
                                         <option value="0">0</option>
@@ -4745,7 +4747,7 @@ echo '
                                         <div class="help-block with-errors"></div>
                                 </div>
                                 <!-- /.form-group -->
-				<div class="form-group" class="control-label"><label>'.$lang['smart_home_gateway_version'].' </label>
+				<div class="form-group"><label for="gw_version" class="control-label">'.$lang['smart_home_gateway_version'].' </label>
 					<input class="form-control" type="text" id="gw_version" name="gw_version" value="'.$grow['version'].' ('.$sketch_version.')" disabled>
 					<div class="help-block with-errors">
 					</div>
@@ -5092,7 +5094,7 @@ echo '
 
         echo '<p class="text-muted">'.$lang['add_message_info_text'].'</p>
         <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
-        <div class="form-group" class="control-label"><label>'.$lang['relay'].'</label> <small class="text-muted">'.$lang['msg_sensor_id_info'].'</small>
+        <div class="form-group"><label for="msg_relay_id" class="control-label">'.$lang['relay'].'</label> <small class="text-muted">'.$lang['msg_sensor_id_info'].'</small>
                 <select class="form-select" type="text" id="msg_relay_id" name="msg_relay_id">';
                         while ($srow=mysqli_fetch_array($results)) {
                                 echo '<option value="'.$srow['id'].'">'.$srow['name'].'</option>';
@@ -5100,11 +5102,11 @@ echo '
                 echo '</select>
                 <div class="help-block with-errors"></div>
         </div>
-        <div class="form-group" class="control-label"><label>'.$lang['msg_id'].'</label> <small class="text-muted">'.$lang['msg_id_info'].'</small>
+        <div class="form-group"><label for="msg_id" class="control-label">'.$lang['msg_id'].'</label> <small class="text-muted">'.$lang['msg_id_info'].'</small>
                 <input class="form-control" type="text" id="msg_id" name="msg_id" value="" placeholder="'.$lang['msg_id'].'">
                 <div class="help-block with-errors"></div>
         </div>
-        <div class="form-group" class="control-label"><label>'.$lang['msg_text'].'</label> <small class="text-muted">'.$lang['msg_text_info'].'</small>
+        <div class="form-group"><label for="msg_text" class="control-label">'.$lang['msg_text'].'</label> <small class="text-muted">'.$lang['msg_text_info'].'</small>
                 <input class="form-control" type="text" id="msg_text" name="msg_text" value="" placeholder="'.$lang['msg_text'].'">
                 <div class="help-block with-errors"></div>
         </div>
@@ -5176,7 +5178,7 @@ echo '
                         <div class="modal-body">';
                                 echo '<p class="text-muted">'.$lang['relay_group_add_info_text'].'</p>
                                 <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
-                                <div class="form-group" class="control-label"><label>'.$lang['relay_group_name'].'</label> <small class="text-muted">'.$lang['relay_group_name_info'].'</small>
+                                <div class="form-group"><label for="relay_group" class="control-label">'.$lang['relay_group_name'].'</label> <small class="text-muted">'.$lang['relay_group_name_info'].'</small>
                                         <input class="form-control" type="text" id="relay_group" name="relay_group" value="" placeholder="'.$lang['relay_group'].'">
                                         <div class="help-block with-errors"></div>
                                 </div>
@@ -5450,7 +5452,7 @@ echo '
 
 	echo '<p class="text-muted">'.$lang['add_message_info_text'].'</p>
         <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
-        <div class="form-group" class="control-label"><label>'.$lang['sensor'].'</label> <small class="text-muted">'.$lang['msg_sensor_id_info'].'</small>
+        <div class="form-group"><label for="msg_sensor_id" class="control-label">'.$lang['sensor'].'</label> <small class="text-muted">'.$lang['msg_sensor_id_info'].'</small>
 	        <select class="form-select" type="text" id="msg_sensor_id" name="msg_sensor_id">';
         		while ($srow=mysqli_fetch_array($results)) {
                 		echo '<option value="'.$srow['id'].'">'.$srow['name'].'</option>';
@@ -5458,22 +5460,22 @@ echo '
         	echo '</select>
         	<div class="help-block with-errors"></div>
 	</div>
-        <div class="form-group" class="control-label"><label>'.$lang['msg_id'].'</label> <small class="text-muted">'.$lang['msg_id_info'].'</small>
+        <div class="form-group"><label for="msg_id" class="control-label">'.$lang['msg_id'].'</label> <small class="text-muted">'.$lang['msg_id_info'].'</small>
         	<input class="form-control" type="text" id="msg_id" name="msg_id" value="" placeholder="'.$lang['msg_id'].'">
         	<div class="help-block with-errors"></div>
 	</div>
-        <div class="form-group" class="control-label"><label>'.$lang['message_position'].'</label> <small class="text-muted">'.$lang['message_position_info'].'</small>
+        <div class="form-group"><label for="msg_type_id" class="control-label">'.$lang['message_position'].'</label> <small class="text-muted">'.$lang['message_position_info'].'</small>
 	        <select <input class="form-select" type="text" id="msg_type_id" name="msg_type_id" value="" placeholder="'.$lang['message_type'].'">
                         <option selected value="0">'.$lang['centre'].'</option>
                         <option value="1">'.$lang['lower_right'].'</option>
         	</select>
         	<div class="help-block with-errors"></div>
 	</div>
-        <div class="form-group" class="control-label"><label>'.$lang['msg_text'].'</label> <small class="text-muted">'.$lang['msg_text_info'].'</small>
+        <div class="form-group"><label for="msg_text" class="control-label">'.$lang['msg_text'].'</label> <small class="text-muted">'.$lang['msg_text_info'].'</small>
                 <input class="form-control" type="text" id="msg_text" name="msg_text" value="" placeholder="'.$lang['msg_text'].'">
                 <div class="help-block with-errors"></div>
         </div>
-        <div class="form-group" class="control-label"><label>'.$lang['status_color'].'</label> <small class="text-muted">'.$lang['status_color_info'].'</small>
+        <div class="form-group"><label for="msg_status_color" class="control-label">'.$lang['status_color'].'</label> <small class="text-muted">'.$lang['status_color_info'].'</small>
         	<input class="form-control" type="text" id="msg_status_color" name="msg_status_color" value="" placeholder="'.$lang['status_color_type1'].'">
         	<div class="help-block with-errors"></div>
 	</div>
@@ -5559,13 +5561,13 @@ echo '
             <div class="modal-body">';
 echo '<p class="text-muted">'.$lang['sensor_type_add_info_text'].'</p>
         <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
-        <div class="form-group" class="control-label"><label>'.$lang['sensor_type'].'</label> <small class="text-muted">'.$lang['sensor_type_info'].'</small>
+        <div class="form-group"><label for="sensor_type" class="control-label">'.$lang['sensor_type'].'</label> <small class="text-muted">'.$lang['sensor_type_info'].'</small>
         <input class="form-control" type="text" id="sensor_type" name="sensor_type" value="" placeholder="'.$lang['sensor_type'].'">
         <div class="help-block with-errors"></div></div>
-        <div class="form-group" class="control-label"><label>'.$lang['decimal_places'].'</label> <small class="text-muted">'.$lang['decimal_places_info'].'</small>
+        <div class="form-group"><label for="decimal_places" class="control-label">'.$lang['decimal_places'].'</label> <small class="text-muted">'.$lang['decimal_places_info'].'</small>
         <input class="form-control" type="text" id="decimal_places" name="decimal_places" value="0" placeholder="'.$lang['decimal_places'].'">
         <div class="help-block with-errors"></div></div>
-        <div class="form-group" class="control-label"><label>'.$lang['operator'].'</label> <small class="text-muted">'.$lang['operator_info'].'</small>
+        <div class="form-group"><label for="operator" class="control-label">'.$lang['operator'].'</label> <small class="text-muted">'.$lang['operator_info'].'</small>
                 <select <input class="form-select" type="text" id="operator" name="operator" value="None" placeholder="None">
                         <option selected value="None">None</option>
                         <option value="+">+</option>
@@ -5574,10 +5576,10 @@ echo '<p class="text-muted">'.$lang['sensor_type_add_info_text'].'</p>
                         <option value="/">/</option>
                 </select>
         <div class="help-block with-errors"></div></div>
-        <div class="form-group" class="control-label"><label>'.$lang['factor'].'</label> <small class="text-muted">'.$lang['factor_info'].'</small>
+        <div class="form-group"><label for="factor" class="control-label">'.$lang['factor'].'</label> <small class="text-muted">'.$lang['factor_info'].'</small>
         <input class="form-control" type="text" id="factor" name="factor" value="0" placeholder="'.$lang['factor'].'">
         <div class="help-block with-errors"></div></div>
-        <div class="form-group" class="control-label"><label>'.$lang['units_character'].'</label> <small class="text-muted">'.$lang['units_character_info'].'</small>
+        <div class="form-group"><label for="sensor_units" class="control-label">'.$lang['units_character'].'</label> <small class="text-muted">'.$lang['units_character_info'].'</small>
         <input class="form-control" type="text" id="sensor_units" name="sensor_units" value="" placeholder="'.$lang['sensor_units'].'">
         <div class="help-block with-errors"></div></div>
 </div>
@@ -5742,23 +5744,23 @@ echo '
             <div class="modal-body">';
 echo '<p class="text-muted">'.$lang['add_on_add_info_text'].'</p>
         <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
-       	<div class="form-group" class="control-label"><label>'.$lang['zone_name'].'</label> <small class="text-muted">'.$lang['add_zone_name_info'].'</small>
+       	<div class="form-group"><label for="zone_http_id" class="control-label">'.$lang['zone_name'].'</label> <small class="text-muted">'.$lang['add_zone_name_info'].'</small>
         <select class="form-select" type="text" id="zone_http_id" name="zone_http_id">';
         while ($zrow=mysqli_fetch_array($zresult)) {
         	echo '<option value="'.$zrow['name'].'">'.$zrow['name'].'</option>';
         }
         echo '</select>
     	<div class="help-block with-errors"></div></div>
-	<div class="form-group" class="control-label"><label>'.$lang['message_type'].'</label> <small class="text-muted">'.$lang['message_type_info'].'</small>
+	<div class="form-group"><label for="zone_add_msg_type" class="control-label">'.$lang['message_type'].'</label> <small class="text-muted">'.$lang['message_type_info'].'</small>
 	<select <input class="form-select" type="text" id="zone_add_msg_type" name="zone_add_msg_type" value="" placeholder="'.$lang['message_type'].'">
 	<option selected value="0">0 </option>
         <option value="1">1 </option>
 	</select>
 	<div class="help-block with-errors"></div></div>
-	<div class="form-group" class="control-label"><label>'.$lang['http_command'].'</label> <small class="text-muted">'.$lang['http_command_info'].'</small>
+	<div class="form-group"><label for="zone_http_command" class="control-label">'.$lang['http_command'].'</label> <small class="text-muted">'.$lang['http_command_info'].'</small>
 	<input class="form-control" type="text" id="zone_http_command" name="zone_http_command" value="" placeholder="'.$lang['http_command'].'">
 	<div class="help-block with-errors"></div></div>
-        <div class="form-group" class="control-label"><label>'.$lang['http_parameter'].'</label> <small class="text-muted">'.$lang['http_parameter_info'].'</small>
+        <div class="form-group"><label for="zone_http_parameter" class="control-label">'.$lang['http_parameter'].'</label> <small class="text-muted">'.$lang['http_parameter_info'].'</small>
         <input class="form-control" type="text" id="zone_http_parameter" name="zone_http_parameter" value="" placeholder="'.$lang['http_parameter'].'">
         <div class="help-block with-errors"></div></div>
 </div>
@@ -5782,23 +5784,23 @@ echo '
             <div class="modal-body">';
 echo '<p class="text-muted">'.$lang['add_on_add_info_text'].'</p>
         <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
-        <div class="form-group" class="control-label"><label>'.$lang['node_id'].'</label> <small class="text-muted">'.$lang['add_node_id_info'].'</small>
+        <div class="form-group"><label for="node_http_id" class="control-label">'.$lang['node_id'].'</label> <small class="text-muted">'.$lang['add_node_id_info'].'</small>
         <select class="form-select" type="text" id="node_http_id" name="node_http_id">';
         while ($nrow=mysqli_fetch_array($nresult)) {
                 echo '<option value="'.$nrow['node_id'].'">'.$nrow['node_id'].'</option>';
         }
         echo '</select>
         <div class="help-block with-errors"></div></div>
-        <div class="form-group" class="control-label"><label>'.$lang['message_type'].'</label> <small class="text-muted">'.$lang['message_type_info'].'</small>
+        <div class="form-group"><label for="node_add_msg_type" class="control-label">'.$lang['message_type'].'</label> <small class="text-muted">'.$lang['message_type_info'].'</small>
         <select <input class="form-select" type="text" id="node_add_msg_type" name="node_add_msg_type" value="" placeholder="'.$lang['message_type'].'">
         <option selected value="0">0 </option>
         <option value="1">1 </option>
         </select>
         <div class="help-block with-errors"></div></div>
-        <div class="form-group" class="control-label"><label>'.$lang['http_command'].'</label> <small class="text-muted">'.$lang['http_command_info'].'</small>
+        <div class="form-group"><label for="node_http_command" class="control-label">'.$lang['http_command'].'</label> <small class="text-muted">'.$lang['http_command_info'].'</small>
         <input class="form-control" type="text" id="node_http_command" name="node_http_command" value="" placeholder="'.$lang['http_command'].'">
         <div class="help-block with-errors"></div></div>
-        <div class="form-group" class="control-label"><label>'.$lang['http_parameter'].'</label> <small class="text-muted">'.$lang['http_parameter_info'].'</small>
+        <div class="form-group"<label for="node_http_parameter" class="control-label">'.$lang['http_parameter'].'</label> <small class="text-muted">'.$lang['http_parameter_info'].'</small>
         <input class="form-control" type="text" id="node_http_parameter" name="node_http_parameter" value="" placeholder="'.$lang['http_parameter'].'">
         <div class="help-block with-errors"></div></div>
 </div>
@@ -5967,7 +5969,7 @@ echo '
 
 	echo '<p class="text-muted">'.$lang['ebus_add_command_info_text'].'</p>
         <form data-bs-toggle="validator" role="form" method="post" action="settings.php" id="form-join">
-        <div class="form-group" class="control-label"><label>'.$lang['sensor'].'</label> <small class="text-muted">'.$lang['ebus_sensor_id_info'].'</small>
+        <div class="form-group"><label for="ebus_sensor_id" class="control-label">'.$lang['sensor'].'</label> <small class="text-muted">'.$lang['ebus_sensor_id_info'].'</small>
 	        <select class="form-select" type="text" id="ebus_sensor_id" name="ebus_sensor_id">';
         		while ($srow=mysqli_fetch_array($results)) {
                 		echo '<option value="'.$srow['id'].'">'.$srow['name'].'</option>';
@@ -5975,18 +5977,18 @@ echo '
         	echo '</select>
         	<div class="help-block with-errors"></div>
 	</div>
-        <div class="form-group" class="control-label"><label>'.$lang['msg_text'].'</label> <small class="text-muted">'.$lang['ebus_message_info'].'</small>
+        <div class="form-group"><label for="ebus_msg" class="control-label">'.$lang['msg_text'].'</label> <small class="text-muted">'.$lang['ebus_message_info'].'</small>
                 <input class="form-control" type="text" id="ebus_msg" name="ebus_msg" value="" placeholder="'.$lang['msg_text'].'">
                 <div class="help-block with-errors"></div>
         </div>
-        <div class="form-group" class="control-label"><label>'.$lang['message_position'].'</label> <small class="text-muted">'.$lang['message_position_info'].'</small>
+        <div class="form-group"><label for="ebus_position" class="control-label">'.$lang['message_position'].'</label> <small class="text-muted">'.$lang['message_position_info'].'</small>
 	        <select <input class="form-select" type="text" id="ebus_position" name="ebus_position" value="" placeholder="'.$lang['message_type'].'">
         		<option selected value="0">'.$lang['centre'].'</option>
         		<option value="1">'.$lang['lower_right'].'</option>
         	</select>
         	<div class="help-block with-errors"></div>
 	</div>
-        <div class="form-group" class="control-label"><label>'.$lang['ebus_message_offset'].'</label> <small class="text-muted">'.$lang['ebus_message_offset_info'].'</small>
+        <div class="form-group"><label for="ebus_offset" class="control-label">'.$lang['ebus_message_offset'].'</label> <small class="text-muted">'.$lang['ebus_message_offset_info'].'</small>
                 <input class="form-control" type="text" id="ebus_offset" name="ebus_offset" value="0">
                 <div class="help-block with-errors"></div>
         </div>
@@ -6217,7 +6219,7 @@ echo '<p class="text-muted">'.$lang['offset_info_text'].'</p>
                	</div>
         </div>
         <!-- /.form-group -->
-	<div class="form-group" class="control-label"><label>'.$lang['schedule'].'</label> 
+	<div class="form-group"><label for="schedule_daily_time_id" class="control-label">'.$lang['schedule'].'</label> 
 	<select class="form-select" type="text" id="schedule_daily_time_id" name="schedule_daily_time_id">';
 	//Get schedule List
 	$query = "SELECT DISTINCT sch_name, `schedule_daily_time_zone`.`schedule_daily_time_id` 
@@ -6232,7 +6234,7 @@ echo '<p class="text-muted">'.$lang['offset_info_text'].'</p>
 	echo '
 	</select>
     <div class="help-block with-errors"></div></div>
-	<div class="form-group" class="control-label"><label>'.$lang['low_temp'].'</label> <small class="text-muted">'.$lang['low_temp_info'].'</small>
+	<div class="form-group"><label for="low_temperature" class="control-label">'.$lang['low_temp'].'</label> <small class="text-muted">'.$lang['low_temp_info'].'</small>
         <select class="form-select" type="text" id="low_temperature" name="low_temperature">';
         if ($c_f == 0) {
                 echo '<option value="5">5</option>
@@ -6271,7 +6273,7 @@ echo '<p class="text-muted">'.$lang['offset_info_text'].'</p>
         }
         echo '</select>
     <div class="help-block with-errors"></div></div>
-        <div class="form-group" class="control-label"><label>'.$lang['high_temp'].'</label> <small class="text-muted">'.$lang['high_temp_info'].'</small>
+        <div class="form-group"><label for="high_temperature" class="control-label">'.$lang['high_temp'].'</label> <small class="text-muted">'.$lang['high_temp_info'].'</small>
         <select class="form-select" type="text" id="high_temperature" name="high_temperature">';
         if ($c_f == 0) {
                 echo '<option value="15">15</option>
@@ -6310,7 +6312,7 @@ echo '<p class="text-muted">'.$lang['offset_info_text'].'</p>
         }
         echo '</select>
     <div class="help-block with-errors"></div></div>
-	<div class="form-group" class="control-label"><label>'.$lang['start_time_offset'].'</label> <small class="text-muted">'.$lang['start_time_offset_info'].'</small>
+	<div class="form-group"><label for="start_time_offset" class="control-label">'.$lang['start_time_offset'].'</label> <small class="text-muted">'.$lang['start_time_offset_info'].'</small>
 	<select class="form-select" type="text" id="start_time_offset" name="start_time_offset">
 	<option value="5">5</option>
 	<option value="10">10</option>
@@ -6332,7 +6334,7 @@ echo '<p class="text-muted">'.$lang['offset_info_text'].'</p>
 	<option value="120">120</option>
 	</select>
     <div class="help-block with-errors"></div></div>
-    <div class="form-group" class="control-label"><label>'.$lang['sensor_name'].'</label> <small class="text-muted">'.$lang['sensor_name_info'].'</small>
+    <div class="form-group"><label for="sensor_id" class="control-label">'.$lang['sensor_name'].'</label> <small class="text-muted">'.$lang['sensor_name_info'].'</small>
 		<select class="form-select" type="text" id="sensor_id" name="sensor_id">';
 		if ($weather_enabled) { echo '<option value="0">Weather</option>'; }
 		//get list from sensors table to display 
@@ -6376,5 +6378,13 @@ $(function() {
     $('button.warning').confirmButton({
         titletxt: "Confirmation"
     });
+});
+</script>
+
+<script>
+document.querySelectorAll('.modal').forEach((modal) => {
+  modal.addEventListener('hide.bs.modal', () => {
+    document.activeElement.blur();
+  });
 });
 </script>

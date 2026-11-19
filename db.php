@@ -2287,9 +2287,9 @@ if($what=="update_livetemp_zone"){
 //Auto Image
 if($what=="auto_image"){
         if($opp=="update"){
-                $frequency = $_GET['fval1']." ".$_GET['set_ai_f'];
-                $rotation = $_GET['rval1']." ".$_GET['set_ai_r'];
-                $destination = $_GET['dest'];
+                $frequency = $_GET['image_fval1']." ".$_GET['set_ai_f'];
+                $rotation = $_GET['image_rval1']." ".$_GET['set_ai_r'];
+                $destination = $_GET['image_dest'];
                 $enabled = $_GET['checkbox1'];
                 if ($enabled=='true'){$enabled = '1';} else {$enabled = '0';}
                 $email_confirmation = $_GET['checkbox3'];

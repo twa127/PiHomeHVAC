@@ -179,7 +179,7 @@ if (isset($_POST['submit'])) {
 						$found_product = mysqli_fetch_array($result);
 						$new_index_id = $found_product['index_id']+1;
 						?>
-						<div class="form-group" class="control-label"><label><?php echo $lang['relay_index_number']; ?>  </label> <small class="text-muted"><?php echo $lang['relay_index_number_info'];?></small>
+						<div class="form-group"><label for="index_id" class="control-label"><?php echo $lang['relay_index_number']; ?>  </label> <small class="text-muted"><?php echo $lang['relay_index_number_info'];?></small>
 							<input class="form-control" placeholder="<?php echo $lang['relay_index_number']; ?>r" value="<?php if(isset($row['index_id'])) { echo $row['index_id']; }else {echo $new_index_id; }  ?>" id="index_id" name="index_id" data-bs-error="<?php echo $lang['relay_index_number_help']; ?>" autocomplete="off" required>
 							<div class="help-block with-errors"></div>
 						</div>
@@ -188,7 +188,7 @@ if (isset($_POST['submit'])) {
 						<input type="hidden" id="m_out_id" name="m_out_id" value="<?php if(isset($row_messages_out['id'])) { echo $row_messages_out['id']; } else { echo '0'; }?>"/>
 
 						<!-- Controller Type -->
-						<div class="form-group" class="control-label"><label><?php echo $lang['controller_type']; ?></label> <small class="text-muted"><?php echo $lang['controller_type_info'];?></small>
+						<div class="form-group"><label for="type" class="control-label"><?php echo $lang['controller_type']; ?></label> <small class="text-muted"><?php echo $lang['controller_type_info'];?></small>
 							<select class="form-select" type="text" id="type" name="type" onchange=RelayTypeID(this.options[this.selectedIndex].value)>
 								<?php if(isset($row['type'])) {
 									switch ($row['type']) {
@@ -244,13 +244,13 @@ if (isset($_POST['submit'])) {
 						</script>
 
 						<!-- Relay Name -->
-						<div class="form-group" class="control-label"><label><?php echo $lang['relay_name']; ?></label> <small class="text-muted"><?php echo $lang['relay_name_info'];?></small>
+						<div class="form-group"><label for="name" class="control-label"><?php echo $lang['relay_name']; ?></label> <small class="text-muted"><?php echo $lang['relay_name_info'];?></small>
 							<input class="form-control" placeholder="Relay Name" value="<?php if(isset($row['name'])) { echo $row['name']; } ?>" id="name" name="name" data-bs-error="<?php echo $lang['relay_name_help']; ?>" autocomplete="off" required>
 							<div class="help-block with-errors"></div>
 						</div>
 
 						<!-- Relay ID -->
-						<div class="form-group" class="control-label" id="relay_id_label" style="display:block"><label><?php echo $lang['relay_id']; ?></label> <small class="text-muted"><?php echo $lang['relay_id_info'];?></small>
+						<div class="form-group" id="relay_id_label" style="display:block"><label for="relay_id" class="control-label"><?php echo $lang['relay_id']; ?></label> <small class="text-muted"><?php echo $lang['relay_id_info'];?></small>
 							<select id="relay_id" onchange=RelayChildList(this.options[this.selectedIndex].value) name="relay_id" class="form-control select2" data-bs-error="<?php echo $lang['relay_id_error']; ?>" autocomplete="off" required>
 								<?php if(isset($rownode['id'])) {
 								        echo '<option selected >'.$rownode['id']." - ".$rownode['name'].'</option>';
@@ -309,7 +309,7 @@ if (isset($_POST['submit'])) {
 
 						<!-- Relay Child ID -->
 						<input type="hidden" id="gpio_pin_list" name="gpio_pin_list" value="<?php echo implode(",", array_filter(Get_GPIO_List()))?>"/>
-						<div class="form-group" class="control-label"><label><?php echo $lang['relay_child_id']; ?></label> <small class="text-muted"><?php echo $lang['relay_child_id_info'];?></small>
+						<div class="form-group"><label for="relay_child_id" class="control-label"><?php echo $lang['relay_child_id']; ?></label> <small class="text-muted"><?php echo $lang['relay_child_id_info'];?></small>
 						        <select id="relay_child_id" name="relay_child_id" class="form-control select2" data-bs-error="<?php echo $lang['relay_child_id_error']; ?>" autocomplete="off" required>
                                                                 <?php if(strpos($rownode["type"], "GPIO") !== false) {
                                                                         $gpio_list=Get_GPIO_List();
@@ -336,7 +336,7 @@ if (isset($_POST['submit'])) {
 						</div>
 
 						<!-- Relay On Trigger Level -->
-						<div class="form-group" class="control-label"><label><?php echo $lang['relay_trigger']; ?></label> <small class="text-muted"><?php echo $lang['relay_trigger_info'];?></small>
+						<div class="form-group"><label for="on_trigger" class="control-label"><?php echo $lang['relay_trigger']; ?></label> <small class="text-muted"><?php echo $lang['relay_trigger_info'];?></small>
 							<select class="form-select" type="text" id="on_trigger" name="on_trigger" onchange=OnTrigger(this.options[this.selectedIndex].value)>
 								<?php if(isset($row['on_trigger'])) {
 									if ($row['on_trigger'] == 0) { echo '<option selected >LOW</option>'; } else { echo '<option selected >HIGH</option>'; }
@@ -360,13 +360,13 @@ if (isset($_POST['submit'])) {
 						</script>
 
 						<!-- Relay ON Lag Time -->
-						<div class="form-group" class="control-label"><label><?php echo $lang['relay_lag_time']; ?></label> <small class="text-muted"><?php echo $lang['relay_lag_time_info'];?></small>
+						<div class="form-group"><label for="lag_time" class="control-label"><?php echo $lang['relay_lag_time']; ?></label> <small class="text-muted"><?php echo $lang['relay_lag_time_info'];?></small>
 							<input class="form-control" placeholder="Relay ON Lag Time" value="<?php if(isset($row['lag_time'])) { echo $row['lag_time']; } else { echo "0"; } ?>" id="lag_time" name="lag_time" data-bs-error="<?php echo $lang['relay_lag_time_help']; ?>" autocomplete="off" required>
 							<div class="help-block with-errors"></div>
 						</div>
 
                                                 <!-- Relay Fail Timout -->
-                                                        <div class="form-group" class="control-label" id="fail_timeout_label" style="display:block"><label><?php echo$lang['fail_timeout'];?></label> <small class="text-muted"><?php echo $lang['fail_timeout_info'];?></small>
+                                                        <div class="form-group" id="fail_timeout_label" style="display:block"><label for="fail_timeout" class="control-label"><?php echo$lang['fail_timeout'];?></label> <small class="text-muted"><?php echo $lang['fail_timeout_info'];?></small>
                                                         <select id="fail_timeout" name="fail_timeout" class="form-control select2" autocomplete="off">
                                                         <?php for ($x = 0; $x <=  120; $x = $x + 10) {
                                                                 echo '<option value="'.$x.'" ' . ($x==$row['fail_timeout'] ? 'selected' : '') . '>'.$x.'</option>';
@@ -376,7 +376,7 @@ if (isset($_POST['submit'])) {
                                                 </div>
 
                                                 <!-- Relay Group -->
-                                                        <div class="form-group" class="control-label" id="group_id_label_1" style="display:none"><label id="group_id_label_2"><?php echo$lang['group'];?></label> <small class="text-muted"><?php echo $lang['relay_group_info'];?></small>
+                                                        <div class="form-group" id="group_id_label_1" style="display:none"><label id="group_id_label_2" for="group_id" class="control-label"><?php echo$lang['group'];?></label> <small class="text-muted"><?php echo $lang['relay_group_info'];?></small>
                                                         <select id="group_id" name="group_id" class="form-control select2" autocomplete="off">
                                                                 <?php if(isset($row['relay_group_name'])) { echo '<option selected >'.$row['relay_group_name'].'</option>'; } ?>
                                                                 <?php  $query = "SELECT `id`, `name` FROM `relay_group` ORDER BY `id` ASC;";

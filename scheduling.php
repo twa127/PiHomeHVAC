@@ -514,8 +514,8 @@ if(!isset($_GET['nid'])) {
 
 					<!-- Schedule Name -->
                         		<?php if(!isset($_GET['nid'])) {
-                        		echo '<div class="form-group" class="control-label">
-                                		<label><'.$lang['sch_name'].'></label>
+                        		echo '<div class="form-group">
+                                		<label for="sch_name" class="control-label"><'.$lang['sch_name'].'></label>
                                 		<input class="form-control" type="text" id="sch_name" name="sch_name" value="'.$time_row["sch_name"].'" placeholder="Schedule Name" required>
                                 		<div class="help-block with-errors"></div>
                         		</div>'; } ?>
@@ -556,7 +556,7 @@ if(!isset($_GET['nid'])) {
 					}
 					?>
                                         <input type="hidden" id="start_time_state" name="start_time_state" value="<?php echo $start_mode; ?>">
-                                        <div class="form-group" class="control-label"><label><?php echo $lang['start_time']; ?></label>
+                                        <div class="form-group"><label for="start_time" class="control-label"><?php echo $lang['start_time']; ?></label>
                         			<input class="form-control" type="time" id="start_time" name="start_time" value="<?php echo $time_row["start"];?>" placeholder="Start Time" required>
 						<?php if ($sun_enabled && !isset($_GET['nid'])) { ?>
 			                                <br>
@@ -611,7 +611,7 @@ if(!isset($_GET['nid'])) {
 					}
                                         ?>
                                         <input type="hidden" id="end_time_state" name="end_time_state" value="<?php echo $end_mode; ?>">
-					<div class="form-group" class="control-label"><label><?php echo $lang['end_time']; ?></label>
+					<div class="form-group"><label for="end_time" class="control-label"><?php echo $lang['end_time']; ?></label>
 						<input class="form-control" type="time" id="end_time" name="end_time" value="<?php echo $time_row["end"];?>" placeholder="End Time" required>
 						<?php if ($sun_enabled && !isset($_GET['nid'])) { ?>
                                                 	<br>
@@ -633,7 +633,7 @@ if(!isset($_GET['nid'])) {
 
 					<?php if ($schedule_type != 2) { ?>
 	                                        <!-- End Buffer -->
-        	                                <br><div class="form-group" class="control-label" id="smart_off_label" style="display:block"><label><?php echo $lang['smart_off'];?></label> <small class="text-muted"><?php echo $lang['smart_off_info'];?></small>
+        	                                <br><div class="form-group" id="smart_off_label" style="display:block"><label for="smart_off" class="control-label"><?php echo $lang['smart_off'];?></label> <small class="text-muted"><?php echo $lang['smart_off_info'];?></small>
                 	                        	<select id="smart_off" name="smart_off" class="form-control select2" autocomplete="off">
 								<?php
                                                                 if ($time_id == 0) {
@@ -659,7 +659,7 @@ if(!isset($_GET['nid'])) {
         	                                </div>
 					<?php } ?>
 
-					<br><label><?php if($schedule_type == 2) { echo $lang['select_relay']; } else { echo $lang['select_zone']; }?></label>
+					<br><div class="text"><strong><?php if($schedule_type == 2) { echo $lang['select_relay']; } else { echo $lang['select_zone']; }?></strong></div>
 					<?php
 					// Zone List Loop
 					while ($row = mysqli_fetch_assoc($zr_results)) {

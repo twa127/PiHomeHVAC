@@ -64,7 +64,7 @@ $(document).ready(function() {
     var controller_HTML = `
 		<div class="wrap" id>
 			<!-- Zone Controller ID -->
-			<div class="form-group" class="control-label" id="controler_id" style="display:block"><label><?php echo $lang['zone_controller_id']; ?></label id="controler_id_label"> <small class="text-muted"><?php echo $lang['zone_controler_id_info'];?></small>
+			<div class="form-group" id="controler_id" style="display:block"><label for="contr_idx" class="control-label"><?php echo $lang['zone_controller_id']; ?></label id="controler_id_label"> <small class="text-muted"><?php echo $lang['zone_controler_id_info'];?></small>
 	        	        <input type="hidden" id="selected_controler_id[]" name="selected_controler_id[]" value="<?php echo $zone_controllers[$i]['controller_relay_id']?>"/>
 				<div class="entry input-group col-xs-12" id="cnt_id - <?php echo $i ?>">
 					<select id="contr_idx" onchange="ControllerIDList(this.options[this.selectedIndex].value)" name="contr_idx" class="form-select" data-bs-error="<?php echo $lang['zone_controller_id_error']; ?>" autocomplete="off">
@@ -123,7 +123,7 @@ $(document).ready(function() {
     var sensor_HTML = `
 		<div class="wrap" id>
 			<!-- Sensor ID -->
-			<div class="form-group" class="control-label" id="sensor_idx" style="display:block"><label id="sensor_idx_label_1"><?php echo $lang['secondary_temperature_sensor']; ?></label> <small class="text-muted" id="sensor_idx_label_2"><?php echo $lang['zone_sensor_id_info'];?></small>
+			<div class="form-group" id="sensor_idx" style="display:block"><label for="sens_idx" class="control-label" id="sensor_idx_label_1"><?php echo $lang['secondary_temperature_sensor']; ?></label> <small class="text-muted" id="sensor_idx_label_2"><?php echo $lang['zone_sensor_id_info'];?></small>
 				<input type="hidden" id="selected_sensors_id[]" name="selected_sensors_id[]" value="<?php echo $zone_sensors[$i]['zone_sensor_id']?>"/>
 				<div class="entry input-group col-12" id="sen_id - <?php echo $i ?>">
 					<select id="sens_idx" onchange="SensorIDList(this.options[this.selectedIndex].value, s_index)" name="sens_idx" class="form-select" data-bs-error="<?php echo $lang['zone_temp_sensor_id_error']; ?>" autocomplete="off">
