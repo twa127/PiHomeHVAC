@@ -26,8 +26,49 @@ if(settings($conn, 'language') == "sk" || settings($conn, 'language') == "de") {
 
 global $lang;
 // Time Zone Settings for PHP
+// 21_11_2026 - lookups for depricated timezones
+switch (settings($conn, 'timezone')) {
+        case 'US/Samoa':
+                $time_zone = 'Pacific/Pago_Pago';
+                break;
+        case 'US/Hawii':
+                $time_zone = 'Pacific/Honolulu';
+                break;
+        case 'US/Alaska':
+                $time_zone = 'America/Anchorage';
+                break;
+        case 'US/Pacific':
+                $time_zone = 'America/Los_Angeles';
+                break;
+        case 'US/Mountain':
+                $time_zone = 'America/Denver';
+                break;
+        case 'Canada/Saskatchewan':
+                $time_zone = 'America/Regina';
+                break;
+        case 'US/Central':
+                $time_zone = 'America/Chicago';
+                break;
+        case 'US/East':
+                $time_zone = 'America/New_York';
+                break;
+        case 'US/East-Indiana':
+                $time_zone = 'America/Indiana/Indianapolis';
+                break;
+        case 'Canada/Atlantic':
+                $time_zone = 'America/Halifax';
+                break;
+        case 'Canada/Newfoundland':
+                $time_zone = 'America/St_Johns';
+                break;
+        case 'Greenland':
+                $time_zone = 'America/Nuuk';
+                break;
+        default:
+                $time_zone = settings($conn, 'timezone');
+}
 //date_default_timezone_set("Europe/Dublin"); // You can set Timezone Manually and uncomment this line and comment out following line
-date_default_timezone_set(settings($conn, 'timezone'));
+date_default_timezone_set($time_zone);
 
 // this function is deprecated --- prepare mysql statement
 function mysqli_prep($value) {
