@@ -841,24 +841,26 @@ $count_num_sensors = count($sensorArray);
 
 							// re-build the sensor list based on the zone type (1 = temperature, 2 = humidity)
 							var id = <?php echo $id; ?>;
-							var opt = document.getElementById("sens_id0").getElementsByTagName("option");
-							var jArray = <?php echo json_encode($sensorArray); ?>;
+							if(id == 0) {
+								var opt = document.getElementById("sens_id0").getElementsByTagName("option");
+								var jArray = <?php echo json_encode($sensorArray); ?>;
 
-							//console.log(jArray, jArray.length, zone_cat);
-							for(j=opt.length-1;j>=0;j--) {
-								document.getElementById("sens_id0").options.remove(j);
-							}
-							// loop through the array of unallocated sensors
-							for(j=0;j<jArray.length;j++) {
-								var optn = document.createElement("OPTION");
-								var stype = parseInt(jArray[j]['sensor_type_id']);
-								optn.text = jArray[j]['name'];
-								optn.value = jArray[j]['id'];
-								if(stype == sensor_type || zone_cat === "2") {
-									document.getElementById("sens_id0").options.add(optn);
-									if(j == 0 && zone_cat != 2) {optn.setAttribute('selected', true);}
+								//console.log(jArray, jArray.length, zone_cat);
+								for(j=opt.length-1;j>=0;j--) {
+									document.getElementById("sens_id0").options.remove(j);
 								}
-							}
+								// loop through the array of unallocated sensors
+								for(j=0;j<jArray.length;j++) {
+									var optn = document.createElement("OPTION");
+									var stype = parseInt(jArray[j]['sensor_type_id']);
+                                    optn.text = jArray[j]['name'];
+                                    optn.value = jArray[j]['id'];
+                                    if(stype == sensor_type || zone_cat === "2") {
+                                    	document.getElementById("sens_id0").options.add(optn);
+                                        if(j == 0 && zone_cat != 2) {optn.setAttribute('selected', true);}
+                                    }
+                                }
+                            }
 
 							document.getElementById("selected_zone_category").value = zone_cat;
 							var e = document.getElementById("type");
