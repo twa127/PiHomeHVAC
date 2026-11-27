@@ -397,40 +397,47 @@ if (isset($_POST['submit'])) {
 
 						<!-- Frost Temperature -->
 						<div class="form-group" id="frost_protection_label" style="display:block"><label for="frost_temp" class="control-label"><?php echo $lang['frost_protection']; ?></label> <small class="text-muted"><?php echo $lang['frost_protection_text'];?></small>
-							<select class="form-select" type="number" id="frost_temp" name="frost_temp" onchange=enable_frost()>
-                						<?php if(isset($row['frost_temp'])) { 
-									echo '<option selected >'.$row['frost_temp'].'</option>';
-								} else {
-									echo '<option selected >0</option>';
-								} ?>
-								<?php $c_f = settings($conn, 'c_f');
-								echo "<option></option>";
-								if($c_f==1 || $c_f=='1') {
-                							for($t=28;$t<=50;$t++){
-                        							echo "<option value=".$t.">".$t."</option>";
-                        						}
-								} else {
-                							for($t=-1;$t<=12;$t++) {
-                        							echo "<option value=".$t.">".$t."</option>";
-                							}
-	                					} ?>
-							</select>
-							<div class="help-block with-errors"></div>
-						</div>
+                        	<select class="form-select" type="number" id="frost_temp" name="frost_temp" onchange=enable_frost()>
+                                <?php if(isset($row['frost_temp'])) {
+                                    if($row['frost_temp'] == 0) {
+                                        echo '<option value = 0 selected >Disabled</option>';
+                                    } else {
+                                        echo '<option selected >'.$row['frost_temp'].'</option>';
+                                    }
+                                } else {
+                                    echo '<option value = 0 selected >Disabled</option>';
+                                } ?>
+                                <?php $c_f = settings($conn, 'c_f');
+                                echo "<option></option>
+                                <option value=0>Disabled</option>";
+                                if($c_f==1 || $c_f=='1') {
+                                    for($t=32;$t<=50;$t++){
+                                        echo "<option value=".$t.">".$t."</option>";
+                                    }
+                                } else {
+                                    for($t=0;$t<=12;$t++) {
+                                		echo "<option value=".$t.">".$t."</option>";
+                                }
+                            } ?>
+                            </select>
+                        <div class="help-block with-errors"></div>
+                    </div>
 
-						<script language="javascript" type="text/javascript">
-						function enable_frost()
-						{
-							var t = document.getElementById("frost_temp").value;
-        						if (t == 0) {
-        							//document.getElementById("frost_controller").style.display = 'none';
-               							document.getElementById("frost_controller_label").style.visibility = 'hidden';
-							} else {
-                                                                //document.getElementById("frost_controller").style.display = 'block';
-                                                                document.getElementById("frost_controller_label").style.visibility = 'visible';
-							}
-						}
-						</script>
+                    <script language="javascript" type="text/javascript">
+                    	function enable_frost()
+                        	{
+                            var t = document.getElementById("frost_temp").value;
+                        	if (t == 0) {
+                                //document.getElementById("frost_controller").style.display = 'none';
+                                document.getElementById("frost_controller_label").style.visibility = 'hidden';
+                                document.getElementById("frost_contr_id0").required = false;
+                            } else {
+                            	//document.getElementById("frost_controller").style.display = 'block';
+                                document.getElementById("frost_controller_label").style.visibility = 'visible';
+                                document.getElementById("frost_contr_id0").required = true;
+                            }
+                        }
+                    </script>
 
 						<!-- Frost Controller -->
 						<input type="hidden" id="frost_count" name="frost_count" value="<?php echo $frost_count ?>"/>
